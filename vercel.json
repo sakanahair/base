@@ -1,8 +1,18 @@
 {
+  "buildCommand": "cd next && npm install && npm run build",
+  "outputDirectory": "next/dist",
+  "framework": null,
+  "redirects": [
+    {
+      "source": "/morishita",
+      "destination": "/morishita/",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
-      "source": "/:path*",
-      "destination": "/morishita/:path*",
+      "source": "/",
+      "destination": "/morishita/index.html",
       "has": [
         {
           "type": "host",
@@ -11,8 +21,28 @@
       ]
     },
     {
-      "source": "/:path*",
-      "destination": "/morishita/:path*",
+      "source": "/",
+      "destination": "/morishita/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.morishita-tax.jp"
+        }
+      ]
+    },
+    {
+      "source": "/:path+",
+      "destination": "/morishita/:path",
+      "has": [
+        {
+          "type": "host",
+          "value": "morishita-tax.jp"
+        }
+      ]
+    },
+    {
+      "source": "/:path+",
+      "destination": "/morishita/:path",
       "has": [
         {
           "type": "host",
