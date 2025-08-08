@@ -1,8 +1,4 @@
 {
-  "rootDirectory": "next",
-  "buildCommand": "npm install && npm run build && cp -r public/morishita dist/",
-  "outputDirectory": "dist",
-  "framework": null,
   "rewrites": [
     {
       "source": "/:path*",
