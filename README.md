@@ -53,3 +53,4 @@ iOS、Android、Webに対応したFlutterアプリケーションとNext.jsの�
 - **Next.js**: http://localhost:3000
 - **Flutter Web**: http://localhost:3000/app/
 - **森下税理士事務所**: https://morishita-tax.jp (Vercel自動デプロイ)
+- **Git Author**: hideo@sakana.hair
