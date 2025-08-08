@@ -1,0 +1,80 @@
+{
+    "name": "schedule",
+    "version": "1.0.0",
+    "description": "スケジュールセクション",
+    "schedule": [
+        {
+            "time": "9:00-10:00",
+            "mon": {"name": "ビギナー", "type": "beginner"},
+            "tue": "-",
+            "wed": {"name": "ビギナー", "type": "beginner"},
+            "thu": "-",
+            "fri": {"name": "フロウ", "type": "flow"},
+            "sat": {"name": "ビギナー", "type": "beginner"},
+            "sun": {"name": "ビギナー", "type": "beginner"}
+        },
+        {
+            "time": "10:30-11:30",
+            "mon": {"name": "フロウ", "type": "flow"},
+            "tue": {"name": "プライベート", "type": "private"},
+            "wed": {"name": "フロウ", "type": "flow"},
+            "thu": {"name": "プライベート", "type": "private"},
+            "fri": {"name": "ビギナー", "type": "beginner"},
+            "sat": {"name": "フロウ", "type": "flow"},
+            "sun": {"name": "フロウ", "type": "flow"}
+        },
+        {
+            "time": "14:00-15:00",
+            "mon": {"name": "マタニティ", "type": "maternity"},
+            "tue": {"name": "ビギナー", "type": "beginner"},
+            "wed": "-",
+            "thu": {"name": "マタニティ", "type": "maternity"},
+            "fri": {"name": "プライベート", "type": "private"},
+            "sat": "-",
+            "sun": "-"
+        },
+        {
+            "time": "18:00-19:00",
+            "mon": {"name": "ビギナー", "type": "beginner"},
+            "tue": {"name": "フロウ", "type": "flow"},
+            "wed": {"name": "ビギナー", "type": "beginner"},
+            "thu": {"name": "フロウ", "type": "flow"},
+            "fri": {"name": "ビギナー", "type": "beginner"},
+            "sat": "-",
+            "sun": "-"
+        },
+        {
+            "time": "19:30-20:30",
+            "mon": {"name": "フロウ", "type": "flow"},
+            "tue": {"name": "ビギナー", "type": "beginner"},
+            "wed": {"name": "フロウ", "type": "flow"},
+            "thu": {"name": "ビギナー", "type": "beginner"},
+            "fri": {"name": "フロウ", "type": "flow"},
+            "sat": "-",
+            "sun": "-"
+        }
+    ],
+    "classTypes": [
+        {
+            "name": "ビギナーピラティス（初心者向け）",
+            "class": "beginner"
+        },
+        {
+            "name": "フロウピラティス（中級者向け）",
+            "class": "flow"
+        },
+        {
+            "name": "マタニティピラティス",
+            "class": "maternity"
+        },
+        {
+            "name": "プライベートレッスン（要予約）",
+            "class": "private"
+        }
+    ],
+    "notes": [
+        "※ スケジュールは変更になる場合があります",
+        "※ プライベートレッスンは上記以外の時間帯でも承ります",
+        "※ オンラインクラスのスケジュールは会員専用ページでご確認ください"
+    ]
+}

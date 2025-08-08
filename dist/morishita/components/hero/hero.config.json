@@ -1,0 +1,32 @@
+{
+    "name": "hero",
+    "version": "1.0.0",
+    "description": "ヒーローセクションコンポーネント",
+    "title": "あなたの「ゼロ」から始めるピラティス",
+    "subtitle": "No.0 PILATES - 心と身体のバランスを整える",
+    "description": "初心者から上級者まで、一人ひとりに合わせた<br>パーソナルトレーニングを提供します。",
+    "buttons": {
+        "primary": {
+            "text": "体験レッスン予約",
+            "action": {
+                "type": "scroll",
+                "target": "#contact"
+            }
+        },
+        "secondary": {
+            "text": "スタジオについて",
+            "action": {
+                "type": "scroll",
+                "target": "#about"
+            }
+        }
+    },
+    "image": {
+        "src": "",
+        "alt": "モジュールシステムのイメージ"
+    },
+    "effects": {
+        "parallax": true,
+        "animations": true
+    }
+}

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景画像自動保存テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        .test-section {
+            width: 800px;
+            height: 400px;
+            margin: 20px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .controls button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .controls button:hover {
+            background: #0056b3;
+        }
+        
+        #status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .file-input {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3>背景画像テスト</h3>
+        <div class="file-input">
+            <input type="file" id="bgImageInput" accept="image/*">
+        </div>
+        <button onclick="checkLocalStorage()">localStorage確認</button>
+        <button onclick="clearAutoSave()">自動保存データクリア</button>
+        <button onclick="toggleAutoSave()">自動保存切替</button>
+        <div id="status">準備完了</div>
+    </div>
+    
+    <div class="test-section" id="testSection">
+        <h1>背景画像自動保存テスト</h1>
+        <p>大きな画像ファイルを背景に設定して、自動保存が正常に動作するかテストします。</p>
+        <p>右側のコントロールから画像を選択してください。</p>
+    </div>
+    
+    <!-- 必要なスクリプトを読み込み -->
+    <script src="js/ElementEditManager.js"></script>
+    
+    <script>
+        const testSection = document.getElementById('testSection');
+        const bgImageInput = document.getElementById('bgImageInput');
+        const statusDiv = document.getElementById('status');
+        
+        // 画像選択時の処理
+        bgImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                
+                // ファイルサイズ確認
+                const sizeKB = (file.size / 1024).toFixed(2);
+                statusDiv.textContent = `画像サイズ: ${sizeKB} KB`;
+                
+                // 背景画像として設定
+                testSection.style.backgroundImage = `url('${dataUrl}')`;
+                testSection.style.backgroundSize = 'cover';
+                testSection.style.backgroundPosition = 'center';
+                
+                // quickEditChangeイベントを発火
+                const event = new CustomEvent('quickEditChange', {
+                    detail: {
+                        element: testSection,
+                        property: 'backgroundImage',
+                        value: `url('${dataUrl}')`,
+                        sectionId: 'test-section'
+                    }
+                });
+                document.dispatchEvent(event);
+                
+                // 追加のスタイル変更も通知
+                document.dispatchEvent(new CustomEvent('quickEditChange', {
+                    detail: {
+                        element: testSection,
+                        property: 'backgroundSize',
+                        value: 'cover',
+                        sectionId: 'test-section'
+                    }
+                }));
+                
+                document.dispatchEvent(new CustomEvent('quickEditChange', {
+                    detail: {
+                        element: testSection,
+                        property: 'backgroundPosition',
+                        value: 'center',
+                        sectionId: 'test-section'
+                    }
+                }));
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // localStorage確認
+        function checkLocalStorage() {
+            const autoSaveData = localStorage.getItem('element_edits_autosave');
+            const manualSaveData = localStorage.getItem('element_edits');
+            
+            let message = 'localStorage状態:\n';
+            
+            if (autoSaveData) {
+                const size = new Blob([autoSaveData]).size;
+                message += `自動保存: ${(size / 1024).toFixed(2)} KB\n`;
+                
+                try {
+                    const data = JSON.parse(autoSaveData);
+                    const hasBackgroundImage = Object.values(data).some(item => 
+                        item.editedStyles && item.editedStyles.backgroundImage
+                    );
+                    message += hasBackgroundImage ? '背景画像データ: あり\n' : '背景画像データ: なし\n';
+                } catch (e) {
+                    message += 'データ解析エラー\n';
+                }
+            } else {
+                message += '自動保存: なし\n';
+            }
+            
+            if (manualSaveData) {
+                const size = new Blob([manualSaveData]).size;
+                message += `手動保存: ${(size / 1024).toFixed(2)} KB`;
+            } else {
+                message += '手動保存: なし';
+            }
+            
+            alert(message);
+        }
+        
+        // 自動保存データクリア
+        function clearAutoSave() {
+            localStorage.removeItem('element_edits_autosave');
+            statusDiv.textContent = '自動保存データをクリアしました';
+        }
+        
+        // 自動保存切替
+        function toggleAutoSave() {
+            if (window.elementEditManager) {
+                const enabled = window.elementEditManager.toggleAutoSave();
+                statusDiv.textContent = `自動保存: ${enabled ? '有効' : '無効'}`;
+            }
+        }
+        
+        // 初期化完了を待つ
+        setTimeout(() => {
+            if (window.elementEditManager) {
+                statusDiv.textContent = '初期化完了 - 画像を選択してください';
+            }
+        }, 500);
+    </script>
+</body>
+</html>

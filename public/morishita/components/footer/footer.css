@@ -1,0 +1,258 @@
+.site-footer {
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    border-top: 1px solid rgba(139, 121, 98, 0.08);
+    color: #333;
+    padding: 6rem 0 2rem;
+    margin-top: 0;
+    position: relative;
+}
+
+.site-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #8b7962, transparent);
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-logo {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.footer-title {
+    font-size: clamp(1.8rem, 3vw, 2.2rem);
+    font-weight: 200;
+    color: #1a1a1a;
+    margin: 0 0 0.8rem;
+    letter-spacing: 0.25em;
+    font-family: 'Noto Serif JP', serif;
+    text-transform: uppercase;
+}
+
+.footer-tagline {
+    font-size: 0.9rem;
+    color: #888;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    margin: 0;
+}
+
+.footer-info {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 3rem;
+    margin: 0 auto 4rem;
+    max-width: 1100px;
+    flex-wrap: nowrap;
+}
+
+.footer-section {
+    flex: 1 1 25%;
+    min-width: 0;
+    display: block;
+}
+
+.footer-subtitle {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0 0 1.5rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.footer-subtitle::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 20px;
+    height: 1px;
+    background: #8b7962;
+}
+
+.footer-text {
+    font-size: 0.85rem;
+    line-height: 1.9;
+    color: #666;
+    margin: 0;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.footer-links a::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: #8b7962;
+    transition: width 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: #8b7962;
+}
+
+.footer-links a:hover::before {
+    width: 100%;
+}
+
+.footer-link {
+    color: #8b7962;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid transparent;
+}
+
+.footer-link:hover {
+    border-bottom-color: #8b7962;
+}
+
+.social-links {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(139, 121, 98, 0.2);
+    border-radius: 50%;
+    color: #8b7962;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: transparent;
+}
+
+.social-link:hover {
+    background: #8b7962;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(139, 121, 98, 0.3);
+}
+
+.social-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+.footer-bottom {
+    padding-top: 3rem;
+    border-top: 1px solid rgba(139, 121, 98, 0.08);
+    text-align: center;
+}
+
+.copyright {
+    font-size: 0.75rem;
+    color: #999;
+    margin: 0;
+    letter-spacing: 0.1em;
+    font-weight: 300;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 1024px) {
+    .footer-info {
+        gap: 2rem;
+    }
+    
+    .footer-section {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        padding: 4rem 0 2rem;
+    }
+    
+    .footer-info {
+        flex-direction: column !important;
+        gap: 2.5rem;
+        text-align: center;
+        align-items: center;
+    }
+    
+    .footer-section {
+        flex: 1 1 100%;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .footer-subtitle::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .footer-links a::before {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .footer-links a:hover::before {
+        width: 60px;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-footer {
+        padding: 3rem 0 1.5rem;
+    }
+    
+    .footer-title {
+        font-size: 1.4rem;
+        letter-spacing: 0.15em;
+    }
+    
+    .footer-logo {
+        margin-bottom: 3rem;
+    }
+}

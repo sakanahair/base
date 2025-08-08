@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No.0 PILATES - 心と身体のバランスを整えるピラティススタジオ</title>
+    
+    <!-- 即座にライトモードを適用 -->
+    <script>
+        // フリッカー防止のため、CSS読み込み前に実行
+        (function() {
+            // 常にライトモードクラスを設定
+            document.documentElement.classList.add('light-mode');
+            document.documentElement.classList.remove('dark-mode');
+            
+            // bodyが読み込まれたら再度適用
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.classList.add('light-mode');
+                document.body.classList.remove('dark-mode');
+                console.log('即座ライトモード適用完了');
+            });
+        })();
+    </script>
+    
+    <link rel="stylesheet" href="theme/global.css?v=20250126001">
+    <!-- Material Icons (Google Fonts) -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+    
+    <!-- Material Icons フォントスタイル -->
+    <style>
+        .material-icons,
+        .material-icons-outlined,
+        .material-icons-round,
+        .material-icons-sharp,
+        .material-icons-two-tone {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: 'liga';
+        }
+        .material-icons-outlined {
+            font-family: 'Material Icons Outlined';
+        }
+        .material-icons-round {
+            font-family: 'Material Icons Round';
+        }
+        .material-icons-sharp {
+            font-family: 'Material Icons Sharp';
+        }
+        .material-icons-two-tone {
+            font-family: 'Material Icons Two Tone';
+        }
+    </style>
+</head>
+<body>
+    <div id="header-component" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000;"></div>
+    <script>
+        // ヘッダーが読み込まれたらすぐにダークモードを適用
+        (function() {
+            const headerObserver = new MutationObserver(function(mutations) {
+                const siteHeader = document.querySelector('.site-header');
+                if (siteHeader && window.scrollY === 0) {
+                    siteHeader.classList.add('header-dark-mode');
+                    headerObserver.disconnect();
+                }
+            });
+            headerObserver.observe(document.getElementById('header-component'), { childList: true, subtree: true });
+        })();
+    </script>
+    <div id="hero-component" style="position: relative; z-index: 1;"></div>
+    <div id="about-component" style="position: relative; z-index: 2; background-color: var(--section-bg, #ffffff);"></div>
+    <div id="programs-component" style="position: relative; z-index: 3;"></div>
+    <div id="pricing-component" style="position: relative; z-index: 4; display: none;"></div>
+    <div id="schedule-component" style="position: relative; z-index: 5;"></div>
+    <div id="access-component" style="position: relative; z-index: 6;"></div>
+    <div id="footer-component" style="position: relative; z-index: 7;"></div>
+
+    <!-- 編集関連CSS削除
+    <link rel="stylesheet" href="css/EditorStyles.css">
+    <link rel="stylesheet" href="css/SectionClickEditorStyles.css"> -->
+    
+    <!-- 編集関連JS削除
+    <script src="js/SettingsManager.js"></script>
+    <script src="js/ThemePersistence.js"></script>
+    <script src="js/ElementEditManager.js?v=20250722-fix"></script>
+    <script src="js/SectionAnalyzer.js"></script>
+    <script src="js/SimpleFormBuilder.js"></script>
+    <script src="js/UniversalEditor.js"></script>
+    <script src="js/QuickEditMenu.js?v=20250721-2"></script>
+    <script src="js/ImageUploader.js"></script>
+    <script src="js/SectionClickEditor.js?v=20250721"></script> -->
+    <!-- <script src="js/FloatingControls.js"></script> 右下編集ボタン削除 -->
+    <script src="js/ChatInterface.js"></script>
+    <script src="js/FloatMenus.js"></script>
+    <!-- ビルド・Git関連JS削除
+    <script src="js/BuildManager.js"></script>
+    <script src="js/TimeTracker.js"></script>
+    <script src="js/GitHistoryManager.js"></script>
+    <script src="js/AIEditInterface.js"></script>
+    <script src="js/DefaultStateManager.js"></script> -->
+    <!-- <script src="js/ImageOptimizer.js"></script> -->
+    <script src="js/ComponentLoader.js?v=20250126001"></script>
+    <script>
+        // コンポーネントローダーの初期化と実行
+        const componentLoader = new ComponentLoader();
+        componentLoader.loadComponents().then(() => {
+            // コンポーネント読み込み完了後にテーマとピッカーを初期化
+            console.log('コンポーネント読み込み完了、テーマとピッカーを初期化中...');
+            console.log('現在のURL:', window.location.href);
+            
+            // 編集機能削除のため、ElementEditManager関連コードを無効化
+            /*
+            setTimeout(() => {
+                console.log('=== ElementEditManager確認 ===');
+                console.log('ElementEditManager存在:', !!window.elementEditManager);
+                if (window.elementEditManager && window.elementEditManager.loadSavedEdits) {
+                    console.log('loadSavedEditsを手動で再実行...');
+                    window.elementEditManager.loadSavedEdits();
+                }
+            }, 2000);
+            */
+            
+            // テーマとピッカーのスクリプトを動的に読み込み
+            const scripts = [
+                'js/theme.js',
+                'js/color-picker.js', 
+                'js/font-picker.js'
+            ];
+            
+            scripts.forEach(src => {
+                const script = document.createElement('script');
+                script.src = src + '?v=20250126001';
+                script.async = true;
+                document.head.appendChild(script);
+            });
+        });
+    </script>
+</body>
+</html>

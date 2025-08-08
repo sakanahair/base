@@ -1,0 +1,287 @@
+(function() {
+    'use strict';
+
+    let currentSlide = 1;
+    let slideInterval;
+    let isAutoPlay = true;
+
+    function initAbout() {
+        const aboutSection = document.querySelector('.about-section');
+        if (!aboutSection) return;
+
+        // スライドショーの初期化
+        initSlideshow();
+        
+        // 設定の適用
+        if (window.aboutConfig) {
+            applyAboutConfig(window.aboutConfig);
+        }
+
+        // アニメーション監視
+        observeAboutElements();
+    }
+
+    function initSlideshow() {
+        const slides = document.querySelectorAll('.about-slide');
+        const navButtons = document.querySelectorAll('.slide-nav-btn');
+        const progressBar = document.getElementById('aboutProgressBar');
+
+        if (slides.length === 0) return;
+
+        // 初期化時にすべてのスライドを非表示にする
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active', 'fade-in', 'fade-out');
+            if (index === 0) {
+                // 最初のスライドを表示
+                slide.classList.add('active');
+            }
+        });
+        
+        currentSlide = 1;
+        updateProgressBar(1);
+
+        // ナビゲーションボタンのイベントリスナー（デスクトップとモバイル両方）
+        const allNavButtons = document.querySelectorAll('.slide-nav-btn');
+        allNavButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const slideNumber = parseInt(this.dataset.slide);
+                if (slideNumber !== currentSlide) {
+                    showSlide(slideNumber);
+                    stopAutoPlay();
+                }
+            });
+        });
+
+        // マウスオーバーで自動再生を停止（デスクトップのみ）
+        const slideshow = document.querySelector('.about-slideshow');
+        if (slideshow && window.innerWidth > 768) {
+            slideshow.addEventListener('mouseenter', stopAutoPlay);
+            slideshow.addEventListener('mouseleave', startAutoPlay);
+        }
+
+        // モバイルでのタッチ操作対応
+        if ('ontouchstart' in window) {
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            slideshow.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+
+            slideshow.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                const diff = touchStartX - touchEndX;
+
+                if (Math.abs(diff) > swipeThreshold) {
+                    const totalSlides = document.querySelectorAll('.about-slide').length;
+                    
+                    if (diff > 0) {
+                        // 左スワイプ - 次のスライドへ
+                        const nextSlide = currentSlide < totalSlides ? currentSlide + 1 : 1;
+                        showSlide(nextSlide);
+                    } else {
+                        // 右スワイプ - 前のスライドへ
+                        const prevSlide = currentSlide > 1 ? currentSlide - 1 : totalSlides;
+                        showSlide(prevSlide);
+                    }
+                    stopAutoPlay();
+                }
+            }
+        }
+
+        // 自動再生開始
+        startAutoPlay();
+
+        // キーボードナビゲーション
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                showSlide(currentSlide > 1 ? currentSlide - 1 : slides.length);
+                stopAutoPlay();
+            } else if (e.key === 'ArrowRight') {
+                showSlide(currentSlide < slides.length ? currentSlide + 1 : 1);
+                stopAutoPlay();
+            }
+        });
+    }
+
+    function showSlide(slideNumber) {
+        const slides = document.querySelectorAll('.about-slide');
+        const activeSlide = document.querySelector('.about-slide.active');
+        const targetSlide = document.querySelector(`.about-slide[data-slide="${slideNumber}"]`);
+        
+        if (!targetSlide || targetSlide === activeSlide) return;
+        
+        // 現在のスライドをフェードアウト
+        if (activeSlide) {
+            activeSlide.classList.add('fade-out');
+            activeSlide.classList.remove('active');
+            
+            // トランジション完了後にクラスをクリーンアップ
+            setTimeout(() => {
+                activeSlide.classList.remove('fade-out');
+            }, 800);
+        }
+        
+        // 新しいスライドをフェードイン
+        targetSlide.classList.add('fade-in');
+        
+        // リフローを強制してトランジションを確実に動作させる
+        void targetSlide.offsetWidth;
+        
+        // アクティブにしてフェードイン
+        requestAnimationFrame(() => {
+            targetSlide.classList.add('active');
+            targetSlide.classList.remove('fade-in');
+        });
+
+        // ナビゲーションボタンの状態更新（デスクトップとモバイル両方）
+        const allNavButtons = document.querySelectorAll('.slide-nav-btn');
+        allNavButtons.forEach(button => {
+            button.classList.remove('active');
+            if (parseInt(button.dataset.slide) === slideNumber) {
+                button.classList.add('active');
+                // ボタンにパルスアニメーション
+                button.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 200);
+            }
+        });
+
+        currentSlide = slideNumber;
+        updateProgressBar(slideNumber);
+    }
+
+    function updateProgressBar(slideNumber) {
+        const progressBar = document.getElementById('aboutProgressBar');
+        const totalSlides = document.querySelectorAll('.about-slide').length;
+        
+        if (progressBar && totalSlides > 0) {
+            const percentage = (slideNumber / totalSlides) * 100;
+            progressBar.style.width = `${percentage}%`;
+        }
+    }
+
+
+    function startAutoPlay() {
+        if (!isAutoPlay) return;
+        
+        stopAutoPlay(); // 既存のタイマーをクリア
+        // よりスムーズな自動切り替えのために間隔を短縮
+        const interval = window.innerWidth <= 768 ? 6000 : 5000;
+        
+        // プログレスバーのリアルタイム更新
+        let progressInterval;
+        let currentProgress = 0;
+        
+        function updateRealTimeProgress() {
+            const progressBar = document.getElementById('aboutProgressBar');
+            if (!progressBar) return;
+            
+            currentProgress += 1;
+            const totalSlides = document.querySelectorAll('.about-slide').length;
+            const baseProgress = ((currentSlide - 1) / totalSlides) * 100;
+            const incrementProgress = (currentProgress / (interval / 50)) * (100 / totalSlides);
+            
+            progressBar.style.width = `${Math.min(baseProgress + incrementProgress, 100)}%`;
+            
+            if (currentProgress >= interval / 50) {
+                currentProgress = 0;
+                clearInterval(progressInterval);
+            }
+        }
+        
+        slideInterval = setInterval(() => {
+            const totalSlides = document.querySelectorAll('.about-slide').length;
+            const nextSlide = currentSlide < totalSlides ? currentSlide + 1 : 1;
+            showSlide(nextSlide);
+            currentProgress = 0;
+            
+            // 次のスライドのプログレス更新を開始
+            progressInterval = setInterval(updateRealTimeProgress, 50);
+        }, interval);
+        
+        // 初回のプログレス更新開始
+        progressInterval = setInterval(updateRealTimeProgress, 50);
+    }
+
+    function stopAutoPlay() {
+        if (slideInterval) {
+            clearInterval(slideInterval);
+        }
+    }
+
+    function applyAboutConfig(config) {
+        if (!config) return;
+
+        // 設定に基づくカスタマイズ（必要に応じて追加）
+        if (config.autoPlay !== undefined) {
+            isAutoPlay = config.autoPlay;
+            if (isAutoPlay) {
+                startAutoPlay();
+            } else {
+                stopAutoPlay();
+            }
+        }
+
+        if (config.slideInterval) {
+            // 自動再生間隔の変更
+            stopAutoPlay();
+            if (isAutoPlay) {
+                slideInterval = setInterval(() => {
+                    const totalSlides = document.querySelectorAll('.about-slide').length;
+                    const nextSlide = currentSlide < totalSlides ? currentSlide + 1 : 1;
+                    showSlide(nextSlide);
+                }, config.slideInterval);
+            }
+        }
+    }
+
+    function observeAboutElements() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-in');
+                    
+                    // スライドショーが表示された時に自動再生開始
+                    if (entry.target.classList.contains('about-slideshow')) {
+                        setTimeout(() => {
+                            startAutoPlay();
+                        }, 1000);
+                    }
+                    
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const elements = document.querySelectorAll('.about-slideshow, .section-header');
+        elements.forEach(el => observer.observe(el));
+    }
+
+    // ページを離れる時に自動再生を停止
+    window.addEventListener('beforeunload', stopAutoPlay);
+    window.addEventListener('blur', stopAutoPlay);
+    window.addEventListener('focus', function() {
+        if (isAutoPlay) {
+            setTimeout(startAutoPlay, 1000);
+        }
+    });
+
+    // DOMが読み込まれたら初期化
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAbout);
+    } else {
+        initAbout();
+    }
+})();

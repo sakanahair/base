@@ -1,0 +1,162 @@
+<section class="about-section" id="about">
+    <div class="about-container">
+        <div class="section-header">
+            <h2 class="section-title">About</h2>
+            <p class="section-subtitle">No.0 PILATES への道のり</p>
+        </div>
+        
+        <div class="about-slideshow">
+            <!-- スライド1: スタジオについて -->
+            <div class="about-slide" data-slide="1">
+                <div class="slide-content">
+                    <div class="slide-text">
+                        <h3 class="slide-title">本来のピラティスとの出会い</h3>
+                        <p class="slide-description">
+                            当スタジオでは、ピラティス創始者Joseph.H.Pilates氏の意思を大切に受け継ぐ、クラシカル・
+                            ピラティスをベースにセッションを行っています。
+                        </p>
+                        <p class="slide-description">
+                            クラシカル・ピラティスは、ただ体を動かすだけではなく、「呼吸」「集中」「コントロール」
+                            「フロー」を通して、内側から整えていくメソッドです。決められたエクササイズを丁寧に動く
+                            ことで、全身のバランスや姿勢が自然に整い、心まで静かに整っていく感覚を味わうことができ
+                            ます。
+                        </p>
+                        <p class="slide-description">
+                            ピラティスは、特別な筋力や柔軟性は必要ありません。忙しい毎日の中で、自分の体に丁寧に向
+                            き合う時間を持ちたい方にこそ、おすすめのメソッドです。
+                        </p>
+                        <p class="slide-description">
+                            古くから伝わるクラシカル・ピラティスの魅力を、ぜひ体験してみてください。
+                        </p>
+                    </div>
+                    <div class="slide-image">
+                        <div class="image-placeholder philosophy">
+                            <img src="images/about-philosophy.webp" alt="No.0 Pilates スタジオ内観" class="slide-img">
+                            <div class="image-overlay">
+                                <span class="image-label">Philosophy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スライド2: インストラクター紹介 -->
+            <div class="about-slide" data-slide="2">
+                <div class="slide-content">
+                    <div class="slide-text">
+                        <h3 class="slide-title">Instructor</h3>
+                        <h4 class="instructor-name">YUI</h4>
+                        <p class="slide-description">
+                            和歌山県で生まれ海と山に近いまちで伸びやかに育ちました。
+                            小学生から始めたバスケットボールは社会人になるまで継続しながら、
+                            体力や忍耐強さが鍛えられ、スポーツの技術のみではなく
+                            仲間や相手の思考を理解し寄り添う大切さも学ぶ時間となりました。
+                        </p>
+                        <p class="slide-description">
+                            高校生から腰痛と付き合い始め社会人での勤務中の姿勢なども原因となり痛みがピークに、
+                            整形外科や整骨院などの受診ではなかなか改善できず、
+                            日常的な運動習慣としてピラティスやヨガを始めてみました。
+                        </p>
+                    </div>
+                    <div class="slide-image">
+                        <div class="image-placeholder instructor">
+                            <img src="images/about-instructor.webp" alt="インストラクター YUI" class="slide-img">
+                            <div class="image-overlay">
+                                <span class="image-label">Instructor YUI</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スライド3: 経験と想い -->
+            <div class="about-slide" data-slide="3">
+                <div class="slide-content">
+                    <div class="slide-text">
+                        <h3 class="slide-title">人生を変えるピラティス</h3>
+                        <p class="slide-description">
+                            今では腰痛で悩む時間も少なくなり、改めて日常生活の改善や
+                            自分を知り多角的なアプローチを継続することの大切さに気付いています。
+                        </p>
+                        <p class="slide-description">
+                            家族や大切な人の為に過ごすことは得意だけど、
+                            自分自身をケアすることをついつい後回しにしてしまう人も多いのではないでしょうか？
+                        </p>
+                        <p class="slide-description">
+                            ピラティスの後は自分の肉体も精神も喜んでいることに気付き、
+                            回を重ねる毎にアップデートされていく自分を発見しました。
+                            自分の人生の質を高めてくれたピラティスを生涯練習し続け、
+                            心身共に健康を保ち続けたいと思っています。
+                        </p>
+                    </div>
+                    <div class="slide-image">
+                        <div class="image-placeholder transformation">
+                            <img src="images/about-experience-new.png" alt="YUI インストラクターの想い" class="slide-img">
+                            <div class="image-overlay">
+                                <span class="image-label">Transformation</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スライド4: 資格・専門性 -->
+            <div class="about-slide" data-slide="4">
+                <div class="slide-content">
+                    <div class="slide-text">
+                        <h3 class="slide-title">あなたの可能性を導く</h3>
+                        <p class="slide-description">
+                            あなたの新たな可能性を導き出すお手伝いを、
+                            是非本来のピラティスを通してお伝え出来ればと思っています。
+                        </p>
+                        <div class="certifications">
+                            <h4 class="cert-title">資格・認定</h4>
+                            <ul class="cert-list">
+                                <li>Body Element System Japan Comprehensive Pilates Instructor</li>
+                                <li>PhysicalMind InstituteNYC TYE4®</li>
+                                <li>PhysicalMind InstituteNYC Parasetter®</li>
+                                <li>SilkSuspension™</li>
+                                <li>Medical Pilates Instructor</li>
+                                <li>Medical Yoga Instructor</li>
+                                <li>歯科技工士</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="slide-image">
+                        <div class="image-placeholder credentials">
+                            <img src="images/about-professional-new.png" alt="プロフェッショナルなスタジオ設備" class="slide-img">
+                            <div class="image-overlay">
+                                <span class="image-label">Professional</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スライドナビゲーション -->
+            <div class="slide-navigation">
+                <button class="slide-nav-btn" data-slide="1">
+                    <span class="nav-number">01</span>
+                    <span class="nav-title">Philosophy</span>
+                </button>
+                <button class="slide-nav-btn" data-slide="2">
+                    <span class="nav-number">02</span>
+                    <span class="nav-title">Instructor</span>
+                </button>
+                <button class="slide-nav-btn" data-slide="3">
+                    <span class="nav-number">03</span>
+                    <span class="nav-title">Experience</span>
+                </button>
+                <button class="slide-nav-btn" data-slide="4">
+                    <span class="nav-number">04</span>
+                    <span class="nav-title">Professional</span>
+                </button>
+            </div>
+
+            <!-- プログレスバー -->
+            <div class="slide-progress">
+                <div class="progress-bar" id="aboutProgressBar"></div>
+            </div>
+        </div>
+    </div>
+</section>

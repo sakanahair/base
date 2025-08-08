@@ -1,0 +1,610 @@
+.about-section {
+    padding: 8rem 0;
+    background: var(--about-gradient, linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%));
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(139, 121, 98, 0.05);
+}
+
+.about-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--container-padding, 20px);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 6rem;
+}
+
+.section-title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 200;
+    color: #1a1a1a;
+    margin: 0 0 1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Noto Serif JP', serif;
+}
+
+.section-subtitle {
+    font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+    color: #666;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    margin: 0;
+}
+
+/* スライドショーコンテナ */
+.about-slideshow {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow: hidden;
+    min-height: 500px; /* 最小高さを設定 */
+}
+
+/* 各スライド */
+.about-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(30px) scale(0.98);
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 1s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 1s;
+    pointer-events: none;
+}
+
+.about-slide.active {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+}
+
+/* フェード効果 */
+.about-slide.fade-out {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.98);
+}
+
+.about-slide.fade-in {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+}
+
+/* スライドアニメーション用 */
+.about-slide.active .slide-title {
+    animation: slideInUp 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+
+.about-slide.active .slide-description {
+    animation: slideInUp 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+}
+
+.about-slide.active .instructor-name {
+    animation: slideInUp 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+.about-slide.active .certifications {
+    animation: slideInUp 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.6s both;
+}
+
+.about-slide.active .slide-image {
+    animation: slideInScale 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.slide-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+    min-height: 60vh;
+    padding: 4rem 0;
+}
+
+.slide-text {
+    padding-right: 2rem;
+}
+
+.slide-title {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 300;
+    color: #1a1a1a;
+    margin: 0 0 2rem;
+    line-height: 1.3;
+    letter-spacing: 0.05em;
+    font-family: 'Noto Serif JP', serif;
+}
+
+.instructor-name {
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-weight: 500;
+    color: #333;
+    margin: 0 0 1.5rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+}
+
+.slide-description {
+    font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+    color: #555;
+    line-height: 2;
+    margin: 0 0 2rem;
+    letter-spacing: 0.02em;
+    font-weight: 300;
+}
+
+.slide-image {
+    position: relative;
+    height: 400px;
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+    border-radius: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: all 0.5s ease;
+}
+
+.image-placeholder.philosophy {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.image-placeholder.instructor {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.image-placeholder.transformation {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.image-placeholder.credentials {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.image-overlay:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.image-placeholder:hover .slide-img {
+    transform: scale(1.05);
+}
+
+.image-label {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* 資格セクション */
+.certifications {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-left: 3px solid #667eea;
+    backdrop-filter: blur(10px);
+}
+
+.cert-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin: 0 0 1.5rem;
+    letter-spacing: 0.1em;
+}
+
+.cert-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cert-list li {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.8;
+    padding: 0.3rem 0;
+    padding-left: 1rem;
+    position: relative;
+    font-weight: 300;
+}
+
+.cert-list li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* スライドナビゲーション */
+.slide-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 1rem 0;
+    position: relative;
+}
+
+.slide-nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    opacity: 0.5;
+    position: relative;
+    border-radius: 8px;
+}
+
+.slide-nav-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: -1;
+}
+
+.slide-nav-btn.active {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+.slide-nav-btn.active::before {
+    width: 60px;
+    height: 60px;
+}
+
+.slide-nav-btn:hover {
+    opacity: 0.8;
+    transform: translateY(-3px) scale(1.02);
+}
+
+.slide-nav-btn:hover::before {
+    width: 50px;
+    height: 50px;
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.nav-number {
+    font-size: 0.8rem;
+    font-weight: 300;
+    color: #333;
+    letter-spacing: 0.1em;
+}
+
+.nav-title {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.slide-nav-btn.active .nav-number {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.slide-nav-btn.active .nav-title {
+    color: #333;
+}
+
+/* プログレスバー */
+.slide-progress {
+    position: relative;
+    height: 2px;
+    background: rgba(102, 126, 234, 0.2);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    width: 25%;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* レスポンシブデザイン */
+@media (min-width: 769px) {
+    /* デスクトップではモバイルナビゲーションを確実に非表示 */
+    .slide-navigation.mobile-only {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .slide-content {
+        gap: 4rem;
+    }
+    
+    .slide-text {
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .about-section {
+        padding: 4rem 0;
+    }
+
+    .section-header {
+        margin-bottom: 3rem;
+        text-align: left;
+    }
+
+    .slide-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        min-height: auto;
+        padding: 1.5rem 0;
+    }
+
+    .slide-text {
+        padding-right: 0;
+        text-align: left;
+    }
+
+    .slide-image {
+        height: 250px;
+        order: -1;
+    }
+
+    /* デスクトップナビゲーションを非表示 */
+    .slide-navigation.desktop-only {
+        display: none;
+    }
+
+    /* モバイルナビゲーションを表示 */
+    .slide-navigation.mobile-only {
+        display: flex !important;
+    }
+
+    /* モバイルナビゲーションボタンのスタイル調整 */
+    .slide-navigation.mobile-only .slide-nav-btn {
+        flex: 1;
+        padding: 0.8rem 0.3rem;
+        min-width: 0;
+        max-width: none;
+    }
+
+    .slide-navigation.mobile-only .nav-number {
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .slide-navigation.mobile-only .nav-title {
+        font-size: 0.6rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .slide-nav-btn {
+        padding: 1rem 0.8rem;
+        flex: 1;
+        min-width: 0;
+        max-width: calc(25% - 0.6rem);
+    }
+
+    .nav-number {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .nav-title {
+        font-size: 0.65rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .certifications {
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    /* タッチ操作を改善 */
+    .slide-nav-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .slide-nav-btn:active {
+        transform: translateY(0);
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+    }
+
+    /* プログレスバーを見やすく */
+    .slide-progress {
+        height: 3px;
+        margin-top: 1.5rem;
+    }
+
+    /* スライド描画の最適化 */
+    .about-slide {
+        transform: translate3d(0, 0, 0);
+    }
+
+    .slide-title {
+        font-size: clamp(1.4rem, 5vw, 2rem);
+    }
+
+    .slide-description {
+        font-size: clamp(0.9rem, 3vw, 1rem);
+        line-height: 1.8;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-section {
+        padding: 3rem 0;
+    }
+
+    .section-header {
+        margin-bottom: 2rem;
+    }
+
+    .slide-content {
+        gap: 1.5rem;
+        padding: 1rem 0;
+    }
+
+    .slide-image {
+        height: 200px;
+    }
+
+    /* デスクトップナビゲーションを非表示 */
+    .slide-navigation.desktop-only {
+        display: none;
+    }
+
+    /* モバイルナビゲーションを表示 */
+    .slide-navigation.mobile-only {
+        display: flex !important;
+        gap: 0.3rem;
+        padding: 0.8rem;
+        margin-top: 0.8rem;
+    }
+
+    /* 小さなスクリーン用のボタンスタイル */
+    .slide-navigation.mobile-only .slide-nav-btn {
+        padding: 0.6rem 0.2rem;
+    }
+
+    .slide-navigation.mobile-only .nav-number {
+        font-size: 0.7rem;
+    }
+
+    .slide-navigation.mobile-only .nav-title {
+        font-size: 0.55rem;
+    }
+
+    .slide-nav-btn {
+        padding: 0.8rem 0.4rem;
+        max-width: calc(25% - 0.3rem);
+    }
+
+    .nav-number {
+        font-size: 0.8rem;
+    }
+
+    .nav-title {
+        font-size: 0.6rem;
+    }
+
+    .slide-title {
+        font-size: clamp(1.2rem, 6vw, 1.6rem);
+        margin-bottom: 1rem;
+    }
+
+    .instructor-name {
+        font-size: clamp(1rem, 4vw, 1.4rem);
+        margin-bottom: 1rem;
+    }
+
+    .slide-description {
+        font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .certifications {
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .cert-list li {
+        font-size: 0.8rem;
+        line-height: 1.6;
+    }
+}

@@ -1,0 +1,68 @@
+{
+    "version": "1.0.0",
+    "description": "コンポーネント読み込み設定ファイル",
+    "components": [
+        {
+            "name": "header",
+            "path": "components/header",
+            "enabled": true,
+            "order": 1,
+            "description": "サイトヘッダー - ナビゲーションとロゴを含む"
+        },
+        {
+            "name": "hero",
+            "path": "components/hero",
+            "enabled": true,
+            "order": 2,
+            "description": "ヒーローセクション - メインビジュアルとCTA"
+        },
+        {
+            "name": "about",
+            "path": "components/about",
+            "enabled": true,
+            "order": 3,
+            "description": "スタジオ紹介セクション"
+        },
+        {
+            "name": "programs",
+            "path": "components/programs",
+            "enabled": true,
+            "order": 4,
+            "description": "プログラム紹介セクション"
+        },
+        {
+            "name": "pricing",
+            "path": "components/pricing",
+            "enabled": false,
+            "order": 5,
+            "description": "料金プランセクション"
+        },
+        {
+            "name": "schedule",
+            "path": "components/schedule",
+            "enabled": true,
+            "order": 6,
+            "description": "スケジュールセクション"
+        },
+        {
+            "name": "access",
+            "path": "components/access",
+            "enabled": true,
+            "order": 7,
+            "description": "アクセス・お問い合わせセクション"
+        },
+        {
+            "name": "footer",
+            "path": "components/footer",
+            "enabled": true,
+            "order": 8,
+            "description": "フッター - リンクと会社情報"
+        }
+    ],
+    "settings": {
+        "loadOrder": "sequential",
+        "errorHandling": "continue",
+        "cacheEnabled": false,
+        "debug": false
+    }
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>テスト</title>
+</head>
+<body>
+    <button onclick="closeAll()">全て閉じる</button>
+    
+    <script>
+    function closeAll() {
+        // 保存メニューを全て削除
+        document.querySelectorAll('.save-menu-overlay').forEach(el => el.remove());
+        
+        // 編集オーバーレイを全て削除
+        document.querySelectorAll('.section-edit-overlay').forEach(el => el.remove());
+        
+        // 編集ボタンをリセット
+        const btn = document.getElementById('floating-edit-btn');
+        if (btn) {
+            btn.textContent = '編集';
+            btn.style.background = 'rgba(255, 255, 255, 0.9)';
+            btn.style.color = '#333';
+        }
+        
+        // セクションハイライトを削除
+        if (window.floatingControls) {
+            window.floatingControls.clearSectionHighlight();
+            window.floatingControls.isEditMode = false;
+        }
+        
+        console.log('全て閉じました');
+    }
+    </script>
+</body>
+</html>

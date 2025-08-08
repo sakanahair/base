@@ -1,0 +1,38 @@
+{
+    "name": "about",
+    "version": "1.0.0",
+    "description": "スタジオ紹介セクション",
+    "intro": {
+        "title": "「ゼロ」から始める、新しい自分",
+        "descriptions": [
+            "No.0 PILATESは、「ゼロ」から始めることの大切さを伝えるピラティススタジオです。初心者の方でも安心して始められるよう、一人ひとりの身体の状態や目標に合わせたパーソナルトレーニングを提供しています。",
+            "私たちは、単なるエクササイズではなく、心と身体のバランスを整え、日常生活の質を向上させることを目指しています。"
+        ]
+    },
+    "features": [
+        {
+            "icon": "<i class=\"material-icons-outlined\">spa</i>",
+            "title": "落ち着いた空間",
+            "text": "自然光が差し込む明るいスタジオで、リラックスしながらトレーニングできます。"
+        },
+        {
+            "icon": "<i class=\"material-icons-outlined\">groups</i>",
+            "title": "少人数制レッスン",
+            "text": "最大4名までの少人数制で、きめ細やかな指導を行います。"
+        },
+        {
+            "icon": "<i class=\"material-icons-outlined\">track_changes</i>",
+            "title": "パーソナル対応",
+            "text": "個々の目標や体力に合わせたオーダーメイドプログラムを作成。"
+        },
+        {
+            "icon": "<i class=\"material-icons-outlined\">auto_awesome</i>",
+            "title": "最新設備",
+            "text": "リフォーマーやキャデラックなど本格的なピラティスマシンを完備。"
+        }
+    ],
+    "image": {
+        "src": "",
+        "alt": "No.0 PILATESスタジオの内観"
+    }
+}

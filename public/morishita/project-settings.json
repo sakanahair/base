@@ -1,0 +1,22 @@
+{
+  "siteSettings": {
+    "theme": {
+      "accentColor": "#9E9E9E",
+      "fontFamily": "\"M PLUS 1p\", sans-serif",
+      "darkMode": false,
+      "customColors": {}
+    },
+    "sections": {}
+  },
+  "defaultSettings": {
+    "theme": {
+      "accentColor": "#9E9E9E",
+      "fontFamily": "\"M PLUS 1p\", sans-serif",
+      "darkMode": false,
+      "customColors": {}
+    },
+    "sections": {}
+  },
+  "savedThemes": [],
+  "lastUpdated": "2025-07-22T06:08:07.088Z"
+}

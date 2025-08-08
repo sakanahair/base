@@ -1,0 +1,227 @@
+/* Section Click Editor Styles */
+
+/* クリック編集モードのインジケーター */
+.click-edit-indicator {
+    user-select: none;
+    pointer-events: none;
+}
+
+/* 編集可能な要素のホバー効果 */
+.section-click-edit-active [data-editable]:hover {
+    outline: 2px dashed var(--accent-color, #64748b);
+    outline-offset: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+/* クイック編集メニュー */
+.quick-edit-menu {
+    user-select: none;
+}
+
+.quick-edit-menu * {
+    box-sizing: border-box;
+}
+
+/* フォールバックメニューのスタイル */
+.quick-edit-menu-fallback {
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 編集中の要素のハイライト */
+.element-editing {
+    outline: 3px solid var(--accent-color, #64748b) !important;
+    outline-offset: 3px !important;
+    position: relative;
+    z-index: 100001;
+}
+
+/* ツールチップ */
+.edit-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 100003;
+    animation: tooltipFade 0.2s ease;
+}
+
+@keyframes tooltipFade {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* インライン編集 */
+.inline-edit-input {
+    font: inherit;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--accent-color, #64748b);
+    padding: 2px 6px;
+    border-radius: 4px;
+    outline: none;
+    min-width: 50px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ダークモード対応 */
+body.dark-mode .quick-edit-menu {
+    background: rgba(30, 30, 30, 0.98);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .quick-edit-menu h3,
+body.dark-mode .quick-edit-menu span,
+body.dark-mode .quick-edit-menu label {
+    color: #fff !important;
+}
+
+body.dark-mode .quick-edit-menu input {
+    background: #2a2a2a;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .quick-edit-menu button {
+    color: #ccc;
+}
+
+body.dark-mode .quick-edit-menu-fallback {
+    background: #1e1e1e;
+    border-color: #333;
+    color: #fff;
+}
+
+body.dark-mode .inline-edit-input {
+    background: rgba(30, 30, 30, 0.95);
+    color: #fff;
+}
+
+body.dark-mode .element-status-display {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+body.dark-mode .element-status-display h4 {
+    color: #fff;
+}
+
+body.dark-mode .element-status-display span {
+    color: #ccc !important;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .quick-edit-menu {
+        min-width: 200px;
+        max-width: calc(100vw - 20px);
+        font-size: 13px;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        transform: none !important;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+    
+    .quick-edit-menu input {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .quick-edit-menu .detail-edit-btn {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+    
+    /* クイック編集メニューが画面下部に表示される場合の調整 */
+    .quick-edit-menu.bottom-positioned {
+        bottom: 10px;
+        top: auto !important;
+    }
+    
+    /* アイコンピッカーなどのモーダルもモバイル対応 */
+    .icon-picker-modal .panel,
+    .detail-editor-panel {
+        width: calc(100vw - 20px) !important;
+        height: calc(100vh - 40px) !important;
+        max-width: none !important;
+        max-height: none !important;
+        left: 10px !important;
+        top: 20px !important;
+        transform: none !important;
+    }
+    
+    /* イメージアップローダーモーダルのモバイル対応 */
+    .image-upload-modal > div {
+        width: calc(100vw - 20px) !important;
+        max-width: none !important;
+        margin: 10px !important;
+    }
+}
+
+/* アクセシビリティ */
+.quick-edit-menu:focus-within {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.quick-edit-menu button:focus {
+    outline: 2px solid var(--accent-color, #64748b);
+    outline-offset: 2px;
+}
+
+/* 編集可能要素のマーカー */
+[data-click-editable] {
+    position: relative;
+}
+
+[data-click-editable]::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-color, #64748b);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.section-click-edit-active [data-click-editable]:hover::after {
+    opacity: 1;
+}
+
+/* トランジション */
+.quick-edit-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 保存アニメーション */
+@keyframes saveFlash {
+    0% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: rgba(139, 195, 74, 0.2);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.element-saved {
+    animation: saveFlash 0.5s ease;
+}

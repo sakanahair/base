@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone Terminal Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .terminal-container {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .terminal-header {
+            background: #323232;
+            padding: 10px 15px;
+            border-radius: 6px 6px 0 0;
+            margin: -20px -20px 10px -20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27c93f; }
+        .terminal-title {
+            color: #999;
+            font-size: 14px;
+        }
+        #terminal {
+            height: 500px;
+        }
+        .info-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: white;
+            text-align: center;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 5px 15px;
+            background: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #5a5a5a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖥️ Standalone Web Terminal</h1>
+        
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="window-controls">
+                    <div class="window-control close"></div>
+                    <div class="window-control minimize"></div>
+                    <div class="window-control maximize"></div>
+                </div>
+                <span class="terminal-title">Terminal - xterm.js</span>
+                <div class="controls">
+                    <button onclick="clearTerminal()">Clear</button>
+                    <button onclick="resetTerminal()">Reset</button>
+                </div>
+            </div>
+            <div id="terminal"></div>
+        </div>
+
+        <div class="info-panel">
+            <h2>使い方</h2>
+            <p>このターミナルはブラウザ内で完全に動作します。以下のコマンドを試してください：</p>
+            <ul>
+                <li><code>help</code> - 利用可能なコマンドを表示</li>
+                <li><code>clear</code> - 画面をクリア</li>
+                <li><code>date</code> - 現在の日時を表示</li>
+                <li><code>echo [message]</code> - メッセージを表示</li>
+                <li><code>calc [expression]</code> - 簡単な計算</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script>
+        let term;
+        let fitAddon;
+
+        function initTerminal() {
+            term = new Terminal({
+                cursorBlink: true,
+                fontSize: 14,
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                theme: {
+                    background: '#1e1e1e',
+                    foreground: '#d4d4d4',
+                    cursor: '#d4d4d4'
+                }
+            });
+
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+
+            term.open(document.getElementById('terminal'));
+            fitAddon.fit();
+
+            // ウェルカムメッセージ
+            term.writeln('🚀 Web Terminal v1.0 - Standalone Demo');
+            term.writeln('');
+            term.writeln('Type "help" for available commands');
+            term.writeln('');
+            term.write('$ ');
+
+            // コマンド処理
+            let currentLine = '';
+            
+            term.onKey(({ key, domEvent }) => {
+                const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+                
+                if (domEvent.keyCode === 13) { // Enter
+                    term.writeln('');
+                    processCommand(currentLine);
+                    currentLine = '';
+                    term.write('$ ');
+                } else if (domEvent.keyCode === 8) { // Backspace
+                    if (currentLine.length > 0) {
+                        currentLine = currentLine.slice(0, -1);
+                        term.write('\b \b');
+                    }
+                } else if (printable) {
+                    currentLine += key;
+                    term.write(key);
+                }
+            });
+
+            // ウィンドウリサイズ対応
+            window.addEventListener('resize', () => fitAddon.fit());
+        }
+
+        function processCommand(cmd) {
+            const trimmedCmd = cmd.trim();
+            const parts = trimmedCmd.split(' ');
+            const command = parts[0];
+            const args = parts.slice(1).join(' ');
+
+            switch (command) {
+                case '':
+                    break;
+                case 'help':
+                    term.writeln('Available commands:');
+                    term.writeln('  help         - Show this help');
+                    term.writeln('  clear        - Clear screen');
+                    term.writeln('  date         - Show date/time');
+                    term.writeln('  echo [msg]   - Echo message');
+                    term.writeln('  calc [expr]  - Calculate expression');
+                    term.writeln('  color [name] - Change text color');
+                    break;
+                case 'clear':
+                    term.clear();
+                    break;
+                case 'date':
+                    term.writeln(new Date().toLocaleString('ja-JP'));
+                    break;
+                case 'echo':
+                    term.writeln(args || '');
+                    break;
+                case 'calc':
+                    try {
+                        // 安全な計算のみ許可
+                        const result = Function('"use strict"; return (' + args + ')')();
+                        term.writeln('= ' + result);
+                    } catch (e) {
+                        term.writeln('Error: Invalid expression');
+                    }
+                    break;
+                case 'color':
+                    const colors = {
+                        red: '\x1b[31m',
+                        green: '\x1b[32m',
+                        blue: '\x1b[34m',
+                        yellow: '\x1b[33m',
+                        reset: '\x1b[0m'
+                    };
+                    if (colors[args]) {
+                        term.write(colors[args]);
+                        term.writeln('Color changed to ' + args);
+                    } else {
+                        term.writeln('Available colors: red, green, blue, yellow, reset');
+                    }
+                    break;
+                default:
+                    term.writeln(`Command not found: ${command}`);
+            }
+        }
+
+        function clearTerminal() {
+            if (term) {
+                term.clear();
+            }
+        }
+
+        function resetTerminal() {
+            if (term) {
+                term.reset();
+                term.writeln('🚀 Terminal reset');
+                term.write('$ ');
+            }
+        }
+
+        // 初期化
+        window.addEventListener('DOMContentLoaded', initTerminal);
+    </script>
+</body>
+</html>

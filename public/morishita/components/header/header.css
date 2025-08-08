@@ -1,0 +1,508 @@
+/* キャンペーンバナー */
+.campaign-banner {
+    background: linear-gradient(135deg, var(--accent-color, #6c757d) 0%, rgba(108, 117, 125, 0.8) 100%);
+    color: white;
+    padding: 8px 0;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1002;
+    box-shadow: var(--box-shadow, 0 2px 4px rgba(0, 0, 0, 0.1));
+    animation: slideDown 0.5s ease;
+    font-family: var(--font-family);
+}
+
+.campaign-content {
+    max-width: var(--container-width, 1200px);
+    margin: 0 auto;
+    padding: 0 var(--container-padding, 20px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.campaign-text {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-family: var(--font-family);
+}
+
+.campaign-close {
+    position: absolute;
+    right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.campaign-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.campaign-banner.closing {
+    animation: slideUp 0.3s ease forwards;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+        max-height: 50px;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+        max-height: 0;
+    }
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .campaign-text {
+        font-size: 13px;
+    }
+    
+    .campaign-close {
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+    }
+}
+
+.site-header {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border-color, #f0f0f0);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-container {
+    max-width: var(--container-width, 1200px);
+    margin: 0 auto;
+    padding: 0 var(--container-padding, 20px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--header-height, 80px);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.logo-icon {
+    font-size: 2rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-icon img {
+    width: 40px;
+    height: 40px;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    object-fit: contain;
+}
+
+.logo-icon:hover img {
+    transform: scale(1.1);
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-main {
+    font-size: 1.3rem;
+    color: var(--heading-color, #1a1a1a);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+}
+
+.logo-sub {
+    font-size: 0.7rem;
+    color: var(--text-color, #666);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: lowercase;
+}
+
+.main-nav {
+    display: flex;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    gap: 2.5rem;
+    align-items: center;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    color: var(--nav-color, #333);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 0.5rem 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.nav-sub {
+    font-size: 0.65rem;
+    color: #999;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background-color: var(--accent-color, #64748b);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--accent-color, #64748b);
+}
+
+.nav-link:hover .nav-sub {
+    color: var(--accent-color, #64748b);
+}
+
+.nav-link:hover::after {
+    width: 30px;
+}
+
+/* クリックアニメーション */
+.nav-link.clicking {
+    animation: linkClick 0.6s ease;
+}
+
+@keyframes linkClick {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* アクティブリンク */
+.nav-link.active {
+    color: var(--accent-color, #8b7962);
+}
+
+.nav-link.active::after {
+    width: 100%;
+    opacity: 0.5;
+}
+
+.nav-contact .nav-link {
+    background-color: var(--accent-color, #64748b);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+}
+
+.nav-contact .nav-link:hover {
+    background-color: var(--accent-hover, #475569);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
+}
+
+.nav-contact .nav-link::after {
+    display: none;
+}
+
+.nav-contact .nav-sub {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.theme-icon-light {
+    display: block;
+}
+
+.theme-icon-dark {
+    display: none;
+}
+
+body.dark-mode .theme-icon-light {
+    display: none;
+}
+
+body.dark-mode .theme-icon-dark {
+    display: block;
+}
+
+/* ヘッダーダークモード（heroセクション内） */
+.header-dark-mode {
+    /* 背景は透明のまま */
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-bottom: none !important;
+}
+
+/* ダークモード時のテキスト色 */
+.header-dark-mode .logo-main {
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.header-dark-mode .logo-sub {
+    color: rgba(255, 255, 255, 0.8) !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.header-dark-mode .nav-link {
+    color: #ffffff !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.header-dark-mode .nav-sub {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.header-dark-mode .nav-link::after {
+    background-color: #ffffff !important;
+}
+
+.header-dark-mode .nav-link:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.header-dark-mode .nav-link:hover .nav-sub {
+    color: #ffffff !important;
+}
+
+.header-dark-mode .hamburger {
+    background-color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.header-dark-mode .campaign-text {
+    color: #ffffff !important;
+}
+
+.header-dark-mode .nav-contact .nav-link {
+    background-color: var(--accent-color, #64748b) !important;
+    color: white !important;
+}
+
+.header-dark-mode .nav-contact .nav-link:hover {
+    background-color: var(--accent-hover, #475569) !important;
+    color: white !important;
+}
+
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hamburger {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background-color: var(--nav-color, #333);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+@media (max-width: 968px) {
+    .logo-sub {
+        display: none;
+    }
+    
+    .nav-sub {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    /* モバイルヘッダーの背景 */
+    .site-header {
+        background-color: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+        border-bottom: 1px solid var(--border-color, #f0f0f0);
+        transition: all 0.3s ease;
+    }
+    
+    /* ヒーローセクション内でのモバイルヘッダー */
+    .header-dark-mode.site-header {
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* モバイルメニューは通常のまま */
+    
+    .main-nav {
+        display: none !important;
+    }
+
+    .main-nav.active {
+        display: none !important;
+    }
+
+    .nav-list {
+        flex-direction: column;
+        padding: 2rem;
+        gap: 1rem;
+    }
+
+    .nav-link {
+        display: block;
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color, #eee);
+        color: var(--heading-color, #1a1a1a) !important;
+        font-size: 1.1rem;
+        font-weight: 400;
+    }
+    
+    .nav-link:hover {
+        background-color: var(--section-alt-bg, #f8f9fa);
+        color: var(--accent-color, #8b7962) !important;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+
+    .mobile-menu-toggle.active .hamburger:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .mobile-menu-toggle.active .hamburger:nth-child(2) {
+        opacity: 0;
+    }
+
+    .mobile-menu-toggle.active .hamburger:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+    }
+    
+    /* モバイルメニュー内のリンクは常に見やすい色に */
+    .header-dark-mode .main-nav {
+        background-color: #ffffff !important;
+    }
+    
+    .header-dark-mode .main-nav .nav-link {
+        color: var(--heading-color, #1a1a1a) !important;
+        text-shadow: none !important;
+    }
+    
+    .header-dark-mode .main-nav .nav-link:hover {
+        color: var(--accent-color, #8b7962) !important;
+    }
+    
+    /* モバイルメニューが開いている時のハンバーガーメニューの色 */
+    .mobile-menu-toggle.active .hamburger {
+        background-color: var(--heading-color, #1a1a1a) !important;
+    }
+    
+    /* モバイルでのロゴの視認性向上 */
+    .header-dark-mode .logo {
+        filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.5));
+    }
+    
+    /* ハンバーガーメニューボタンの背景 */
+    .header-dark-mode .mobile-menu-toggle {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+        padding: 8px;
+    }
+}

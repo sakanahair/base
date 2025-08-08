@@ -1,0 +1,585 @@
+/* Google Fonts インポート */
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300;400;500;700;800;900&display=swap');
+
+/* 日本語フォント30種類のインポート */
+/* ゴシック体 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kosugi&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sawarabi+Gothic&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500;700&display=swap');
+
+/* 明朝体 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDMincho&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Antique&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Antique+Soft&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kaisei+Opti:wght@400;500;700&display=swap');
+
+/* デコラティブ・装飾体 */
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Potta+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Reggae+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=RocknRoll+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Stick&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Train+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rampart+One&display=swap');
+
+/* CSS変数による共通テーマ設定 */
+:root {
+    /* カラー設定 */
+    --primary-color: #8b7962;
+    --primary-hover: #6b5942;
+    --accent-color: #8b7962;
+    --accent-hover: #6b5942;
+    --heading-color: #1a1a1a;
+    --text-color: #666666;
+    --border-color: #e5e5e5;
+    
+    /* 背景色 */
+    --body-bg: #ffffff;
+    --section-bg: #ffffff;
+    --section-alt-bg: #fafafa;
+    --header-bg: #ffffff;
+    --hero-bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --cta-bg: #f8f9fa;
+    --footer-bg: #1a1a1a;
+    
+    /* セクション別背景色 - 高級感のある微妙なグラデーション */
+    --hero-gradient: linear-gradient(135deg, #f8f9fa 0%, #f5f5f5 100%);
+    --about-gradient: linear-gradient(180deg, #ffffff 0%, #fdfcfb 50%, #faf9f8 100%);
+    --programs-gradient: linear-gradient(180deg, #fbfafa 0%, #ffffff 50%, #fbfafa 100%);
+    --schedule-gradient: linear-gradient(180deg, #ffffff 0%, #fcfbfa 50%, #f9f8f7 100%);
+    --access-gradient: linear-gradient(180deg, #faf9f8 0%, #ffffff 50%, #fbfafa 100%);
+    
+    /* フッター専用色 */
+    --footer-text: #ffffff;
+    --footer-text-secondary: #cccccc;
+    --footer-heading: #ffffff;
+    --footer-link: #cccccc;
+    --footer-social-bg: rgba(255, 255, 255, 0.1);
+    --footer-border: rgba(255, 255, 255, 0.1);
+    
+    /* レイアウト */
+    --container-width: 1200px;
+    --container-padding: 20px;
+    --header-height: 80px;
+    
+    /* タイポグラフィ */
+    --font-family: 'Noto Sans JP', 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-family-heading: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+    --font-family-accent: 'Zen Maru Gothic', 'Noto Sans JP', sans-serif;
+    --font-size-base: 16px;
+    --line-height-base: 1.6;
+    
+    /* その他 */
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --box-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+    
+    /* アイコン背景 */
+    --icon-bg: #f0f7ff;
+    
+    /* ナビゲーション */
+    --nav-color: #333333;
+}
+
+/* ダークモード */
+body.dark-mode {
+    --body-bg: #1a1a1a;
+    --section-bg: #242424;
+    --section-alt-bg: #1a1a1a;
+    --header-bg: #242424;
+    --hero-bg: #1a1a1a;
+    --card-bg: #2a2a2a;
+    --cta-bg: #2a2a2a;
+    --heading-color: #ffffff;
+    --text-color: #cccccc;
+    --border-color: #444444;
+    --nav-color: #ffffff;
+    
+    /* フッター専用色（ダークモード） */
+    --footer-bg: #0f0f0f;
+    --footer-text: #ffffff;
+    --footer-text-secondary: #999999;
+    --footer-heading: #ffffff;
+    --footer-link: #cccccc;
+    --footer-social-bg: rgba(255, 255, 255, 0.1);
+    --footer-border: rgba(255, 255, 255, 0.1);
+    
+    /* アイコン背景（ダークモード） */
+    --icon-bg: rgba(139, 195, 74, 0.1);
+    
+    /* ボックスシャドウ（ダークモード） */
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --box-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* スムーズな切り替えトランジション */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* システムの設定に関係なく、デフォルトはライトモード */
+/* ダークモードは明示的に .dark-mode クラスが付与された場合のみ適用される */
+
+/* リセットCSS（基本） */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 背景画像の最適化 */
+.hero-gradient,
+[class*="gradient"] {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    will-change: background-image;
+    transition: filter 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+/* 背景画像の読み込み中の状態 */
+.hero-gradient:not(.bg-loaded) {
+    filter: blur(20px);
+    opacity: 0.8;
+}
+
+/* 背景画像の読み込み完了後 */
+.hero-gradient.bg-loaded {
+    filter: blur(0);
+    opacity: 1;
+}
+
+/* プリロード用の非表示画像 */
+.preload-image {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    visibility: hidden;
+}
+
+html {
+    font-size: var(--font-size-base);
+    scroll-behavior: smooth;
+    /* タッチデバイスでのズーム防止 */
+    touch-action: pan-x pan-y;
+}
+
+body {
+    font-family: var(--font-family);
+    line-height: var(--line-height-base);
+    color: var(--text-color);
+    background-color: var(--body-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding-top: var(--header-height, 80px);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    /* ダブルタップズーム防止 */
+    touch-action: manipulation;
+}
+
+/* 共通要素スタイル */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading);
+    color: var(--heading-color);
+    line-height: 1.4;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+}
+
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+h2 { font-size: clamp(2rem, 4vw, 3rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+h4 { font-size: clamp(1.2rem, 2.5vw, 1.5rem); }
+
+p {
+    font-weight: 300;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+strong, b {
+    font-weight: 500;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--transition-speed) ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* アイコンのデフォルトスタイル */
+.material-icons,
+.material-icons-outlined,
+.material-icons-round,
+.material-icons-sharp,
+.material-icons-two-tone {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+    vertical-align: middle;
+}
+
+.material-icons-outlined {
+    font-family: 'Material Icons Outlined';
+}
+
+.material-icons-round {
+    font-family: 'Material Icons Round';
+}
+
+.material-icons-sharp {
+    font-family: 'Material Icons Sharp';
+}
+
+.material-icons-two-tone {
+    font-family: 'Material Icons Two Tone';
+}
+
+/* Font Awesomeのデフォルトスタイル */
+.fa, .fas, .far, .fal, .fad, .fab {
+    display: inline-block;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* ボタンスタイル */
+.btn {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    font-family: var(--font-family);
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+    background: transparent;
+}
+
+.btn-primary {
+    background: var(--accent-color, #8b7962);
+    color: white;
+    border-color: var(--accent-color, #8b7962);
+}
+
+.btn-primary:hover {
+    background: transparent;
+    color: var(--accent-color, #8b7962);
+    border-color: var(--accent-color, #8b7962);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--heading-color);
+    border-color: var(--heading-color);
+}
+
+.btn-secondary:hover {
+    background: var(--heading-color);
+    color: white;
+}
+
+/* フォーム要素 */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea,
+select {
+    font-family: var(--font-family);
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-color);
+    transition: border-color var(--transition-speed) ease;
+    /* iOSでのズーム防止（16px以上のフォントサイズ） */
+    font-size: 16px;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+/* ユーティリティクラス */
+.container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+.mt-5 { margin-top: 3rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+.mb-5 { margin-bottom: 3rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+.p-5 { padding: 3rem; }
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* セクションハイライトアニメーション */
+.section-highlight {
+    position: relative;
+    animation: sectionPulse 1s ease;
+}
+
+@keyframes sectionPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 121, 98, 0);
+    }
+    50% {
+        box-shadow: 0 0 0 20px rgba(139, 121, 98, 0.1);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 121, 98, 0);
+    }
+}
+
+/* スクロール時のセクションフェードイン */
+section {
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    position: relative;
+}
+
+/* セクションの高級感あるオーバーレイ効果 */
+section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(139, 121, 98, 0.01) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+section > * {
+    position: relative;
+    z-index: 1;
+}
+
+section.fade-in {
+    animation: fadeInUp 0.8s ease forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* レスポンシブユーティリティ */
+@media (max-width: 768px) {
+    :root {
+        --font-size-base: 14px;
+        --container-padding: 15px;
+    }
+}
+
+/* アクセシビリティ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* フォーカススタイル */
+:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* 印刷時のスタイル */
+@media print {
+    * {
+        background: transparent !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    a, a:visited {
+        text-decoration: underline;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* モバイル表示で全セクションを左寄せ */
+@media (max-width: 768px) {
+    /* すべてのテキスト要素を左寄せ（セクションヘッダーとタイトルを除く） */
+    h1, h3, h4, h5, h6,
+    p {
+        text-align: left !important;
+    }
+    
+    /* セクションヘッダーとタイトルは中央寄せを維持 */
+    .section-header {
+        text-align: center !important;
+    }
+    
+    .section-title {
+        text-align: center !important;
+    }
+    
+    /* サブタイトルは中央寄せを維持 */
+    .section-subtitle-main,
+    .section-subtitle {
+        text-align: center !important;
+    }
+    
+    /* プログラムセクション */
+    .program-card,
+    .program-icon,
+    .program-name,
+    .program-duration,
+    .program-description {
+        text-align: left !important;
+    }
+    
+    /* 価格セクション */
+    .pricing-card,
+    .price-type,
+    .price-amount,
+    .price-period,
+    .campaign-text,
+    .price-features,
+    .price-item {
+        text-align: left !important;
+    }
+    
+    /* スケジュールセクション */
+    .schedule-content,
+    .schedule-day,
+    .time-slot,
+    .class-info,
+    .class-name,
+    .class-instructor {
+        text-align: left !important;
+    }
+    
+    /* アクセスセクション */
+    .access-content,
+    .info-group,
+    .info-label,
+    .info-value,
+    .map-container {
+        text-align: left !important;
+    }
+    
+    /* フッターセクション */
+    .footer-content,
+    .footer-section h3,
+    .footer-text,
+    .footer-copyright {
+        text-align: left !important;
+    }
+    
+    /* ボタンは中央寄せを維持 */
+    .btn-primary,
+    .btn-secondary,
+    .btn {
+        text-align: center !important;
+    }
+}

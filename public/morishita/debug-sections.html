@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セクション検出デバッグ</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-info { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .section-item { margin: 5px 0; padding: 10px; border: 1px solid #ddd; border-radius: 3px; }
+        .test-section { padding: 20px; margin: 10px 0; border: 2px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #1976D2; }
+        .log { background: #000; color: #0f0; padding: 10px; font-family: monospace; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>セクション検出デバッグツール</h1>
+    
+    <div class="debug-info">
+        <h2>テストセクション</h2>
+        <div class="test-section" id="header-component">
+            <h3>ヘッダーセクション (ID: header-component)</h3>
+            <p>これはヘッダーセクションです</p>
+            <span>編集可能なテキスト</span>
+        </div>
+        
+        <div class="test-section" id="hero-component">
+            <h3>ヒーローセクション (ID: hero-component)</h3>
+            <p>これはヒーローセクションです</p>
+            <span>別の編集可能なテキスト</span>
+        </div>
+        
+        <section class="about test-section">
+            <h3>Aboutセクション (section tag + class)</h3>
+            <p>これはAboutセクションです</p>
+            <div>ネストした要素</div>
+        </section>
+        
+        <div class="programs test-section">
+            <h3>プログラムセクション (class only)</h3>
+            <p>これはプログラムセクションです</p>
+            <button>テストボタン</button>
+        </div>
+    </div>
+    
+    <div class="debug-info">
+        <h2>制御パネル</h2>
+        <button onclick="testSectionDetection()">セクション検出テスト</button>
+        <button onclick="testHeaderSection()">ヘッダーセクション選択テスト</button>
+        <button onclick="testHeroSection()">ヒーローセクション選択テスト</button>
+        <button onclick="testAboutSection()">Aboutセクション選択テスト</button>
+        <button onclick="testProgramsSection()">プログラムセクション選択テスト</button>
+        <button onclick="clearLog()">ログクリア</button>
+    </div>
+    
+    <div class="debug-info">
+        <h2>検出結果</h2>
+        <div id="detection-results"></div>
+    </div>
+    
+    <div class="debug-info">
+        <h2>デバッグログ</h2>
+        <div id="debug-log" class="log"></div>
+    </div>
+
+    <script>
+        // ログ機能
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44' : type === 'success' ? '#4f4' : type === 'warning' ? '#fa4' : '#0f0';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').innerHTML = '';
+        }
+
+        // セクション検出関数（FloatingControlsから移植）
+        function detectSections() {
+            const sections = [];
+            
+            log('🔍 セクション検出開始', 'info');
+            
+            // 複数の方法でセクションを検出
+            const componentElements = document.querySelectorAll('[id$="-component"]');
+            log(`📋 -component要素: ${componentElements.length}個`, 'info');
+            
+            const sectionElements = document.querySelectorAll('section');
+            log(`📋 section要素: ${sectionElements.length}個`, 'info');
+            
+            const classBasedElements = document.querySelectorAll('.hero, .about, .programs, .pricing, .schedule, .access, .footer, .site-header');
+            log(`📋 クラスベース要素: ${classBasedElements.length}個`, 'info');
+            
+            const sectionNames = {
+                'header': 'ヘッダー',
+                'hero': 'ヒーロー', 
+                'about': 'スタジオ紹介',
+                'programs': 'プログラム',
+                'pricing': '料金プラン',
+                'schedule': 'スケジュール',
+                'access': 'アクセス',
+                'footer': 'フッター'
+            };
+
+            // すべての候補要素を統合
+            const allCandidates = new Set();
+            
+            componentElements.forEach(element => allCandidates.add(element));
+            sectionElements.forEach(element => allCandidates.add(element));
+            classBasedElements.forEach(element => allCandidates.add(element));
+            
+            log(`🎯 統合候補要素: ${allCandidates.size}個`, 'info');
+            
+            allCandidates.forEach(element => {
+                let sectionId = '';
+                let displayName = '';
+                
+                // IDから判定
+                if (element.id) {
+                    if (element.id.includes('-component')) {
+                        sectionId = element.id.replace('-component', '');
+                    } else if (element.id.includes('header')) {
+                        sectionId = 'header';
+                    } else if (element.id.includes('hero')) {
+                        sectionId = 'hero';
+                    } else {
+                        sectionId = element.id;
+                    }
+                }
+                
+                // クラス名から判定
+                if (!sectionId && element.className) {
+                    const classList = element.className.toLowerCase();
+                    if (classList.includes('header')) sectionId = 'header';
+                    else if (classList.includes('hero')) sectionId = 'hero';
+                    else if (classList.includes('about')) sectionId = 'about';
+                    else if (classList.includes('program')) sectionId = 'programs';
+                    else if (classList.includes('pricing')) sectionId = 'pricing';
+                    else if (classList.includes('schedule')) sectionId = 'schedule';
+                    else if (classList.includes('access')) sectionId = 'access';
+                    else if (classList.includes('footer')) sectionId = 'footer';
+                }
+                
+                // タグ名から判定
+                if (!sectionId && element.tagName.toLowerCase() === 'header') {
+                    sectionId = 'header';
+                } else if (!sectionId && element.tagName.toLowerCase() === 'footer') {
+                    sectionId = 'footer';
+                }
+                
+                // フォールバック
+                if (!sectionId) {
+                    sectionId = element.id || element.className || 'unknown';
+                }
+                
+                displayName = sectionNames[sectionId] || sectionId;
+                
+                sections.push({
+                    id: sectionId,
+                    displayName: displayName,
+                    element: element
+                });
+                
+                log(`➕ セクション追加: ${sectionId} (${displayName}) - ${element.tagName}#${element.id}.${element.className}`, 'success');
+            });
+
+            log(`✅ 検出完了: ${sections.length}個のセクション`, 'success');
+            return sections;
+        }
+
+        // セクション選択テスト関数
+        function simulateSectionSelection(sectionData) {
+            log(`🎯 セクション選択シミュレーション: ${sectionData.displayName}`, 'warning');
+            log(`要素: ${sectionData.element.tagName}#${sectionData.element.id}.${sectionData.element.className}`, 'info');
+            
+            // sectionSelectedイベントを発火
+            const event = new CustomEvent('sectionSelected', {
+                detail: { section: sectionData.element }
+            });
+            document.dispatchEvent(event);
+            log('sectionSelectedイベント発火完了', 'success');
+            
+            // SectionClickEditorが存在するかチェック
+            if (window.sectionClickEditor) {
+                log('SectionClickEditorが存在します', 'success');
+                log(`SectionClickEditor.isActive: ${window.sectionClickEditor.isActive}`, 'info');
+                log(`SectionClickEditor.currentSection: ${window.sectionClickEditor.currentSection ? window.sectionClickEditor.currentSection.tagName : 'null'}`, 'info');
+                log(`編集可能要素数: ${window.sectionClickEditor.editableElements.size}`, 'info');
+            } else {
+                log('SectionClickEditorが見つかりません', 'error');
+            }
+        }
+
+        // テスト関数群
+        function testSectionDetection() {
+            log('=== セクション検出テスト開始 ===', 'warning');
+            const sections = detectSections();
+            
+            const resultsDiv = document.getElementById('detection-results');
+            resultsDiv.innerHTML = '<h3>検出されたセクション:</h3>';
+            
+            sections.forEach(section => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'section-item';
+                sectionDiv.innerHTML = `
+                    <strong>${section.displayName}</strong> (ID: ${section.id})<br>
+                    要素: ${section.element.tagName}<br>
+                    ID: ${section.element.id}<br>
+                    Class: ${section.element.className}<br>
+                    <button onclick="simulateSectionSelection(${JSON.stringify({
+                        id: section.id,
+                        displayName: section.displayName,
+                        element: 'ELEMENT_REF'
+                    }).replace('"ELEMENT_REF"', `document.querySelector('#${section.element.id}') || document.querySelector('.${section.element.className.split(' ')[0]}')`)})" style="background: #4CAF50; margin-top: 5px;">この要素を選択テスト</button>
+                `;
+                resultsDiv.appendChild(sectionDiv);
+            });
+        }
+
+        function testHeaderSection() {
+            const element = document.getElementById('header-component');
+            if (element) {
+                simulateSectionSelection({
+                    id: 'header',
+                    displayName: 'ヘッダー',
+                    element: element
+                });
+            } else {
+                log('ヘッダー要素が見つかりません', 'error');
+            }
+        }
+
+        function testHeroSection() {
+            const element = document.getElementById('hero-component');
+            if (element) {
+                simulateSectionSelection({
+                    id: 'hero',
+                    displayName: 'ヒーロー',
+                    element: element
+                });
+            } else {
+                log('ヒーロー要素が見つかりません', 'error');
+            }
+        }
+
+        function testAboutSection() {
+            const element = document.querySelector('.about');
+            if (element) {
+                simulateSectionSelection({
+                    id: 'about',
+                    displayName: 'スタジオ紹介',
+                    element: element
+                });
+            } else {
+                log('About要素が見つかりません', 'error');
+            }
+        }
+
+        function testProgramsSection() {
+            const element = document.querySelector('.programs');
+            if (element) {
+                simulateSectionSelection({
+                    id: 'programs',
+                    displayName: 'プログラム',
+                    element: element
+                });
+            } else {
+                log('プログラム要素が見つかりません', 'error');
+            }
+        }
+
+        // SectionClickEditorイベントをモニター
+        document.addEventListener('sectionSelected', (event) => {
+            log('🎉 sectionSelectedイベントを受信しました!', 'success');
+            log(`セクション要素: ${event.detail.section.tagName}#${event.detail.section.id}`, 'info');
+        });
+
+        // ページ読み込み時の初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('デバッグページ初期化完了', 'success');
+            log('SectionClickEditorの状態をチェック中...', 'info');
+            
+            // SectionClickEditorの存在確認
+            setTimeout(() => {
+                if (window.sectionClickEditor) {
+                    log('SectionClickEditorが初期化されました', 'success');
+                } else {
+                    log('SectionClickEditorが初期化されていません', 'warning');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

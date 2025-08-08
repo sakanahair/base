@@ -1,0 +1,268 @@
+.hero-section {
+    position: relative;
+    min-height: 100vh;
+    margin-top: calc(var(--header-height, 80px) * -1);
+    padding-top: var(--header-height, 80px);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background-color: var(--hero-bg, #f8f9fa);
+}
+
+.hero-container {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 6rem var(--container-padding, 20px) 4rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.hero-content {
+    animation: slideInLeft 0.8s ease-out;
+}
+
+.hero-title {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 300;
+    color: #ffffff;
+    margin: 0 0 1.5rem;
+    line-height: 1.3;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    text-align: left;
+    letter-spacing: 0.08em;
+    font-family: 'Noto Serif JP', 'Kosugi', serif;
+}
+
+.hero-subtitle {
+    font-size: clamp(0.9rem, 1.8vw, 1.1rem);
+    color: rgba(255, 255, 255, 0.95);
+    margin: 0 0 2rem;
+    font-weight: 400;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
+    text-align: left;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    font-family: 'Kosugi', sans-serif;
+}
+
+.hero-description {
+    font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 3rem;
+    line-height: 2;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+    text-align: left;
+    letter-spacing: 0.05em;
+    font-weight: 300;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.btn {
+    padding: 0.8rem 2.5rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    text-decoration: none;
+    display: inline-block;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #1a1a1a;
+    box-shadow: 0 1px 20px rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.7s;
+}
+
+.btn-primary:hover {
+    background-color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 30px rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover::after {
+    left: 100%;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: white;
+    transform: translateY(-1px);
+}
+
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* スライドショーコンテナ */
+.hero-slideshow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 各スライド */
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 2s ease-in-out;
+    /* 高級感のあるフィルター効果 */
+    filter: brightness(0.7) contrast(1.2);
+    /* デバッグ用の背景色（画像が読み込まれない場合の確認用） */
+    background-color: #333;
+}
+
+.hero-slide.active {
+    opacity: 1;
+}
+
+/* グラデーションオーバーレイ */
+.hero-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, 
+        rgba(0, 0, 0, 0.5) 0%, 
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.4) 70%,
+        rgba(0, 0, 0, 0.6) 100%);
+    z-index: 1;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 968px) {
+    .hero-container {
+        grid-template-columns: 1fr;
+        text-align: left;
+    }
+
+
+    .hero-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    /* ヒーローセクションを全画面表示 */
+    .hero-section {
+        min-height: 100vh;
+        margin-top: calc(var(--header-height, 80px) * -1);
+        padding-top: var(--header-height, 80px);
+        display: flex;
+        align-items: flex-start; /* 上寄せ */
+    }
+    
+    /* テキストを左寄せ */
+    .hero-container {
+        text-align: left;
+        padding: 2rem var(--container-padding, 20px);
+        padding-top: calc(var(--header-height, 80px) + 0.5rem); /* 2rem → 0.5rem に変更 */
+    }
+    
+    .hero-title {
+        text-align: left;
+    }
+    
+    .hero-subtitle {
+        text-align: left;
+    }
+    
+    .hero-description {
+        text-align: left;
+    }
+    
+    .hero-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start; /* 上寄せ */
+    }
+
+    .hero-container {
+        padding: 2rem var(--container-padding, 20px);
+        padding-top: calc(var(--header-height, 80px) + 0.5rem); /* 2rem → 0.5rem に変更 */
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}

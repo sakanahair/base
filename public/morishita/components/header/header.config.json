@@ -1,0 +1,36 @@
+{
+    "name": "header",
+    "version": "1.0.0",
+    "description": "サイトヘッダーコンポーネント",
+    "logoText": "No.0 PILATES",
+    "navigation": [
+        {
+            "text": "私たちについて",
+            "href": "#about"
+        },
+        {
+            "text": "プログラム",
+            "href": "#programs"
+        },
+        {
+            "text": "料金プラン",
+            "href": "#pricing"
+        },
+        {
+            "text": "スケジュール",
+            "href": "#schedule"
+        },
+        {
+            "text": "アクセス",
+            "href": "#access"
+        },
+        {
+            "text": "体験予約",
+            "href": "#contact"
+        }
+    ],
+    "settings": {
+        "sticky": true,
+        "mobileBreakpoint": 768
+    }
+}

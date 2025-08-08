@@ -1,0 +1,527 @@
+.schedule-section {
+    padding: 6rem 0;
+    background: var(--schedule-gradient, linear-gradient(180deg, #ffffff 0%, #fafafa 100%));
+    border-top: 1px solid rgba(139, 121, 98, 0.05);
+}
+
+.schedule-container {
+    max-width: var(--container-width, 1200px);
+    margin: 0 auto;
+    padding: 0 var(--container-padding, 20px);
+}
+
+.schedule-section .section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    opacity: 1;
+    transform: none;
+}
+
+.schedule-section .section-title {
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 200;
+    color: #1a1a1a;
+    margin: 0 0 1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-family: 'Noto Serif JP', serif;
+    display: block;
+    visibility: visible;
+}
+
+.section-subtitle {
+    font-size: 1.1rem;
+    color: var(--accent-color, #8b7962);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    margin: 0 0 1.5rem;
+}
+
+.section-description {
+    font-size: 1.2rem;
+    color: var(--text-color, #666);
+    margin: 0;
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+.schedule-table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 4rem;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.schedule-table {
+    width: 100%;
+    background: var(--card-bg, #ffffff);
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.schedule-table th {
+    background: #f8f8f8;
+    color: var(--heading-color, #1a1a1a);
+    padding: 1.2rem;
+    font-weight: 400;
+    text-align: center;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.schedule-table th:first-child {
+    background: #f5f5f5;
+    width: 120px;
+    font-weight: 500;
+}
+
+.schedule-table td {
+    padding: 1rem;
+    text-align: center;
+    border-right: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    height: 70px;
+}
+
+.schedule-table td:last-child {
+    border-right: none;
+}
+
+.time {
+    font-weight: 400;
+    color: var(--accent-color, #8b7962);
+    background: #fafafa;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+}
+
+.class-item {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: white;
+    display: inline-block;
+    min-width: 100px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+}
+
+.class-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.class-item.private {
+    background: #6b6b6b;
+}
+
+.class-item.duo {
+    background: #8b7962;
+}
+
+.class-item.mat-group {
+    background: #a0a0a0;
+}
+
+.schedule-legend {
+    background: var(--card-bg, #ffffff);
+    padding: 3rem;
+    border: 1px solid #e5e5e5;
+    margin-bottom: 3rem;
+}
+
+.schedule-legend h3 {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--heading-color, #1a1a1a);
+    margin: 0 0 2rem;
+    text-align: center;
+    letter-spacing: -0.01em;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.legend-color {
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.legend-color.private {
+    background: #6b6b6b;
+}
+
+.legend-color.duo {
+    background: #8b7962;
+}
+
+.legend-color.mat-group {
+    background: #a0a0a0;
+}
+
+.legend-content {
+    flex: 1;
+}
+
+.legend-content strong {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--heading-color, #1a1a1a);
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+}
+
+.legend-content span {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-color, #666);
+    font-weight: 300;
+    line-height: 1.5;
+}
+
+.schedule-notes {
+    text-align: center;
+    padding: 2rem 0;
+    border-top: 1px solid #e5e5e5;
+    margin-bottom: 3rem;
+}
+
+.schedule-notes p {
+    margin: 0.5rem 0;
+    color: var(--text-color, #666);
+    font-size: 0.95rem;
+    font-weight: 300;
+}
+
+.schedule-cta {
+    text-align: center;
+}
+
+.reservation-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 2.5rem;
+    background: var(--accent-color, #8b7962);
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.reservation-button:hover {
+    background: transparent;
+    color: var(--accent-color, #8b7962);
+    border-color: var(--accent-color, #8b7962);
+}
+
+.reservation-button svg {
+    transition: transform 0.3s ease;
+}
+
+.reservation-button:hover svg {
+    transform: translateX(3px) translateY(-3px);
+}
+
+/* Time Tracking Panel Styles */
+.time-tracking-panel {
+    display: none;
+}
+
+/* Today Column Highlight */
+.today-column {
+    background-color: rgba(139, 121, 98, 0.03) !important;
+    position: relative;
+}
+
+.schedule-table thead .today-column {
+    background-color: #f0ebe6 !important;
+}
+
+/* Current Class Highlight */
+.current-class {
+    background: var(--accent-color, #8b7962);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 3px 10px rgba(139, 121, 98, 0.3);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(139, 121, 98, 0.5);
+    }
+}
+
+/* 料金表スタイル */
+.schedule-pricing {
+    margin: 4rem 0;
+    padding: 3rem 0;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.pricing-title {
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--heading-color, #1a1a1a);
+    text-align: center;
+    margin: 0 0 3rem;
+    letter-spacing: -0.01em;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.pricing-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid #e5e5e5;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.pricing-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.pricing-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pricing-type {
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: var(--heading-color, #1a1a1a);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.pricing-duration {
+    font-size: 0.9rem;
+    color: var(--text-color, #666);
+    font-weight: 300;
+}
+
+.pricing-body {
+    padding: 2rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.price-row:last-child {
+    border-bottom: none;
+}
+
+.price-row.first-time {
+    background: #fef5e7;
+    margin: -1rem -1rem 1rem;
+    padding: 1rem;
+    border-bottom: none;
+}
+
+.price-row.special {
+    background: #f0f8ff;
+    margin: 0 -1rem 1rem;
+    padding: 1rem;
+    border-bottom: none;
+}
+
+.price-label-wrapper {
+    flex: 1;
+}
+
+.price-label {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-color, #666);
+    font-weight: 300;
+    margin-bottom: 0.3rem;
+}
+
+.price-note {
+    display: block;
+    font-size: 0.85rem;
+    color: #999;
+    font-weight: 300;
+}
+
+.price-amount {
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: var(--accent-color, #8b7962);
+    white-space: nowrap;
+}
+
+.per-person {
+    font-size: 0.85rem;
+    color: var(--text-color, #666);
+    font-weight: 300;
+}
+
+.price-divider {
+    text-align: center;
+    color: var(--accent-color, #8b7962);
+    font-size: 0.9rem;
+    margin: 1.5rem 0;
+    position: relative;
+    font-weight: 300;
+}
+
+.price-divider::before,
+.price-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background: #e5e5e5;
+}
+
+.price-divider::before {
+    left: 0;
+}
+
+.price-divider::after {
+    right: 0;
+}
+
+.pricing-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.tax-note,
+.membership-note {
+    font-size: 0.95rem;
+    color: var(--text-color, #666);
+    margin: 0.5rem 0;
+    font-weight: 300;
+}
+
+/* カード別の色分け */
+.private-pricing .pricing-header {
+    background: #f5f5f5;
+}
+
+.duo-pricing .pricing-header {
+    background: #faf8f5;
+}
+
+.mat-pricing .pricing-header {
+    background: #f8f8f8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .schedule-section {
+        padding: 4rem 0;
+    }
+
+    .section-header {
+        margin-bottom: 3rem;
+    }
+
+    .schedule-table {
+        font-size: 0.85rem;
+        min-width: 600px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        padding: 0.8rem 0.5rem;
+    }
+
+    .class-item {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.8rem;
+        min-width: 70px;
+    }
+
+    .legend-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .schedule-legend {
+        padding: 2rem;
+    }
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-card {
+        margin-bottom: 1rem;
+    }
+
+    .pricing-header {
+        padding: 1.2rem 1.5rem;
+    }
+
+    .pricing-body {
+        padding: 1.5rem;
+    }
+
+    .price-row {
+        padding: 0.8rem 0;
+    }
+
+    .price-amount {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .schedule-table th,
+    .schedule-table td {
+        padding: 0.6rem 0.3rem;
+    }
+
+    .class-item {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.6rem;
+        min-width: 60px;
+    }
+
+    .time {
+        font-size: 0.8rem;
+    }
+}

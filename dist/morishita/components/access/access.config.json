@@ -1,0 +1,67 @@
+{
+    "name": "access",
+    "version": "1.0.0",
+    "description": "アクセス・お問い合わせセクション",
+    "studioInfo": {
+        "name": {
+            "label": "店舗名",
+            "value": "No.0 PILATES（ナンバーゼロ ピラティス）",
+            "type": "text"
+        },
+        "address": {
+            "label": "住所",
+            "value": "〒150-0001\n東京都渋谷区神宮前5-10-1 GYRE B1F",
+            "type": "address"
+        },
+        "phone": {
+            "label": "電話番号",
+            "value": "03-1234-5678",
+            "type": "tel"
+        },
+        "email": {
+            "label": "メール",
+            "value": "info@no0pilates.com",
+            "type": "email"
+        },
+        "hours": {
+            "label": "営業時間",
+            "value": "平日：9:00 - 21:00\n土日祝：9:00 - 18:00",
+            "type": "hours"
+        },
+        "holiday": {
+            "label": "定休日",
+            "value": "毎週火曜日、年末年始",
+            "type": "text"
+        }
+    },
+    "accessMethods": [
+        {
+            "title": "🚃 電車でお越しの方",
+            "items": [
+                "東京メトロ銀座線・半蔵門線・千代田線「表参道駅」A5出口より徒歩3分",
+                "JR山手線「原宿駅」表参道口より徒歩10分",
+                "東京メトロ千代田線・副都心線「明治神宮前駅」4番出口より徒歩5分"
+            ]
+        },
+        {
+            "title": "🚗 お車でお越しの方",
+            "text": "専用駐車場はございません。近隣のコインパーキングをご利用ください。"
+        }
+    ],
+    "map": {
+        "apiKey": "",
+        "lat": 35.6644,
+        "lng": 139.7104,
+        "zoom": 16,
+        "markerTitle": "No.0 PILATES"
+    },
+    "form": {
+        "subjects": [
+            {"value": "trial", "text": "体験レッスン予約"},
+            {"value": "inquiry", "text": "一般的なお問い合わせ"},
+            {"value": "membership", "text": "入会について"},
+            {"value": "other", "text": "その他"}
+        ],
+        "submitEndpoint": "/api/contact"
+    }
+}
