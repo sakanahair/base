@@ -55,6 +55,11 @@ cd /var/www/sakana/next
 echo "依存関係をインストール中..."
 npm install --production
 
+# standaloneビルドに必要なファイルをコピー
+echo "standaloneビルドに必要なファイルをコピー中..."
+cp -r public .next/standalone/
+cp -r .next/static .next/standalone/.next/
+
 # PM2でNext.jsを起動/再起動（standaloneモード）
 echo "PM2でアプリケーションを起動中..."
 if pm2 list | grep -q sakana-next; then
