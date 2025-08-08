@@ -1,0 +1,23 @@
+# Mutagen Configuration
+sync:
+  sakana:
+    alpha: "."  # カレントディレクトリ（プロジェクトルート）
+    beta: "root@dev.sakana:/var/www/sakana"
+    mode: "two-way-resolved"
+    symlink:
+      mode: "posix-raw"
+    permissions:
+      defaultFileMode: 0644
+      defaultDirectoryMode: 0755
+    ignore:
+      vcs: true
+      paths:
+        - "node_modules/"
+        - ".next/"
+        - "dist/"
+        - ".git/"
+        - "*.log"
+        - ".env.local"
+        - ".DS_Store"
+        - "flutter/build/"
+        - ".vercel/"

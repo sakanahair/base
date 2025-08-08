@@ -1,0 +1,34 @@
+以下の構成に基づいて、プロジェクトの開発環境と配信環境を統一的に構築してください。
+
+【目的】
+- MacとConoHa間でリアルタイムにソースコードを同期（Mutagen使用）
+- ConoHaをNext.jsの本番・ステージング環境とする
+- Firebaseを認証・ストレージ・リアルタイムDB用途で使用
+- CloudflareでCDN・WAF・キャッシュ最適化し、高速グローバル配信を実現
+- FlutterアプリはWebビルドも行い、ConoHaまたはFirebase Hostingへデプロイ
+- Firebase Storageにある画像や動画はCloudflare経由でキャッシュ配信
+- Cloudflare Streamなども動画用途に備えて選択可能にする
+
+【構成】
+- Next.js: ConoHa VPS上にデプロイ。App Router構成でAPIルートも含む
+- Flutter: Web版もConoHaに配置、またはFirebase Hostingに分離可
+- Firebase: 認証（Auth）、DB（Firestore）、Storage（画像/動画）
+- Mutagen: Mac ⇄ ConoHa 間を双方向同期。停止/再開可能な開発環境
+- Cloudflare: ConoHaやFirebaseへの通信を最適化。セキュリティとCDN配信
+
+【必要な実装】
+1. Mac側のNext.js/FlutterプロジェクトをMutagen経由でConoHaと同期
+2. ConoHa上にNext.jsをビルド後配置（`.next`, `public`等）
+3. Next.js側にFirebaseのAuth/Storage/Firestoreの連携設定
+4. Firebase Storageの静的ファイルURLをCloudflareでキャッシュ
+5. Cloudflare Proxyを有効化、適切なキャッシュポリシーと圧縮設定（brotliなど）
+6. 動画ファイルが大きい場合はCloudflare Streamや外部CDNと連携できる設計
+7. Flutter WebはNext.js配下またはサブディレクトリで動作可能なように設置
+8. Firebase Hostingオプションも併用可能な設計（flutter webのみの場合など）
+
+【制約】
+- Vercelは使用しない（制限あり）
+- ConoHaでの自由な構成が前提
+- Firebase無料枠とCloudflare無料プランで最大効率を目指す
+
+この構成でプロジェクト環境を準備し、ローカル修正が即時ConoHaに反映され、Cloudflareで最速配信されるようにしてください。
