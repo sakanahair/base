@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "destination": "/morishita/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "morishita-tax.jp"
+        }
+      ]
+    },
+    {
+      "source": "/:path*",
+      "destination": "/morishita/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.morishita-tax.jp"
+        }
+      ]
+    }
+  ]
+}
