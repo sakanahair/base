@@ -45,15 +45,17 @@ cp -r public .next/standalone/
 cp -r .next/static .next/standalone/.next/
 
 # 3. Flutter Webビルド（Flutterがインストールされている場合）
-if command -v flutter &> /dev/null && [ -d "$FLUTTER_DIR" ]; then
+# Flutterパスを設定
+export PATH="/opt/flutter/bin:$PATH"
+if [ -f "/opt/flutter/bin/flutter" ] && [ -d "$FLUTTER_DIR" ]; then
     echo -e "${BLUE}📱 Flutter Webをビルド中...${NC}"
     cd "$FLUTTER_DIR"
     
     # Flutter依存関係を取得
-    flutter pub get
+    sudo -u www-data /opt/flutter/bin/flutter pub get
     
     # Flutter Webをビルド
-    flutter build web --release --base-href /app/
+    sudo -u www-data /opt/flutter/bin/flutter build web --release --base-href /app/
     
     # Flutter WebファイルをNext.jsのpublicフォルダにコピー
     echo -e "${YELLOW}📂 Flutter WebをNext.jsに統合中...${NC}"

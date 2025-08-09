@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/cupertino.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,261 +7,119 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'マルチプラットフォーム Flutter App',
+      title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
+
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
-  
-  String getPlatformName() {
-    if (kIsWeb) {
-      return 'Web';
-    } else if (Platform.isIOS) {
-      return 'iOS';
-    } else if (Platform.isAndroid) {
-      return 'Android';
-    } else if (Platform.isMacOS) {
-      return 'macOS';
-    } else if (Platform.isWindows) {
-      return 'Windows';
-    } else if (Platform.isLinux) {
-      return 'Linux';
-    }
-    return 'Unknown';
-  }
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
 
-  Widget _buildPlatformInfo() {
-    final platform = getPlatformName();
-    final isWeb = kIsWeb;
-    final isMobile = !isWeb && (Platform.isIOS || Platform.isAndroid);
-    
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'プラットフォーム情報',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow('現在のプラットフォーム', platform),
-            _buildInfoRow('Web環境', isWeb ? 'はい' : 'いいえ'),
-            _buildInfoRow('モバイル環境', isMobile ? 'はい' : 'いいえ'),
-            _buildInfoRow('画面幅', '${MediaQuery.of(context).size.width.toStringAsFixed(0)}px'),
-            _buildInfoRow('画面高さ', '${MediaQuery.of(context).size.height.toStringAsFixed(0)}px'),
-            _buildInfoRow('デバイスピクセル比', MediaQuery.of(context).devicePixelRatio.toStringAsFixed(2)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureList() {
-    final features = [
-      {'icon': Icons.phone_iphone, 'title': 'レスポンシブデザイン', 'description': '画面サイズに応じて自動調整'},
-      {'icon': Icons.palette, 'title': 'マテリアルデザイン3', 'description': '最新のUIコンポーネント'},
-      {'icon': Icons.speed, 'title': '高速パフォーマンス', 'description': 'ネイティブレベルの実行速度'},
-      {'icon': Icons.code, 'title': 'ホットリロード', 'description': '開発中の即座の変更反映'},
-      {'icon': Icons.devices, 'title': 'クロスプラットフォーム', 'description': '1つのコードベースで複数OS対応'},
-      {'icon': Icons.widgets, 'title': '豊富なウィジェット', 'description': 'カスタマイズ可能なUIコンポーネント'},
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: features.length,
-      itemBuilder: (context, index) {
-        final feature = features[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: Icon(
-              feature['icon'] as IconData,
-              color: Theme.of(context).colorScheme.primary,
-              size: 32,
-            ),
-            title: Text(
-              feature['title'] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(feature['description'] as String),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSettings() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          '設定',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        SwitchListTile(
-          title: const Text('通知を有効にする'),
-          subtitle: const Text('アプリからの通知を受け取る'),
-          value: true,
-          onChanged: (value) {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.language),
-          title: const Text('言語'),
-          subtitle: const Text('日本語'),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.dark_mode),
-          title: const Text('テーマ'),
-          subtitle: const Text('システム設定に従う'),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () {},
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.info),
-          title: const Text('バージョン'),
-          subtitle: const Text('1.0.0'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip),
-          title: const Text('プライバシーポリシー'),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () {},
-        ),
-      ],
-    );
+  void _incrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      _counter++;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isWideScreen = MediaQuery.of(context).size.width > 600;
-    
-    final List<Widget> pages = [
-      _buildPlatformInfo(),
-      _buildFeatureList(),
-      _buildSettings(),
-    ];
-
-    if (kIsWeb || isWideScreen) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: const Text('Flutter マルチプラットフォーム App'),
-        ),
-        body: Row(
-          children: [
-            NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (int index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-              labelType: NavigationRailLabelType.all,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home),
-                  label: Text('ホーム'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.star_outline),
-                  selectedIcon: Icon(Icons.star),
-                  label: Text('機能'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: Text('設定'),
-                ),
-              ],
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+      appBar: AppBar(
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
+      ),
+      body: Center(
+        // Center is a layout widget. It takes a single child and positions it
+        // in the middle of the parent.
+        child: Column(
+          // Column is also a layout widget. It takes a list of children and
+          // arranges them vertically. By default, it sizes itself to fit its
+          // children horizontally, and tries to be as tall as its parent.
+          //
+          // Column has various properties to control how it sizes itself and
+          // how it positions its children. Here we use mainAxisAlignment to
+          // center the children vertically; the main axis here is the vertical
+          // axis because Columns are vertical (the cross axis would be
+          // horizontal).
+          //
+          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+          // action in the IDE, or press "p" in the console), to see the
+          // wireframe for each widget.
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Text(
+              'You have pushed the button this many times:',
             ),
-            const VerticalDivider(thickness: 1, width: 1),
-            Expanded(
-              child: pages[_selectedIndex],
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],
         ),
-      );
-    } else {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: const Text('Flutter App'),
-        ),
-        body: pages[_selectedIndex],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (int index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'ホーム',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.star_outline),
-              selectedIcon: Icon(Icons.star),
-              label: '機能',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: '設定',
-            ),
-          ],
-        ),
-      );
-    }
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: const Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
   }
 }

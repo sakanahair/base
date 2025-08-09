@@ -1,4 +1,4 @@
-# my_flutter_app
+# sakana_app
 
 A new Flutter project.
 
