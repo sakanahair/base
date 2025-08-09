@@ -87,23 +87,91 @@ install_flutter() {
     if ! command -v flutter &> /dev/null; then
         echo -e "${YELLOW}📦 Flutterをインストールしています...${NC}"
         if [[ "$OS" == "macos" ]]; then
+            echo -e "${BLUE}macOS: iOS/Android/Web開発が可能${NC}"
             brew install --cask flutter
         else
-            # Ubuntu用のFlutterインストール
-            sudo apt-get update
-            sudo apt-get install -y git curl unzip xz-utils zip libglu1-mesa
+            echo -e "${BLUE}Ubuntu: Android/Web開発が可能${NC}"
+            echo -e "${YELLOW}（iOS開発にはMacが必要です）${NC}"
+            echo ""
+            echo "Flutterのインストール方法を選択してください:"
+            echo "  1) Snap版 (簡単・推奨)"
+            echo "  2) Git版 (カスタマイズ可能)"
+            echo "  3) 詳細設定 (インストールスクリプトを実行)"
+            read -p "選択 (1-3): " flutter_choice
             
-            # Flutterをダウンロード
-            cd ~
-            git clone https://github.com/flutter/flutter.git -b stable
-            echo 'export PATH="$PATH:$HOME/flutter/bin"' >> ~/.bashrc
-            export PATH="$PATH:$HOME/flutter/bin"
-            
-            # 元のディレクトリに戻る
-            cd - > /dev/null
+            if [ "$flutter_choice" == "1" ]; then
+                # Snap版インストール
+                echo -e "${YELLOW}Snap版Flutterをインストール中...${NC}"
+                sudo snap install flutter --classic
+                
+                # パス設定
+                if ! grep -q "/snap/bin" ~/.bashrc; then
+                    echo 'export PATH="$PATH:/snap/bin"' >> ~/.bashrc
+                fi
+                export PATH="$PATH:/snap/bin"
+                
+                # 初期設定
+                flutter config --no-analytics
+                flutter precache --web --linux
+                
+            elif [ "$flutter_choice" == "3" ]; then
+                # 詳細設定スクリプトを実行
+                echo -e "${YELLOW}詳細設定スクリプトを実行します...${NC}"
+                if [ -f "script/install-flutter-ubuntu.sh" ]; then
+                    ./script/install-flutter-ubuntu.sh
+                    return
+                else
+                    echo -e "${RED}インストールスクリプトが見つかりません${NC}"
+                fi
+            else
+                # Git版インストール（デフォルト）
+                # Ubuntu用のFlutterインストール
+                echo -e "${YELLOW}Git版Flutterをインストール中...${NC}"
+                sudo apt-get update
+                sudo apt-get install -y git curl unzip xz-utils zip libglu1-mesa
+                
+                # Android開発用の追加パッケージ
+                echo -e "${YELLOW}Android開発ツールをインストール中...${NC}"
+                sudo apt-get install -y libc6:i386 libncurses5:i386 libstdc++6:i386 lib32z1 libbz2-1.0:i386
+                
+                # Flutterをダウンロード
+                cd ~
+                if [ ! -d "flutter" ]; then
+                    git clone https://github.com/flutter/flutter.git -b stable
+                fi
+                
+                # パス設定
+                if ! grep -q "flutter/bin" ~/.bashrc; then
+                    echo 'export PATH="$PATH:$HOME/flutter/bin"' >> ~/.bashrc
+                fi
+                export PATH="$PATH:$HOME/flutter/bin"
+                
+                # Chrome/Chromiumのインストール（Web開発用）
+                if ! command -v google-chrome &> /dev/null && ! command -v chromium-browser &> /dev/null; then
+                    echo -e "${YELLOW}Chrome/Chromiumをインストール中（Web開発用）...${NC}"
+                    sudo apt-get install -y chromium-browser
+                fi
+                
+                # 元のディレクトリに戻る
+                cd - > /dev/null
+                
+                # Flutterの初期設定
+                echo -e "${YELLOW}Flutter初期設定中...${NC}"
+                flutter doctor --android-licenses 2>/dev/null || true
+                flutter config --no-analytics
+                flutter precache --web --linux
+            fi
         fi
     else
         echo -e "${GREEN}✅ Flutter $(flutter --version | head -n 1) は既にインストールされています${NC}"
+        
+        # 利用可能な開発環境を表示
+        if [[ "$OS" == "macos" ]]; then
+            echo -e "${GREEN}   開発可能: iOS / Android / Web${NC}"
+        else
+            echo -e "${GREEN}   開発可能: Android / Web${NC}"
+            echo -e "${YELLOW}   iOS開発にはMacが必要です${NC}"
+        fi
     fi
 }
 
@@ -174,6 +242,11 @@ install_dependencies() {
         echo -e "${YELLOW}Flutterの依存関係をインストール中...${NC}"
         cd flutter
         flutter pub get
+        
+        # Flutter doctorで環境を確認（簡潔版）
+        echo -e "${YELLOW}Flutter環境を確認中...${NC}"
+        flutter doctor || true
+        
         cd ..
     fi
     
@@ -258,7 +331,11 @@ main() {
     echo -e "${BLUE}🚀 セットアップを開始します${NC}"
     echo "このスクリプトは以下をインストール/設定します："
     echo "  • Node.js 20.x"
-    echo "  • Flutter"
+    if [[ "$OS" == "macos" ]]; then
+        echo "  • Flutter (iOS/Android/Web開発環境)"
+    else
+        echo "  • Flutter (Android/Web開発環境)"
+    fi
     echo "  • Mutagen"
     echo "  • プロジェクトの依存関係"
     echo "  • SSH設定"
@@ -306,16 +383,30 @@ main() {
     echo "  1. ローカル開発を開始:"
     echo "     ${YELLOW}./script/build.sh${NC}"
     echo ""
-    echo "  2. サーバーへデプロイ:"
+    
+    if command -v flutter &> /dev/null; then
+        echo "  2. Flutter開発:"
+        if [[ "$OS" == "macos" ]]; then
+            echo "     ${YELLOW}cd flutter && flutter run -d ios      # iOS${NC}"
+            echo "     ${YELLOW}cd flutter && flutter run -d android  # Android${NC}"
+            echo "     ${YELLOW}cd flutter && flutter run -d chrome   # Web${NC}"
+        else
+            echo "     ${YELLOW}cd flutter && flutter run -d android  # Android${NC}"
+            echo "     ${YELLOW}cd flutter && flutter run -d chrome   # Web${NC}"
+        fi
+        echo ""
+    fi
+    
+    echo "  3. サーバーへデプロイ:"
     echo "     ${YELLOW}./script/deploy.sh${NC}"
     echo ""
-    echo "  3. 開発サーバーを起動:"
+    echo "  4. 開発サーバーを起動:"
     echo "     ${YELLOW}cd next && npm run dev${NC}"
     echo ""
     echo -e "${BLUE}📚 詳細なドキュメント:${NC}"
-    echo "  • README.md"
-    echo "  • README_SETUP.md"
-    echo "  • README_CONOHA.md"
+    echo "  • doc/INDEX.md - ドキュメント一覧"
+    echo "  • doc/FLUTTER_UBUNTU_SETUP.md - Ubuntu Flutter詳細"
+    echo "  • doc/FLUTTER_DEVELOPMENT.md - Flutter開発ガイド"
     echo ""
 }
 

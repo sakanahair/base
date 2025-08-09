@@ -35,17 +35,25 @@ SAKANA AIプロジェクトの技術ドキュメント集です。
   - Flutter + Next.js統合の詳細
   - 開発ワークフロー
 
+### Flutter開発
+- **[FLUTTER_DEVELOPMENT.md](./FLUTTER_DEVELOPMENT.md)** - Flutter マルチプラットフォーム開発ガイド
+  - Mac/Ubuntu両環境での開発方法
+  - iOS/Android/Web開発の詳細
+  - プラットフォーム別ビルド手順
+  - クロスプラットフォーム開発のベストプラクティス
+
 ## 🗂 ドキュメント構成
 
 ```
 doc/
-├── INDEX.md           # このファイル（ドキュメントインデックス）
-├── README.md          # 初期技術仕様書
-├── INSTALL.md         # インストールガイド
-├── README_SETUP.md    # セットアップ手順
-├── README_CONOHA.md   # ConoHa VPS設定
-├── CLAUDE.md          # 開発経緯と設計決定
-└── DEPLOYMENT.md      # デプロイメント詳細（旧）
+├── INDEX.md               # このファイル（ドキュメントインデックス）
+├── README.md              # 初期技術仕様書
+├── INSTALL.md             # インストールガイド
+├── README_SETUP.md        # セットアップ手順
+├── README_CONOHA.md       # ConoHa VPS設定
+├── CLAUDE.md              # 開発経緯と設計決定
+├── FLUTTER_DEVELOPMENT.md # Flutter開発ガイド
+└── DEPLOYMENT.md          # デプロイメント詳細（旧）
 ```
 
 ## 📝 ドキュメント作成ガイドライン
@@ -83,6 +91,9 @@ cd SAKANA_AI
 # ビルド＆開発サーバー起動
 ./script/build.sh
 
+# Flutter開発ツール（インタラクティブ）
+./script/flutter-dev.sh
+
 # 開発サーバーのみ
 cd next && npm run dev
 ```
@@ -113,8 +124,8 @@ ssh root@dev.sakana 'chown -R www-data:www-data /var/www/sakana'
 
 - **開始日**: 2025年8月
 - **主要技術**: Next.js, Flutter, ConoHa VPS, Mutagen
-- **ドキュメント数**: 7+
-- **自動化スクリプト**: 10+
+- **ドキュメント数**: 8+
+- **自動化スクリプト**: 11+
 
 ## 🆘 ヘルプ
 

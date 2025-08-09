@@ -26,20 +26,37 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     SED_CMD="sed -i ''"
     IS_MAC=true
     echo -e "${YELLOW}📍 実行環境: macOS${NC}"
+    echo -e "${GREEN}✅ iOS/Android/Web ビルド可能${NC}"
 else
-    # Linux
+    # Linux/Ubuntu
     SED_CMD="sed -i"
     IS_MAC=false
-    echo -e "${YELLOW}📍 実行環境: Linux (サーバー)${NC}"
+    echo -e "${YELLOW}📍 実行環境: Linux/Ubuntu${NC}"
+    echo -e "${GREEN}✅ Android/Web ビルド可能${NC}"
+    echo -e "${YELLOW}⚠️  iOS ビルドはMacでのみ可能${NC}"
 fi
 
 # Flutterがインストールされているか確認
 if command -v flutter &> /dev/null; then
     HAS_FLUTTER=true
+    FLUTTER_VERSION=$(flutter --version | head -n 1)
     echo -e "${GREEN}✅ Flutter が見つかりました${NC}"
+    echo -e "${BLUE}   バージョン: ${FLUTTER_VERSION}${NC}"
+    
+    # 利用可能なデバイスを確認
+    echo -e "${BLUE}📱 利用可能なビルドターゲット:${NC}"
+    if [ "$IS_MAC" = true ]; then
+        echo -e "   • iOS (実機/シミュレータ)"
+        echo -e "   • Android (実機/エミュレータ)"
+        echo -e "   • Web (Chrome/Edge/Safari)"
+    else
+        echo -e "   • Android (実機/エミュレータ)"
+        echo -e "   • Web (Chrome/Firefox)"
+    fi
 else
     HAS_FLUTTER=false
     echo -e "${YELLOW}⚠️  Flutter が見つかりません（Next.jsのみビルドします）${NC}"
+    echo -e "${YELLOW}   Flutterをインストールするには: ./setup.sh${NC}"
 fi
 
 # 1. Flutter Web ビルド（Flutterがある場合のみ）
@@ -51,7 +68,35 @@ if [ "$HAS_FLUTTER" = true ] && [ -d "$FLUTTER_DIR" ]; then
     flutter pub get
     
     # Flutter Web をビルド（base-hrefを/app/に設定）
+    echo -e "${BLUE}🌐 Flutter Web をビルド中...${NC}"
     flutter build web --release --base-href /app/
+    
+    # Androidビルドのオプション表示（Ubuntuでも可能）
+    if [ -d "android" ]; then
+        echo -e "${YELLOW}📱 Androidアプリもビルドしますか？${NC}"
+        echo "   (APKファイルが作成されます)"
+        read -p "   ビルドする場合は 'y' を入力: " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}📱 Android APK をビルド中...${NC}"
+            flutter build apk --release
+            echo -e "${GREEN}✅ APK作成完了: build/app/outputs/flutter-apk/app-release.apk${NC}"
+        fi
+    fi
+    
+    # iOSビルドのオプション表示（Macのみ）
+    if [ "$IS_MAC" = true ] && [ -d "ios" ]; then
+        echo -e "${YELLOW}📱 iOSアプリもビルドしますか？${NC}"
+        echo "   (Xcodeでの追加設定が必要な場合があります)"
+        read -p "   ビルドする場合は 'y' を入力: " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${BLUE}📱 iOS をビルド中...${NC}"
+            flutter build ios --release --no-codesign
+            echo -e "${GREEN}✅ iOSビルド完了${NC}"
+            echo -e "${YELLOW}   Xcodeで署名して実機にインストールしてください${NC}"
+        fi
+    fi
     
     # ビルド成果物を Next.js の public フォルダにコピー
     echo -e "${YELLOW}📂 Flutter ビルドを Next.js に統合しています...${NC}"
@@ -63,7 +108,9 @@ if [ "$HAS_FLUTTER" = true ] && [ -d "$FLUTTER_DIR" ]; then
     $SED_CMD 's|<base href="/">|<base href="/app/">|g' "$NEXT_DIR/public/app/index.html" 2>/dev/null || true
 else
     if [ "$HAS_FLUTTER" = false ]; then
-        echo -e "${YELLOW}ℹ️  Flutter ビルドをスキップしています（サーバー環境）${NC}"
+        echo -e "${YELLOW}ℹ️  Flutter ビルドをスキップしています${NC}"
+        echo -e "${YELLOW}   Ubuntuでも Flutter Web/Android 開発が可能です${NC}"
+        echo -e "${YELLOW}   インストール: ./setup.sh${NC}"
     fi
 fi
 
@@ -91,6 +138,12 @@ if [ "$IS_MAC" = true ]; then
     echo "開発環境:"
     echo "  cd $NEXT_DIR && npm run dev"
     echo ""
+    echo "Flutter開発（iOS/Android/Web）:"
+    echo "  cd $FLUTTER_DIR"
+    echo "  flutter run -d chrome    # Web開発"
+    echo "  flutter run -d ios       # iOS開発"
+    echo "  flutter run -d android   # Android開発"
+    echo ""
     echo "本番環境（スタンドアロンモード）:"
     echo "  cd $NEXT_DIR && node .next/standalone/server.js"
     echo ""
@@ -116,7 +169,16 @@ if [ "$IS_MAC" = true ]; then
         echo -e "${YELLOW}ℹ️  手動でサーバーを起動してください${NC}"
     fi
 else
-    # Linux/サーバー環境の場合
+    # Linux/Ubuntu環境の場合
+    if [ "$HAS_FLUTTER" = true ]; then
+        echo "Flutter開発（Android/Web）:"
+        echo "  cd $FLUTTER_DIR"
+        echo "  flutter run -d chrome    # Web開発"
+        echo "  flutter run -d android   # Android開発"
+        echo "  flutter devices          # 利用可能なデバイス確認"
+        echo ""
+    fi
+    
     echo "PM2での起動:"
     echo "  pm2 restart sakana-next"
     echo ""
