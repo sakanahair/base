@@ -20,6 +20,13 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 FLUTTER_DIR="$ROOT_DIR/flutter"
 NEXT_DIR="$ROOT_DIR/next"
 
+# Flutterのパスを確認（システムのFlutterを優先）
+# tools/flutterがある場合は削除
+if [ -d "$ROOT_DIR/tools/flutter" ] && [ ! -d "$ROOT_DIR/tools/flutter/.git" ]; then
+    echo -e "${YELLOW}⚠️  tools/flutterは不完全です。削除します...${NC}"
+    rm -rf "$ROOT_DIR/tools/flutter"
+fi
+
 # OS判定（Mac/Linux対応）
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
@@ -64,6 +71,9 @@ if [ "$HAS_FLUTTER" = true ] && [ -d "$FLUTTER_DIR" ]; then
     echo -e "${BLUE}📱 Flutter Web をビルドしています...${NC}"
     cd "$FLUTTER_DIR"
     
+    # CI環境変数を設定（root権限での実行を許可）
+    export CI=true
+    
     # Flutter の依存関係を取得
     flutter pub get
     
@@ -79,6 +89,7 @@ if [ "$HAS_FLUTTER" = true ] && [ -d "$FLUTTER_DIR" ]; then
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${BLUE}📱 Android APK をビルド中...${NC}"
+            export CI=true
             flutter build apk --release
             echo -e "${GREEN}✅ APK作成完了: build/app/outputs/flutter-apk/app-release.apk${NC}"
         fi
@@ -92,6 +103,7 @@ if [ "$HAS_FLUTTER" = true ] && [ -d "$FLUTTER_DIR" ]; then
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${BLUE}📱 iOS をビルド中...${NC}"
+            export CI=true
             flutter build ios --release --no-codesign
             echo -e "${GREEN}✅ iOSビルド完了${NC}"
             echo -e "${YELLOW}   Xcodeで署名して実機にインストールしてください${NC}"

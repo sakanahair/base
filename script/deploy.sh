@@ -57,6 +57,7 @@ npm install --production
 
 # standaloneビルドに必要なファイルをコピー
 echo "standaloneビルドに必要なファイルをコピー中..."
+rm -rf .next/standalone/public .next/standalone/.next/static
 cp -r public .next/standalone/
 cp -r .next/static .next/standalone/.next/
 
