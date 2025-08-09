@@ -66,8 +66,8 @@ git commit -m "$COMMIT_MESSAGE"
 # GitHubにプッシュ
 echo -e "${BLUE}🚀 GitHubにプッシュ中...${NC}"
 
-# トークン付きURLでプッシュ
-git push https://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@github.com/sakanahair/base.git $CURRENT_BRANCH
+# originを使ってプッシュ（トークンは既にリモートURLに設定済み）
+git push origin $CURRENT_BRANCH
 
 echo ""
 echo -e "${GREEN}✅ 正常に完了しました！${NC}"
