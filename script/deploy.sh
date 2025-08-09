@@ -93,3 +93,20 @@ echo "- Flutter App: http://dev.sakana.hair/app/"
 echo "- morishita: http://dev.sakana.hair/morishita/"
 echo ""
 echo "PM2ログを確認: ssh $SERVER 'pm2 logs sakana-next'"
+echo ""
+
+# ローカル開発サーバーも起動するか確認
+echo "🔄 ローカル開発サーバーも起動しますか？"
+read -p "起動する場合は 'y' を入力: " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "✅ ローカル開発サーバーを起動します..."
+    echo ""
+    echo "🌐 ローカルアクセス URL:"
+    echo "  http://localhost:3000"
+    echo ""
+    echo "📝 サーバーを停止するには Ctrl+C を押してください"
+    echo ""
+    cd $PROJECT_ROOT/next
+    npm run dev
+fi
