@@ -30,6 +30,12 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       route: '/dashboard',
     ),
     _MenuItem(
+      icon: Icons.chat_bubble_outline,
+      activeIcon: Icons.chat_bubble,
+      label: 'チャット',
+      route: '/chat',
+    ),
+    _MenuItem(
       icon: Icons.smart_toy_outlined,
       activeIcon: Icons.smart_toy,
       label: 'SAKANA AI',
@@ -77,6 +83,11 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _updateBottomNavIndex();
   }
   

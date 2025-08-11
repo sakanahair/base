@@ -102,24 +102,26 @@ class _DashboardPageState extends State<DashboardPage> {
         if (isMobile) const SizedBox(height: 16),
         
         if (!isMobile)
-          ElevatedButton.icon(
-            onPressed: () {
-              if (context.isTouchDevice) {
-                ResponsiveHelper.addHapticFeedback();
-              }
-              // TODO: Export report
-            },
-            icon: Icon(Icons.download, size: context.responsiveIconSize),
-            label: const Text('レポート出力'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 16 : 20,
-                vertical: 12,
+          SizedBox(
+            width: 150,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                if (context.isTouchDevice) {
+                  ResponsiveHelper.addHapticFeedback();
+                }
+                // TODO: Export report
+              },
+              icon: Icon(Icons.download, size: context.responsiveIconSize),
+              label: const Text('レポート出力'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 16 : 20,
+                  vertical: 12,
+                ),
               ),
-              minimumSize: Size.fromHeight(context.responsiveButtonHeight),
-            ),
-          ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+            ).animate().fadeIn(delay: 200.ms).scale(begin: const Offset(0.9, 0.9)),
+          ),
       ],
     );
   }

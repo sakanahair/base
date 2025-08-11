@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/services/customer_service.dart';
+import 'core/services/theme_service.dart';
 import 'core/config/firebase_config.dart';
 import 'shared/widgets/splash_screen.dart';
 
@@ -36,12 +37,17 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CustomerService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
-      child: MaterialApp.router(
-        title: 'Sakana Hair Admin',
-        theme: AppTheme.lightTheme,
-        routerConfig: AppRouter.router,
-        debugShowCheckedModeBanner: false,
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp.router(
+            title: 'SAKANA Platform',
+            theme: themeService.generateThemeData(),
+            routerConfig: AppRouter.router,
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }
