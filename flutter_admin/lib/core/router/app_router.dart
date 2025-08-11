@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/customers/presentation/pages/smart_customers_page.dart';
+import '../../features/customers/presentation/pages/customers_split_page.dart';
 import '../../features/ai_chat/presentation/pages/ai_chat_page.dart';
 import '../../features/appointments/presentation/pages/appointments_page.dart';
 import '../../features/services/presentation/pages/services_page.dart';
@@ -75,7 +76,7 @@ class AppRouter {
             path: '/customers',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const SmartCustomersPage(),
+              child: const CustomersSplitPage(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,
