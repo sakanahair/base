@@ -1,6 +1,6 @@
 {
-    "name": "sakana_app",
-    "short_name": "sakana_app",
+    "name": "sakana_admin",
+    "short_name": "sakana_admin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

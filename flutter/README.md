@@ -1,4 +1,4 @@
-# sakana_app
+# sakana_admin
 
 A new Flutter project.
 
