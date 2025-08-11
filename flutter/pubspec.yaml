@@ -34,6 +34,7 @@ dependencies:
   flex_color_picker: ^3.3.0
   xterm: ^4.0.0
   web_socket_channel: ^2.4.0
+  flutter_dropzone: ^4.0.2
   
 dev_dependencies:
   flutter_test:

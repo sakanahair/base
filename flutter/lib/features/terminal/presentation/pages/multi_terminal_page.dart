@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:xterm/xterm.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -9,6 +11,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dropzone/flutter_dropzone.dart';
+import 'package:file_picker/file_picker.dart';
 
 class TerminalSession {
   final String id;
@@ -39,6 +43,8 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   late TabController _tabController;
   final List<TerminalSession> _sessions = [];
   int _sessionCounter = 1;
+  late DropzoneViewController _dropzoneController;
+  bool _isDragging = false;
   
   @override
   void initState() {
@@ -159,6 +165,10 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
     
     // キーボード入力処理
     session.terminal.onOutput = (String data) {
+      // デバッグ: 入力データの確認
+      if (kDebugMode) {
+        print('Terminal input: "${data}" (bytes: ${data.codeUnits})');
+      }
       _handleTerminalInput(session, data);
     };
     
@@ -174,6 +184,10 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
     
     // キーボード入力処理
     session.terminal.onOutput = (String data) {
+      // デバッグ: 入力データの確認
+      if (kDebugMode) {
+        print('Terminal input: "${data}" (bytes: ${data.codeUnits})');
+      }
       _handleTerminalInput(session, data);
     };
     
@@ -184,8 +198,12 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   void _handleTerminalInput(TerminalSession session, String data) {
     // WebSocket接続がある場合は全ての入力を直接送信
     if (session.channel != null && session.channel!.closeCode == null) {
-      // 生の入力データをそのまま送信（PTYが制御文字を処理）
-      session.channel!.sink.add(data);
+      // データが空でない場合のみ送信
+      if (data.isNotEmpty) {
+        // スペースキーが正しく処理されない問題への対処
+        // onOutputが空文字列を返すことがあるため、明示的にチェック
+        session.channel!.sink.add(data);
+      }
       return;
     }
     
@@ -380,6 +398,46 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.upload_file, size: 20),
+            onPressed: () async {
+              // ファイル選択ダイアログ
+              final result = await FilePicker.platform.pickFiles(
+                allowMultiple: false,
+                withData: true,
+              );
+              
+              if (result != null && result.files.isNotEmpty) {
+                final file = result.files.first;
+                final currentSession = _sessions[_tabController.index];
+                
+                // ファイルサイズチェック（10MB制限）
+                if (file.size > 10 * 1024 * 1024) {
+                  currentSession.terminal.write('\r\n\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
+                  return;
+                }
+                
+                if (currentSession.channel != null && 
+                    currentSession.channel!.closeCode == null && 
+                    file.bytes != null) {
+                  // ファイルをBase64エンコード
+                  final base64Content = base64Encode(file.bytes!);
+                  
+                  // ファイルアップロードメッセージを送信
+                  currentSession.channel!.sink.add(json.encode({
+                    'type': 'file_upload',
+                    'filename': file.name,
+                    'content': base64Content,
+                    'encoding': 'base64',
+                  }));
+                  
+                  // アップロード開始通知
+                  currentSession.terminal.write('\r\n\x1B[33mUploading: ${file.name}...\x1B[0m\r\n');
+                }
+              }
+            },
+            tooltip: 'Upload File',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh, size: 20),
             onPressed: () async {
               // 全セッションをクリア
@@ -425,43 +483,176 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
       ),
       body: _sessions.isEmpty
         ? const Center(child: CircularProgressIndicator())
-        : TabBarView(
-            controller: _tabController,
-            children: _sessions.map((session) {
-              return Container(
-                color: const Color(0xFF1E1E1E),
-                padding: const EdgeInsets.all(8),
-                child: TerminalView(
-                  session.terminal,
-                  controller: session.controller,
-                  theme: const TerminalTheme(
-                    cursor: Color(0xFFD4D4D4),
-                    selection: Color(0xFF264F78),
-                    foreground: Color(0xFFD4D4D4),
-                    background: Color(0xFF1E1E1E),
-                    black: Color(0xFF000000),
-                    red: Color(0xFFCD3131),
-                    green: Color(0xFF0DBC79),
-                    yellow: Color(0xFFE5E510),
-                    blue: Color(0xFF2472C8),
-                    magenta: Color(0xFFBC3FBC),
-                    cyan: Color(0xFF11A8CD),
-                    white: Color(0xFFE5E5E5),
-                    brightBlack: Color(0xFF666666),
-                    brightRed: Color(0xFFF14C4C),
-                    brightGreen: Color(0xFF23D18B),
-                    brightYellow: Color(0xFFF5F543),
-                    brightBlue: Color(0xFF3B8EEA),
-                    brightMagenta: Color(0xFFD670D6),
-                    brightCyan: Color(0xFF29B8DB),
-                    brightWhite: Color(0xFFFFFFFF),
-                    searchHitBackground: Color(0xFF444444),
-                    searchHitBackgroundCurrent: Color(0xFF666666),
-                    searchHitForeground: Color(0xFFFFFFFF),
+        : Stack(
+            children: [
+              TabBarView(
+                controller: _tabController,
+                children: _sessions.map((session) {
+                  return Stack(
+                    children: [
+                      Container(
+                        color: const Color(0xFF1E1E1E),
+                        padding: const EdgeInsets.all(8),
+                        child: Stack(
+                          children: [
+                            RawKeyboardListener(
+                              focusNode: FocusNode()..requestFocus(),
+                              onKey: (RawKeyEvent event) {
+                                // スペースキーの特別処理
+                                if (event is RawKeyDownEvent &&
+                                    event.logicalKey == LogicalKeyboardKey.space) {
+                                  if (session.channel != null && 
+                                      session.channel!.closeCode == null) {
+                                    // スペースを直接送信
+                                    session.channel!.sink.add(' ');
+                                    if (kDebugMode) {
+                                      print('Space key sent directly to WebSocket');
+                                    }
+                                  }
+                                }
+                              },
+                              child: TerminalView(
+                                session.terminal,
+                                controller: session.controller,
+                                theme: const TerminalTheme(
+                                cursor: Color(0xFFD4D4D4),
+                                selection: Color(0xFF264F78),
+                                foreground: Color(0xFFD4D4D4),
+                                background: Color(0xFF1E1E1E),
+                                black: Color(0xFF000000),
+                                red: Color(0xFFCD3131),
+                                green: Color(0xFF0DBC79),
+                                yellow: Color(0xFFE5E510),
+                                blue: Color(0xFF2472C8),
+                                magenta: Color(0xFFBC3FBC),
+                                cyan: Color(0xFF11A8CD),
+                                white: Color(0xFFE5E5E5),
+                                brightBlack: Color(0xFF666666),
+                                brightRed: Color(0xFFF14C4C),
+                                brightGreen: Color(0xFF23D18B),
+                                brightYellow: Color(0xFFF5F543),
+                                brightBlue: Color(0xFF3B8EEA),
+                                brightMagenta: Color(0xFFD670D6),
+                                brightCyan: Color(0xFF29B8DB),
+                                brightWhite: Color(0xFFFFFFFF),
+                                searchHitBackground: Color(0xFF444444),
+                                searchHitBackgroundCurrent: Color(0xFF666666),
+                                searchHitForeground: Color(0xFFFFFFFF),
+                                ),
+                              ),
+                            ),
+                            DropzoneView(
+                              operation: DragOperation.copy,
+                              cursor: CursorType.Default,
+                              onCreated: (controller) {
+                                _dropzoneController = controller;
+                              },
+                              onDrop: (event) async {
+                                setState(() {
+                                  _isDragging = false;
+                                });
+                                
+                                if (event is html.File) {
+                                  final file = event as html.File;
+                                  final currentSession = _sessions[_tabController.index];
+                                  
+                                  // ファイルサイズチェック（10MB制限）
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    currentSession.terminal.write('\r\n\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
+                                    return;
+                                  }
+                                  
+                                  // ファイル読み込み
+                                  final reader = html.FileReader();
+                                  reader.readAsArrayBuffer(file);
+                                  
+                                  reader.onLoadEnd.listen((e) {
+                                    if (currentSession.channel != null && 
+                                        currentSession.channel!.closeCode == null) {
+                                      // ファイルをBase64エンコード
+                                      final bytes = reader.result as Uint8List;
+                                      final base64Content = base64Encode(bytes);
+                                      
+                                      // ファイルアップロードメッセージを送信
+                                      currentSession.channel!.sink.add(json.encode({
+                                        'type': 'file_upload',
+                                        'filename': file.name,
+                                        'content': base64Content,
+                                        'encoding': 'base64',
+                                      }));
+                                      
+                                      // アップロード開始通知
+                                      currentSession.terminal.write('\r\n\x1B[33mUploading: ${file.name}...\x1B[0m\r\n');
+                                    }
+                                  });
+                                  
+                                  reader.onError.listen((error) {
+                                    currentSession.terminal.write('\r\n\x1B[31mError reading file: $error\x1B[0m\r\n');
+                                  });
+                                }
+                              },
+                              onHover: () {
+                                setState(() {
+                                  _isDragging = true;
+                                });
+                              },
+                              onLeave: () {
+                                setState(() {
+                                  _isDragging = false;
+                                });
+                              },
+                              onError: (error) {
+                                print('Dropzone error: $error');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+              // ドラッグオーバーレイ
+              if (_isDragging)
+                Container(
+                  color: Colors.blue.withOpacity(0.2),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.upload_file,
+                            size: 48,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'ファイルをドロップしてアップロード',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              );
-            }).toList(),
+            ],
           ),
     );
   }

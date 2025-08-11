@@ -5,6 +5,7 @@ const WebSocket = require('./next/node_modules/ws');
 const pty = require('./next/node_modules/node-pty');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs').promises;
 
 const PORT = process.env.TERMINAL_PORT || 8090;
 
@@ -180,6 +181,9 @@ wss.on('connection', (ws, req) => {
             } else if (data.type === 'command') {
               console.log('Executing command:', data.command);
               currentSession.shell.write(data.command + '\n');
+            } else if (data.type === 'file_upload') {
+              // ファイルアップロード処理
+              handleFileUpload(data, currentSession, ws);
             }
           } catch (e) {
             // JSONパースエラーの場合は生データとして処理
@@ -210,6 +214,50 @@ wss.on('connection', (ws, req) => {
     }
   });
 });
+
+// ファイルアップロード処理
+async function handleFileUpload(data, session, ws) {
+  try {
+    const { filename, content, encoding = 'base64' } = data;
+    
+    if (!filename || !content) {
+      ws.send('\x1B[31mError: Missing filename or content\x1B[0m\r\n');
+      return;
+    }
+    
+    // ファイル名のサニタイズ
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const uploadDir = path.resolve(__dirname, 'uploads');
+    const filePath = path.join(uploadDir, sanitizedFilename);
+    
+    // アップロードディレクトリの作成
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    // Base64デコード
+    const buffer = Buffer.from(content, encoding);
+    
+    // ファイルサイズチェック（10MB制限）
+    if (buffer.length > 10 * 1024 * 1024) {
+      ws.send('\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
+      return;
+    }
+    
+    // ファイル保存
+    await fs.writeFile(filePath, buffer);
+    
+    // 成功メッセージ
+    ws.send(`\x1B[32mFile uploaded: ${sanitizedFilename}\x1B[0m\r\n`);
+    ws.send(`\x1B[33mSaved to: ${filePath}\x1B[0m\r\n`);
+    
+    // ファイルパスをターミナルに入力
+    const relativePath = path.relative(path.resolve(__dirname, 'flutter'), filePath);
+    session.shell.write(relativePath.replace(/ /g, '\\ '));
+    
+  } catch (error) {
+    console.error('File upload error:', error);
+    ws.send(`\x1B[31mFile upload error: ${error.message}\x1B[0m\r\n`);
+  }
+}
 
 // グレースフルシャットダウン
 process.on('SIGINT', () => {
