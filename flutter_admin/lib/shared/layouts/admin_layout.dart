@@ -208,10 +208,23 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
-                  Icons.catching_pokemon,
-                  color: Colors.white,
-                  size: 20,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Image.network(
+                    '/admin/logo.png',
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.catching_pokemon,
+                        size: 16,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -377,9 +390,16 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
         final isActive = _menuItems.indexOf(item) == _currentBottomNavIndex;
         return BottomNavigationBarItem(
           icon: item.customIcon != null
-              ? const Icon(
-                  Icons.catching_pokemon,
-                  size: 24,
+              ? Image.network(
+                  '/admin/logo.png',
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.catching_pokemon,
+                      size: 24,
+                    );
+                  },
                 )
               : Icon(
                   isActive ? item.activeIcon : item.icon,
@@ -576,10 +596,23 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                           color: AppTheme.secondaryColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.catching_pokemon,
-                          color: Colors.white,
-                          size: 24,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Image.network(
+                            '/admin/logo.png',
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.catching_pokemon,
+                                size: 20,
+                              );
+                            },
+                          ),
                         ),
                       )
                     : Row(
@@ -592,10 +625,23 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                               color: AppTheme.secondaryColor,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
-                              Icons.catching_pokemon,
-                              color: Colors.white,
-                              size: 24,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Image.network(
+                                '/admin/logo.png',
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.catching_pokemon,
+                                    size: 20,
+                                  );
+                                },
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -685,10 +731,19 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
-                                    child: const Icon(
-                                      Icons.catching_pokemon,
-                                      size: 20,
-                                      color: null,
+                                    child: Image.network(
+                                      '/admin/logo.png',
+                                      width: 20,
+                                      height: 20,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.catching_pokemon,
+                                          size: 20,
+                                          color: isActive
+                                              ? AppTheme.secondaryColor
+                                              : AppTheme.textSecondary,
+                                        );
+                                      },
                                     ),
                                   )
                                 : Icon(

@@ -117,10 +117,23 @@ class _AIChatPageState extends State<AIChatPage> {
                     color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.catching_pokemon,
-                    color: Colors.white,
-                    size: 28,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Image.network(
+                      '/admin/logo.png',
+                      width: 20,
+                      height: 20,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.catching_pokemon,
+                          size: 20,
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
