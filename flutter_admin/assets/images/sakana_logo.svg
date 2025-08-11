@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <g transform="translate(30, 60) scale(0.75)">
+    <!-- 魚の体 -->
+    <path d="M 40 120 C 35 120 30 115 30 110 C 30 100 40 90 60 80 L 90 60 L 100 40 C 102 35 108 35 110 40 L 120 55 L 150 40 C 155 37 162 37 165 42 L 190 90 L 210 100 C 220 105 225 115 220 125 L 200 160 L 190 180 C 188 185 182 185 180 180 L 170 165 L 140 180 C 135 183 128 183 125 178 L 100 130 L 80 120 L 40 120 Z" 
+          stroke="currentColor" 
+          stroke-width="10" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          fill="none"/>
+    <!-- 口 -->
+    <path d="M 30 110 Q 45 100 80 120" 
+          stroke="currentColor" 
+          stroke-width="10" 
+          stroke-linecap="round"
+          fill="none"/>
+    <path d="M 30 110 Q 45 120 80 100" 
+          stroke="currentColor" 
+          stroke-width="10" 
+          stroke-linecap="round"
+          fill="none"/>
+    <!-- 目 -->
+    <circle cx="65" cy="95" r="10" fill="currentColor"/>
+  </g>
+</svg>

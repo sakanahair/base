@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
+import '../../features/customers/presentation/pages/smart_customers_page.dart';
+import '../../features/ai_chat/presentation/pages/ai_chat_page.dart';
 import '../../features/appointments/presentation/pages/appointments_page.dart';
 import '../../features/services/presentation/pages/services_page.dart';
 import '../../features/staff/presentation/pages/staff_page.dart';
@@ -9,14 +11,31 @@ import '../../features/analytics/presentation/pages/analytics_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../shared/layouts/admin_layout.dart';
+import '../services/auth_service.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
+  static final _authService = AuthService();
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/dashboard',
+    initialLocation: '/login',
+    redirect: (context, state) {
+      final isAuthenticated = _authService.isAuthenticated;
+      final isLoginPage = state.matchedLocation == '/login';
+      
+      if (!isAuthenticated && !isLoginPage) {
+        return '/login';
+      }
+      
+      if (isAuthenticated && isLoginPage) {
+        return '/dashboard';
+      }
+      
+      return null;
+    },
+    refreshListenable: _authService,
     routes: [
       GoRoute(
         path: '/login',
@@ -40,10 +59,23 @@ class AppRouter {
             ),
           ),
           GoRoute(
+            path: '/ai-chat',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const AIChatPage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            ),
+          ),
+          GoRoute(
             path: '/customers',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const CustomersPage(),
+              child: const SmartCustomersPage(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,

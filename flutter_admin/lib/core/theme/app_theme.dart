@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors (LINE-style mint green theme)
@@ -38,109 +37,109 @@ class AppTheme {
         surface: backgroundColor,
         error: errorColor,
       ),
-      textTheme: GoogleFonts.mPlusRounded1cTextTheme().copyWith(
-        displayLarge: GoogleFonts.mPlusRounded1c(
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(
           fontSize: 32,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.03,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 9.6, // 0.3em * 32px
           height: 1.5,
           color: textPrimary,
         ),
-        displayMedium: GoogleFonts.mPlusRounded1c(
+        displayMedium: TextStyle(
           fontSize: 28,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.03,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 8.4, // 0.3em * 28px
           height: 1.5,
           color: textPrimary,
         ),
-        displaySmall: GoogleFonts.mPlusRounded1c(
+        displaySmall: TextStyle(
           fontSize: 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.03,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 7.2, // 0.3em * 24px
           height: 1.5,
           color: textPrimary,
         ),
-        headlineLarge: GoogleFonts.mPlusRounded1c(
+        headlineLarge: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.03,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 2.0, // 0.1em * 20px
           height: 1.5,
           color: textPrimary,
         ),
-        headlineMedium: GoogleFonts.mPlusRounded1c(
+        headlineMedium: TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.03,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.8, // 0.1em * 18px
           height: 1.5,
           color: textPrimary,
         ),
-        headlineSmall: GoogleFonts.mPlusRounded1c(
+        headlineSmall: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.6, // 0.1em * 16px
           height: 1.5,
           color: textPrimary,
         ),
-        titleLarge: GoogleFonts.mPlusRounded1c(
+        titleLarge: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.6, // 0.1em * 16px
           height: 1.8,
           color: textPrimary,
         ),
-        titleMedium: GoogleFonts.mPlusRounded1c(
+        titleMedium: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.4, // 0.1em * 14px
           height: 1.8,
           color: textPrimary,
         ),
-        titleSmall: GoogleFonts.mPlusRounded1c(
+        titleSmall: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.2, // 0.1em * 12px
           height: 1.8,
           color: textSecondary,
         ),
-        bodyLarge: GoogleFonts.mPlusRounded1c(
+        bodyLarge: TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 1.6, // 0.1em * 16px
           height: 1.8,
           color: textPrimary,
         ),
-        bodyMedium: GoogleFonts.mPlusRounded1c(
+        bodyMedium: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 1.4, // 0.1em * 14px
           height: 1.8,
           color: textPrimary,
         ),
-        bodySmall: GoogleFonts.mPlusRounded1c(
+        bodySmall: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w400,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 1.2, // 0.1em * 12px
           height: 1.8,
           color: textSecondary,
         ),
-        labelLarge: GoogleFonts.mPlusRounded1c(
+        labelLarge: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.4, // 0.1em * 14px
           height: 1.5,
           color: textPrimary,
         ),
-        labelMedium: GoogleFonts.mPlusRounded1c(
+        labelMedium: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.2, // 0.1em * 12px
           height: 1.5,
           color: textSecondary,
         ),
-        labelSmall: GoogleFonts.mPlusRounded1c(
+        labelSmall: TextStyle(
           fontSize: 10,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.02,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.0, // 0.1em * 10px
           height: 1.5,
           color: textTertiary,
         ),
@@ -154,10 +153,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
           ),
-          textStyle: GoogleFonts.mPlusRounded1c(
+          textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.02,
+            fontWeight: FontWeight.w300,
+            letterSpacing: 1.4,
           ),
         ),
       ),
@@ -169,10 +168,10 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
           ),
-          textStyle: GoogleFonts.mPlusRounded1c(
+          textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.02,
+            fontWeight: FontWeight.w300,
+            letterSpacing: 1.4,
           ),
         ),
       ),
@@ -180,44 +179,46 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: secondaryColor,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStyle: GoogleFonts.mPlusRounded1c(
+          textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.02,
+            fontWeight: FontWeight.w300,
+            letterSpacing: 1.4,
           ),
         ),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          borderSide: BorderSide(color: borderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: secondaryColor, width: 2),
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          borderSide: BorderSide(color: secondaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: errorColor),
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+          borderSide: BorderSide(color: errorColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        hintStyle: GoogleFonts.mPlusRounded1c(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        hintStyle: TextStyle(
           fontSize: 14,
+          fontWeight: FontWeight.w200,
+          letterSpacing: 1.4,
           color: textTertiary,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: const CardThemeData(
         color: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: borderColor),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          side: BorderSide(color: borderColor),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -226,14 +227,15 @@ class AppTheme {
         thickness: 1,
         space: 0,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.mPlusRounded1c(
+        titleTextStyle: TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w300,
+          letterSpacing: 1.8,
           color: Colors.white,
         ),
       ),
