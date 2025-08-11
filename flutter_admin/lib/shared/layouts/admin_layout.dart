@@ -197,51 +197,19 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           
           SizedBox(width: isMobile ? 8 : 16),
           
-          // Title with SAKANA logo
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Image.network(
-                    '/admin/logo.png',
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.catching_pokemon,
-                        size: 16,
-                      );
-                    },
-                  ),
-                ),
+          // Title
+          Text(
+            isMobile ? 'SAKANA' : 'SAKANA Admin',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w300,
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                baseFontSize: 18,
+                mobileScale: 0.9,
               ),
-              const SizedBox(width: 8),
-              Text(
-                isMobile ? 'SAKANA' : 'SAKANA Admin',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w300,
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(
-                    context,
-                    baseFontSize: 18,
-                    mobileScale: 0.9,
-                  ),
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
           
           const Spacer(),
@@ -588,61 +556,31 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _isSidebarCollapsed
-                    ? Container(
+                    ? Image.network(
+                        '/admin/logo.png',
                         width: 40,
                         height: 40,
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Image.network(
-                            '/admin/logo.png',
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.catching_pokemon,
-                                size: 20,
-                              );
-                            },
-                          ),
-                        ),
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.catching_pokemon,
+                            size: 40,
+                            color: AppTheme.secondaryColor,
+                          );
+                        },
                       )
                     : Row(
                         children: [
-                          Container(
+                          Image.network(
+                            '/admin/logo.png',
                             width: 40,
                             height: 40,
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Image.network(
-                                '/admin/logo.png',
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.catching_pokemon,
-                                    size: 20,
-                                  );
-                                },
-                              ),
-                            ),
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.catching_pokemon,
+                                size: 40,
+                                color: AppTheme.secondaryColor,
+                              );
+                            },
                           ),
                           const SizedBox(width: 12),
                           Column(
@@ -722,29 +660,19 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                         child: Row(
                           children: [
                             item.customIcon != null
-                                ? Container(
+                                ? Image.network(
+                                    '/admin/logo.png',
                                     width: context.responsiveIconSize,
                                     height: context.responsiveIconSize,
-                                    decoration: BoxDecoration(
-                                      color: isActive
-                                          ? AppTheme.secondaryColor.withOpacity(0.1)
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Image.network(
-                                      '/admin/logo.png',
-                                      width: 20,
-                                      height: 20,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Icon(
-                                          Icons.catching_pokemon,
-                                          size: 20,
-                                          color: isActive
-                                              ? AppTheme.secondaryColor
-                                              : AppTheme.textSecondary,
-                                        );
-                                      },
-                                    ),
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        Icons.catching_pokemon,
+                                        size: context.responsiveIconSize,
+                                        color: isActive
+                                            ? AppTheme.secondaryColor
+                                            : AppTheme.textSecondary,
+                                      );
+                                    },
                                   )
                                 : Icon(
                                     isActive ? item.activeIcon : item.icon,
