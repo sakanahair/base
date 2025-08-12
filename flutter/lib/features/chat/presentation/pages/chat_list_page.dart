@@ -17,6 +17,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   String _searchQuery = '';
   final List<String> _channels = ['すべて', 'SAKANA', 'LINE', 'SMS', 'App', 'WebChat'];
   String _selectedChannel = 'すべて';
+  bool _isDetailMode = false;
+  List<String> _pinnedChats = [];
+  List<String> _hiddenChats = [];
 
   @override
   void initState() {
@@ -66,6 +69,50 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     onPressed: () => context.go('/chat/broadcast'),
                     tooltip: '一斉配信',
                     padding: const EdgeInsets.all(8),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _isDetailMode ? Icons.view_list : Icons.view_agenda,
+                      size: 20,
+                      color: Colors.black54,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isDetailMode = !_isDetailMode;
+                      });
+                    },
+                    tooltip: _isDetailMode ? 'シンプル表示' : '詳細表示',
+                    padding: const EdgeInsets.all(8),
+                  ),
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.visibility_off, size: 20, color: Colors.black54),
+                        onPressed: () => _showHiddenChatsDialog(context),
+                        tooltip: '非表示リスト',
+                        padding: const EdgeInsets.all(8),
+                      ),
+                      if (_hiddenChats.isNotEmpty)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              _hiddenChats.length.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   IconButton(
                     icon: Icon(Icons.settings, size: 20, color: Colors.black54),
@@ -220,7 +267,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
       final matchesSearch = chat['name'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
           chat['lastMessage'].toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesChannel = _selectedChannel == 'すべて' || chat['channel'] == _selectedChannel;
-      return matchesSearch && matchesChannel;
+      final isNotHidden = !_hiddenChats.contains(chat['id']);
+      return matchesSearch && matchesChannel && isNotHidden;
     }).toList();
 
     return ListView.separated(
@@ -232,14 +280,66 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
       ),
       itemBuilder: (context, index) {
         final chat = filteredChats[index];
-        return ListTile(
-          onTap: () => context.go('/chat/conversation/${chat['id']}'),
-          leading: InkWell(
-            onTap: chat['id'] != 'sakana-ai' ? () => _showCustomerDetails(context, chat) : null,
-            borderRadius: BorderRadius.circular(25),
-            child: Stack(
-              children: [
-                CircleAvatar(
+        final isPinned = _pinnedChats.contains(chat['id']);
+        final isSakanaAI = chat['id'] == 'sakana-ai';
+        
+        return Dismissible(
+          key: Key(chat['id']),
+          direction: isSakanaAI ? DismissDirection.none : DismissDirection.horizontal,
+          confirmDismiss: (direction) async {
+            if (isSakanaAI) return false;
+            
+            if (direction == DismissDirection.endToStart) {
+              // 右から左へのスワイプ（左スワイプ）：ミュート
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${chat['name']}の通知をオフにしました'),
+                  action: SnackBarAction(
+                    label: '元に戻す',
+                    onPressed: () {
+                      // ミュート解除の処理
+                    },
+                  ),
+                ),
+              );
+              return false;
+            } else {
+              // 左から右へのスワイプ（右スワイプ）：ピン留め
+              _togglePin(chat['id']);
+              return false;
+            }
+          },
+          background: Container(
+            color: Colors.blue.withOpacity(0.2),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            child: const Icon(Icons.push_pin, color: Colors.blue),
+          ),
+          secondaryBackground: Container(
+            color: Colors.orange.withOpacity(0.2),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.notifications_off, color: Colors.orange),
+          ),
+          child: GestureDetector(
+            onSecondaryTapDown: isSakanaAI ? null : (details) {
+              // PCの右クリック
+              _showContextMenu(context, details.globalPosition, chat);
+            },
+            onLongPress: isSakanaAI ? null : () {
+              // モバイルの長押し
+              _showContextMenu(context, Offset.zero, chat);
+            },
+            child: Container(
+              color: isPinned ? themeService.primaryColor.withOpacity(0.05) : null,
+              child: ListTile(
+                onTap: () => context.go('/chat/conversation/${chat['id']}'),
+                leading: InkWell(
+                  onTap: chat['id'] != 'sakana-ai' ? () => _showCustomerDetails(context, chat) : null,
+                  borderRadius: BorderRadius.circular(25),
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
                   radius: 25,
                   backgroundColor: chat['id'] == 'sakana-ai' 
                     ? Colors.white
@@ -285,25 +385,125 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                       color: Colors.white,
                     ),
                   ),
+                      ),
+                      if (isPinned)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.push_pin,
+                              size: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            chat['name'],
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (chat['tags'] != null) ...[
+                          const SizedBox(width: 8),
+                          ...chat['tags'].map<Widget>((tag) => Container(
+                            margin: const EdgeInsets.only(right: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _getTagColor(tag).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _getTagColor(tag).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              tag,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: _getTagColor(tag),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )).toList(),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Text(
+                    chat['time'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              if (_isDetailMode) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 12,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      chat['phone'] ?? '090-1234-5678',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.cake,
+                      size: 12,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      chat['birthday'] ?? '1月1日',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.attach_money,
+                      size: 12,
+                      color: Colors.grey[500],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      chat['totalSpent'] ?? '¥25,000',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  chat['name'],
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-              Text(
-                chat['time'],
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
             ],
           ),
           subtitle: Row(
@@ -344,10 +544,13 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-            ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ).animate().fadeIn(delay: (index * 50).ms);
+        ),
+      ).animate().fadeIn(delay: (index * 50).ms);
       },
     );
   }
@@ -476,6 +679,27 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
     }
   }
 
+  Color _getTagColor(String tag) {
+    switch (tag) {
+      case 'VIP':
+        return Colors.amber[700]!;
+      case '新規':
+        return Colors.green[600]!;
+      case '常連':
+        return Colors.blue[600]!;
+      case '休眠':
+        return Colors.grey[600]!;
+      case '要フォロー':
+        return Colors.red[600]!;
+      case 'カラー':
+        return Colors.purple[600]!;
+      case 'パーマ':
+        return Colors.orange[600]!;
+      default:
+        return Colors.grey[600]!;
+    }
+  }
+
   List<Map<String, dynamic>> _getDummyChats() {
     return [
       {
@@ -486,6 +710,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'SAKANA',
         'isRead': true,
         'unreadCount': 0,
+        'tags': null,
+        'phone': null,
+        'birthday': null,
+        'totalSpent': null,
       },
       {
         'id': '1',
@@ -495,6 +723,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'LINE',
         'isRead': false,
         'unreadCount': 2,
+        'tags': ['VIP', '常連'],
+        'phone': '090-1234-5678',
+        'birthday': '3月15日',
+        'totalSpent': '¥125,400',
       },
       {
         'id': '2',
@@ -504,6 +736,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'WebChat',
         'isRead': true,
         'unreadCount': 0,
+        'tags': ['カラー', '新規'],
+        'phone': '080-2345-6789',
+        'birthday': '7月1日',
+        'totalSpent': '¥32,000',
       },
       {
         'id': '3',
@@ -513,6 +749,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'SMS',
         'isRead': false,
         'unreadCount': 1,
+        'tags': ['要フォロー'],
+        'phone': '090-3456-7890',
+        'birthday': '11月20日',
+        'totalSpent': '¥45,000',
       },
       {
         'id': '4',
@@ -522,6 +762,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'LINE',
         'isRead': true,
         'unreadCount': 0,
+        'tags': ['常連'],
+        'phone': '080-4567-8901',
+        'birthday': '5月5日',
+        'totalSpent': '¥78,500',
       },
       {
         'id': '5',
@@ -531,6 +775,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'App',
         'isRead': true,
         'unreadCount': 0,
+        'tags': ['パーマ', 'VIP'],
+        'phone': '090-5678-9012',
+        'birthday': '9月10日',
+        'totalSpent': '¥210,000',
       },
     ];
   }
@@ -869,6 +1117,264 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _togglePin(String chatId) {
+    setState(() {
+      if (_pinnedChats.contains(chatId)) {
+        _pinnedChats.remove(chatId);
+      } else {
+        _pinnedChats.add(chatId);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_pinnedChats.contains(chatId) ? 'ピン留めしました' : 'ピン留めを解除しました'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<bool> _showDeleteDialog(BuildContext context, Map<String, dynamic> chat) async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('削除確認'),
+        content: Text('${chat['name']}との会話とユーザー情報を完全に削除しますか？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('削除', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _showContextMenu(BuildContext context, Offset position, Map<String, dynamic> chat) {
+    final isPinned = _pinnedChats.contains(chat['id']);
+    
+    showMenu<String>(
+      context: context,
+      position: position == Offset.zero 
+        ? RelativeRect.fromLTRB(100, 200, 100, 200)
+        : RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
+      items: [
+        PopupMenuItem<String>(
+          value: 'preview',
+          child: ListTile(
+            leading: const Icon(Icons.preview),
+            title: const Text('プレビュー'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'mute',
+          child: ListTile(
+            leading: const Icon(Icons.notifications_off),
+            title: const Text('通知オフ'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'hide',
+          child: ListTile(
+            leading: const Icon(Icons.visibility_off),
+            title: const Text('非表示'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'pin',
+          child: ListTile(
+            leading: Icon(isPinned ? Icons.push_pin_outlined : Icons.push_pin),
+            title: Text(isPinned ? 'ピン留め解除' : 'ピン留め'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'block',
+          child: ListTile(
+            leading: const Icon(Icons.block, color: Colors.orange),
+            title: const Text('ブロック', style: TextStyle(color: Colors.orange)),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text('削除', style: TextStyle(color: Colors.red)),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        switch (value) {
+          case 'preview':
+            _showCustomerDetails(context, chat);
+            break;
+          case 'mute':
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('通知をオフにしました')),
+            );
+            break;
+          case 'hide':
+            setState(() {
+              _hiddenChats.add(chat['id']);
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${chat['name']}を非表示にしました'),
+                action: SnackBarAction(
+                  label: '元に戻す',
+                  onPressed: () {
+                    setState(() {
+                      _hiddenChats.remove(chat['id']);
+                    });
+                  },
+                ),
+              ),
+            );
+            break;
+          case 'pin':
+            _togglePin(chat['id']);
+            break;
+          case 'block':
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('ブロック確認'),
+                content: Text('${chat['name']}をブロックしますか？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('キャンセル'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${chat['name']}をブロックしました')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                    ),
+                    child: const Text('ブロック', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+            break;
+          case 'delete':
+            _showDeleteDialog(context, chat).then((shouldDelete) {
+              if (shouldDelete) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${chat['name']}を削除しました')),
+                );
+              }
+            });
+            break;
+        }
+      }
+    });
+  }
+
+  void _showHiddenChatsDialog(BuildContext context) {
+    final hiddenChatsList = _getDummyChats().where((chat) => _hiddenChats.contains(chat['id'])).toList();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('非表示リスト'),
+            Text(
+              '${_hiddenChats.length}件',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        content: _hiddenChats.isEmpty
+          ? const Text('非表示にしたチャットはありません')
+          : SizedBox(
+              width: double.maxFinite,
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: hiddenChatsList.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final chat = hiddenChatsList[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: _getChannelColor(chat['channel']).withOpacity(0.2),
+                      child: Text(
+                        chat['name'][0],
+                        style: TextStyle(
+                          color: _getChannelColor(chat['channel']),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    title: Text(chat['name']),
+                    subtitle: Text(
+                      chat['channel'],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    trailing: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _hiddenChats.remove(chat['id']);
+                        });
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${chat['name']}を表示に戻しました')),
+                        );
+                      },
+                      child: const Text('表示'),
+                    ),
+                  );
+                },
+              ),
+            ),
+        actions: [
+          if (_hiddenChats.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _hiddenChats.clear();
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('すべてのチャットを表示に戻しました')),
+                );
+              },
+              child: const Text('すべて表示'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
           ),
         ],
       ),
