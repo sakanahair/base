@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "425845959532",
+    "firebase_url": "https://sakana-76364-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "sakana-76364",
+    "storage_bucket": "sakana-76364.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:425845959532:android:3b0f7a3881e4c7c6ffe149",
+        "android_client_info": {
+          "package_name": "com.example.sakana_admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "425845959532-45fd6rm41llisgr2e4ek5sv3g7rul8k8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgvS_HTbeqQ8srf6GHZlf0z2mtwZQFUrs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "425845959532-45fd6rm41llisgr2e4ek5sv3g7rul8k8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

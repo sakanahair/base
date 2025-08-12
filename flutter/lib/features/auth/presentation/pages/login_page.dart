@@ -19,7 +19,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final _authService = AuthService();
-  final _emailController = TextEditingController(text: 'admin');
+  final _emailController = TextEditingController(text: 'admin@sakana.hair');
   final _passwordController = TextEditingController();
   bool _showSplash = true;
   bool _isLoading = false;
@@ -384,7 +384,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 controller: _emailController,
                 style: TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'ユーザー名',
+                  labelText: 'メールアドレス',
                   labelStyle: TextStyle(color: AppTheme.textSecondary),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: AppTheme.borderColor),
@@ -430,7 +430,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Hint: admin / Pass12345',
+                  'Hint: admin@sakana.hair / Pass12345',
                   style: TextStyle(
                     color: AppTheme.textTertiary,
                     fontSize: ResponsiveHelper.getResponsiveFontSize(

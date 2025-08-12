@@ -27,22 +27,18 @@ class AppRouter {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/chat', // チャットページをスタートページに
     redirect: (context, state) {
-      // 開発中は認証をスキップ
-      return null;
+      final isAuthenticated = _authService.isAuthenticated;
+      final isLoginPage = state.matchedLocation == '/login';
       
-      // 本番環境では以下のコメントを外す
-      // final isAuthenticated = _authService.isAuthenticated;
-      // final isLoginPage = state.matchedLocation == '/login';
-      // 
-      // if (!isAuthenticated && !isLoginPage) {
-      //   return '/login';
-      // }
-      // 
-      // if (isAuthenticated && isLoginPage) {
-      //   return '/dashboard';
-      // }
-      // 
-      // return null;
+      if (!isAuthenticated && !isLoginPage) {
+        return '/login';
+      }
+      
+      if (isAuthenticated && isLoginPage) {
+        return '/chat';
+      }
+      
+      return null;
     },
     refreshListenable: _authService,
     routes: [

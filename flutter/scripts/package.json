@@ -1,0 +1,12 @@
+{
+  "name": "firebase-admin-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for Firebase Admin",
+  "main": "index.js",
+  "scripts": {
+    "create-admin": "node create_admin.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

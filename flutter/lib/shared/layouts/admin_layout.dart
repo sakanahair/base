@@ -77,6 +77,12 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       label: '設定',
       route: '/settings',
     ),
+    _MenuItem(
+      icon: Icons.logout_outlined,
+      activeIcon: Icons.logout,
+      label: 'ログアウト',
+      route: '/logout',
+    ),
   ];
   
   @override
@@ -726,7 +732,15 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                         if (context.isTouchDevice) {
                           ResponsiveHelper.addHapticFeedback();
                         }
-                        context.go(item.route);
+                        
+                        // Handle logout specially
+                        if (item.route == '/logout') {
+                          _authService.logout();
+                          context.go('/login');
+                        } else {
+                          context.go(item.route);
+                        }
+                        
                         if (!isDesktop) {
                           Navigator.pop(context);
                         }

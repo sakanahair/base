@@ -1,0 +1,11 @@
+{
+  "users": [
+    {
+      "localId": "admin_sakana_001",
+      "email": "admin@sakana.hair",
+      "emailVerified": true,
+      "displayName": "Admin User",
+      "rawPassword": "Pass12345"
+    }
+  ]
+}

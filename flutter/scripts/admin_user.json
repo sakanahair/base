@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "localId": "admin001",
+      "email": "admin@sakana.hair",
+      "emailVerified": true,
+      "passwordHash": "UGFzczEyMzQ1",
+      "displayName": "Admin User",
+      "createdAt": "1704067200000",
+      "lastLoginAt": "1704067200000",
+      "providerUserInfo": []
+    }
+  ]
+}
