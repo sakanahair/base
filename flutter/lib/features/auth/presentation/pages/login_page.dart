@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math' as math;
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/theme_service.dart';
 import '../../../../shared/widgets/splash_screen.dart';
 import '../../../../shared/utils/responsive_helper.dart';
 
@@ -69,10 +71,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               child: AnimatedBuilder(
                 animation: _gridController,
                 builder: (context, child) {
+                  final themeService = Provider.of<ThemeService>(context);
                   return CustomPaint(
                     painter: WavePainter(
                       animation: _gridController.value,
-                      color: AppTheme.primaryColor.withOpacity(0.05),
+                      color: themeService.primaryColor.withOpacity(0.05),
                     ),
                   );
                 },
@@ -109,7 +112,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             baseFontSize: 7.2,
                             mobileScale: 0.9,
                           ),
-                          color: AppTheme.secondaryColor,
+                          color: Provider.of<ThemeService>(context).primaryColor,
                         ),
                       ).animate().fadeIn(duration: 800.ms).slideY(begin: -0.2, end: 0),
                   
@@ -127,7 +130,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.transparent,
-                                    AppTheme.primaryColor,
+                                    Provider.of<ThemeService>(context).primaryColor,
                                     Colors.transparent,
                                   ],
                                 ),
@@ -240,7 +243,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         child: Text(
                           '管理者としてログイン',
                           style: TextStyle(
-                            color: AppTheme.secondaryColor,
+                            color: Provider.of<ThemeService>(context).primaryColor,
                             fontSize: ResponsiveHelper.getResponsiveFontSize(
                               context,
                               baseFontSize: 14,
@@ -297,13 +300,13 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? AppTheme.secondaryColor : Colors.white,
+          backgroundColor: isPrimary ? Provider.of<ThemeService>(context, listen: false).primaryColor : Colors.white,
           foregroundColor: isPrimary ? Colors.white : AppTheme.textPrimary,
           elevation: isPrimary ? 2 : 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context) * 2),
             side: BorderSide(
-              color: isPrimary ? AppTheme.secondaryColor : AppTheme.borderColor,
+              color: isPrimary ? Provider.of<ThemeService>(context, listen: false).primaryColor : AppTheme.borderColor,
               width: 1,
             ),
           ),
@@ -388,7 +391,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.secondaryColor),
+                    borderSide: BorderSide(color: Provider.of<ThemeService>(context, listen: false).primaryColor),
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
                   ),
                   filled: true,
@@ -412,7 +415,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppTheme.secondaryColor),
+                    borderSide: BorderSide(color: Provider.of<ThemeService>(context, listen: false).primaryColor),
                     borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
                   ),
                   filled: true,
@@ -454,7 +457,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                           _handleAdminLogin();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
+                          backgroundColor: Provider.of<ThemeService>(context, listen: false).primaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
                           ),

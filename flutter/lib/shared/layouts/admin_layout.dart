@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/theme_service.dart';
+import 'package:provider/provider.dart';
 import '../../features/terminal/presentation/pages/terminal_page.dart';
 import '../../features/terminal/presentation/pages/multi_terminal_page.dart';
 import '../utils/responsive_helper.dart';
@@ -169,12 +171,13 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   }
 
   Widget _buildHeader(BuildContext context, String currentRoute, bool isMobile, bool isTablet, bool isDesktop) {
+    final themeService = Provider.of<ThemeService>(context);
     // モバイルではヘッダーを小さくするか、非表示にする
     if (isMobile) {
       return Container(
         height: 48, // モバイルでは小さなヘッダー
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor,
+          color: themeService.primaryColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -199,7 +202,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     return Container(
       height: ResponsiveHelper.getAppBarHeight(context),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
+        color: themeService.primaryColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -466,15 +469,16 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   }
   
   Widget _buildMobileFAB(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
     return FloatingActionButton(
       onPressed: () {
         ResponsiveHelper.addHapticFeedbackMedium();
         _showQuickActions(context);
       },
-      backgroundColor: AppTheme.secondaryColor,
-      child: const Icon(
+      backgroundColor: themeService.primaryColor,
+      child: Icon(
         Icons.add,
-        color: Colors.white,
+        color: themeService.onPrimaryColor,
       ),
     );
   }
@@ -620,6 +624,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   }
   
   Widget _buildSidebar(String currentRoute, bool isDesktop) {
+    final themeService = Provider.of<ThemeService>(context);
 
     return Container(
       color: AppTheme.sidebarBackgroundColor,
@@ -708,12 +713,12 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: isActive ? AppTheme.activeBackgroundColor : Colors.transparent,
+                    color: isActive ? themeService.primaryColorBackground : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: isActive
                         ? Border(
                             left: BorderSide(
-                              color: AppTheme.secondaryColor,
+                              color: themeService.primaryColor,
                               width: 4,
                             ),
                           )
@@ -755,7 +760,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                                         Icons.catching_pokemon,
                                         size: context.responsiveIconSize,
                                         color: isActive
-                                            ? AppTheme.secondaryColor
+                                            ? themeService.primaryColor
                                             : AppTheme.textSecondary,
                                       );
                                     },
@@ -764,7 +769,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                                     isActive ? item.activeIcon : item.icon,
                                     size: context.responsiveIconSize,
                                     color: isActive
-                                        ? AppTheme.secondaryColor
+                                        ? themeService.primaryColor
                                         : AppTheme.textSecondary,
                                   ),
                             if (!_isSidebarCollapsed) ...[
@@ -776,7 +781,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                                     fontSize: 14,
                                     fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
                                     color: isActive
-                                        ? AppTheme.secondaryColor
+                                        ? themeService.primaryColor
                                         : AppTheme.textPrimary,
                                   ),
                                 ),

@@ -38,41 +38,59 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
       backgroundColor: AppTheme.backgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(88),
-        child: AppBar(
-          backgroundColor: themeService.primaryColor,
-          foregroundColor: themeService.onPrimaryColor,
-          title: const Text('チャット', style: TextStyle(fontSize: 18)),
-          toolbarHeight: 48,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.qr_code, size: 20),
-              onPressed: () => context.go('/chat/qr'),
-              tooltip: 'QRコード生成',
-              padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            Container(
+              height: 48,
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    'チャット',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.qr_code, size: 20, color: Colors.black54),
+                    onPressed: () => context.go('/chat/qr'),
+                    tooltip: 'QRコード生成',
+                    padding: const EdgeInsets.all(8),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.broadcast_on_personal, size: 20, color: Colors.black54),
+                    onPressed: () => context.go('/chat/broadcast'),
+                    tooltip: '一斉配信',
+                    padding: const EdgeInsets.all(8),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.settings, size: 20, color: Colors.black54),
+                    onPressed: () => context.go('/settings/chat'),
+                    tooltip: 'チャット設定',
+                    padding: const EdgeInsets.all(8),
+                  ),
+                ],
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.broadcast_on_personal, size: 20),
-              onPressed: () => context.go('/chat/broadcast'),
-              tooltip: '一斉配信',
-              padding: const EdgeInsets.all(8),
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings, size: 20),
-              onPressed: () => context.go('/settings/chat'),
-              tooltip: 'チャット設定',
-              padding: const EdgeInsets.all(8),
-            ),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(40),
-            child: SizedBox(
+            Container(
               height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+              ),
               child: TabBar(
                 controller: _tabController,
-                indicatorColor: themeService.onPrimaryColor,
-                labelColor: themeService.onPrimaryColor,
-                unselectedLabelColor: themeService.onPrimaryColor.withOpacity(0.7),
-                labelStyle: const TextStyle(fontSize: 14),
+                indicatorColor: themeService.primaryColor,
+                indicatorWeight: 3,
+                labelColor: themeService.primaryColor,
+                unselectedLabelColor: Colors.black54,
+                labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 tabs: const [
                   Tab(text: 'トーク'),
                   Tab(text: '友だち'),
@@ -80,7 +98,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
       body: Column(
