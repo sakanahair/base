@@ -35,16 +35,10 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       route: '/dashboard',
     ),
     _MenuItem(
-      icon: Icons.chat_bubble_outline,
-      activeIcon: Icons.chat_bubble,
+      icon: Icons.catching_pokemon,
+      activeIcon: Icons.catching_pokemon,
       label: 'チャット',
       route: '/chat',
-    ),
-    _MenuItem(
-      icon: Icons.smart_toy_outlined,
-      activeIcon: Icons.smart_toy,
-      label: 'SAKANA AI',
-      route: '/ai-chat',
       customIcon: 'assets/images/sakana_logo.png',
     ),
     _MenuItem(
@@ -340,7 +334,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: themeService.primaryColor.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(

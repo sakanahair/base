@@ -22,6 +22,42 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
   String _selectedChannel = 'LINE';
+  String _selectedAIFunction = 'チャット';
+  bool _webSearchEnabled = false;
+  
+  // AIモデルの定義
+  final List<Map<String, String>> _aiModels = [
+    {'name': 'mixture', 'displayName': 'Mixture-of-Agents', 'icon': '😊'},
+    {'name': 'gpt5', 'displayName': 'GPT-5', 'icon': '🌀'},
+    {'name': 'gpt5pro', 'displayName': 'GPT-5 Pro', 'icon': '🌀'},
+    {'name': 'o3pro', 'displayName': 'o3-pro', 'icon': '🌀'},
+    {'name': 'o4mini', 'displayName': 'o4-mini-high', 'icon': '🌀'},
+    {'name': 'claude-sonnet', 'displayName': 'Claude Sonnet 4', 'icon': '✳️'},
+    {'name': 'claude-opus', 'displayName': 'Claude Opus 4.1', 'icon': '✳️'},
+    {'name': 'gemini-flash', 'displayName': 'Gemini 2.5 Flash', 'icon': '🔷'},
+    {'name': 'gemini-pro', 'displayName': 'Gemini 2.5 Pro', 'icon': '🔷'},
+    {'name': 'deepseek', 'displayName': 'DeepSeek R1', 'icon': '🔷'},
+    {'name': 'grok', 'displayName': 'Grok4 0709', 'icon': '⭕'},
+  ];
+  
+  Map<String, String> _selectedModel = {'name': 'claude-opus', 'displayName': 'Claude Opus 4.1', 'icon': '✳️'};
+  
+  @override
+  void initState() {
+    super.initState();
+    // chatIdからチャンネルを判定
+    if (widget.chatId == 'sakana-ai') {
+      _selectedChannel = 'SAKANA';
+    } else if (widget.chatId == '2') {
+      _selectedChannel = 'WebChat';
+    } else if (widget.chatId == '3') {
+      _selectedChannel = 'SMS';
+    } else if (widget.chatId == '5') {
+      _selectedChannel = 'App';
+    } else {
+      _selectedChannel = 'LINE';
+    }
+  }
 
   @override
   void dispose() {
@@ -35,7 +71,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     final themeService = Provider.of<ThemeService>(context);
     
     return Scaffold(
-      backgroundColor: const Color(0xFF93AAD4), // LINE風背景色
+      backgroundColor: _selectedChannel == 'LINE' 
+        ? const Color(0xFF93AAD4) // LINE風背景色
+        : Colors.white, // その他は白背景
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -43,12 +81,35 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         leadingWidth: 40,
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: const Color(0xFF00B900),
-              child: const Text(
-                '田',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+            InkWell(
+              onTap: widget.chatId != 'sakana-ai' ? () => _showCustomerDetails(context) : null,
+              borderRadius: BorderRadius.circular(18),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: widget.chatId == 'sakana-ai' ? Colors.white : _getChannelColor(),
+                child: widget.chatId == 'sakana-ai' 
+                  ? ClipOval(
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        padding: const EdgeInsets.all(6),
+                        child: Image.network(
+                          '/admin/logo.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.catching_pokemon,
+                              size: 24,
+                              color: _getChannelColor(),
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  : Text(
+                      '田',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
               ),
             ),
             const SizedBox(width: 12),
@@ -56,8 +117,8 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '田中 太郎',
+                  Text(
+                    widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中 太郎',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -68,8 +129,8 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF00B900),
+                        decoration: BoxDecoration(
+                          color: _getChannelColor(),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -88,16 +149,103 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.phone),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.videocam),
-            onPressed: () {},
-          ),
-          PopupMenuButton(
+        actions: widget.chatId == 'sakana-ai' 
+          ? [
+              // モデル選択ボタン
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: PopupMenuButton<Map<String, String>>(
+                  onSelected: (model) {
+                    setState(() {
+                      _selectedModel = model;
+                    });
+                  },
+                  itemBuilder: (context) => _aiModels.map((model) {
+                    return PopupMenuItem<Map<String, String>>(
+                      value: model,
+                      child: Row(
+                        children: [
+                          Text(model['icon']!, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
+                          Text(model['displayName']!),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_selectedModel['icon']!, style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 4),
+                        Text(
+                          _selectedModel['displayName']!,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // ウェブ検索チェックボックス
+              IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color: _webSearchEnabled ? Colors.blue : Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _webSearchEnabled = !_webSearchEnabled;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_webSearchEnabled ? 'ウェブ検索を有効にしました' : 'ウェブ検索を無効にしました'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                tooltip: 'ウェブ検索',
+              ),
+              PopupMenuButton(
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'clear',
+                    child: ListTile(
+                      leading: Icon(Icons.clear_all),
+                      title: Text('会話をクリア'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'settings',
+                    child: ListTile(
+                      leading: Icon(Icons.settings),
+                      title: Text('設定'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+            ]
+          : [
+              IconButton(
+                icon: const Icon(Icons.phone),
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const Icon(Icons.videocam),
+                onPressed: () {},
+              ),
+              PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => [
               const PopupMenuItem(
@@ -130,18 +278,21 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       ),
       body: Column(
         children: [
-          // チャンネル切り替え
+          // チャンネル切り替え or AI機能切り替え
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                const Text(
-                  'チャンネル:',
+                Text(
+                  widget.chatId == 'sakana-ai' ? 'AI機能:' : 'チャンネル:',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(width: 8),
-                ..._buildChannelChips(themeService),
+                if (widget.chatId == 'sakana-ai')
+                  ..._buildAIFunctionChips(themeService)
+                else
+                  ..._buildChannelChips(themeService),
               ],
             ),
           ),
@@ -257,6 +408,64 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     }).toList();
   }
 
+  List<Widget> _buildAIFunctionChips(ThemeService themeService) {
+    final functions = ['チャット', '画像生成', '動画生成', '着せ替え'];
+    return functions.map((function) {
+      final isSelected = _selectedAIFunction == function;
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedAIFunction = function;
+            });
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected 
+                ? const Color(0xFF7FA8A1).withOpacity(0.2)
+                : Colors.grey[100],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected 
+                  ? const Color(0xFF7FA8A1)
+                  : Colors.grey[300]!,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isSelected)
+                  Icon(
+                    Icons.check,
+                    size: 14,
+                    color: const Color(0xFF7FA8A1),
+                  ),
+                if (isSelected)
+                  const SizedBox(width: 4),
+                Text(
+                  function,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isSelected 
+                      ? const Color(0xFF7FA8A1)
+                      : Colors.grey[700],
+                    fontWeight: isSelected 
+                      ? FontWeight.w600 
+                      : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   Widget _buildMessageBubble(Map<String, dynamic> message, ThemeService themeService) {
     final isMe = message['isMe'];
     final hasRead = message['hasRead'] ?? false;
@@ -270,7 +479,11 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
           if (!isMe) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: const Color(0xFF00B900),
+              backgroundColor: widget.chatId == 'sakana-ai' 
+                ? themeService.primaryColor 
+                : (_selectedChannel == 'LINE' 
+                    ? const Color(0xFF00B900)
+                    : themeService.primaryColor),
               child: Text(
                 message['sender'][0],
                 style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -286,7 +499,11 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF7EC855) : Colors.white,
+                      color: isMe 
+                        ? (_selectedChannel == 'LINE' 
+                            ? const Color(0xFF7EC855) 
+                            : themeService.primaryColor)
+                        : Colors.white,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(18),
                         topRight: const Radius.circular(18),
@@ -463,6 +680,25 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     );
   }
 
+  Color _getChannelColor([String? channel]) {
+    final targetChannel = channel ?? _selectedChannel;
+    // くすんだ色合いのバリエーション
+    switch (targetChannel) {
+      case 'SAKANA':
+        return const Color(0xFF7FA8A1); // くすんだティール
+      case 'LINE':
+        return const Color(0xFF7C9885); // くすんだ緑
+      case 'SMS':
+        return const Color(0xFF8B95A7); // くすんだ青
+      case 'App':
+        return const Color(0xFF9B8B9B); // くすんだ紫
+      case 'WebChat':
+        return const Color(0xFFA89874); // くすんだオレンジ
+      default:
+        return const Color(0xFF8B8B8B); // くすんだグレー
+    }
+  }
+
   void _showAttachmentOptions(BuildContext context, ThemeService themeService) {
     showModalBottomSheet(
       context: context,
@@ -582,19 +818,310 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     }
   }
 
-  Color _getChannelColor(String channel) {
-    switch (channel) {
-      case 'LINE':
-        return const Color(0xFF00B900);
-      case 'SMS':
-        return Colors.blue;
-      case 'App':
-        return Colors.purple;
-      case 'WebChat':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+
+  void _showCustomerDetails(BuildContext context) {
+    final customerName = widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中 太郎';
+    final channel = _selectedChannel;
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ヘッダー
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        customerName[0],
+                        style: TextStyle(
+                          color: themeService.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            customerName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '090-1234-5678',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // アクションボタン
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(Icons.chat, 'チャット', () {}),
+                    _buildActionButton(Icons.phone, '電話', () {}),
+                    _buildActionButton(Icons.calendar_today, '予約', () {}),
+                    _buildActionButton(Icons.history, '履歴', () {}),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // コンテンツ
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 基本情報
+                      _buildSectionTitle('基本情報'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('メール', customerName.replaceAll(' ', '').toLowerCase() + '@example.com'),
+                      _buildInfoRow('誕生日', '1990年1月1日'),
+                      _buildInfoRow('性別', '女性'),
+                      _buildInfoRow('登録日', '2024年1月15日'),
+                      const SizedBox(height: 24),
+                      
+                      // 利用状況
+                      _buildSectionTitle('利用状況'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('累計利用額', '¥125,400', Icons.attach_money, Colors.green),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('来店回数', '24回', Icons.store, Colors.blue),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('最終来店', '3日前', Icons.access_time, Colors.orange),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('平均単価', '¥8,500', Icons.receipt, Colors.purple),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // コミュニケーション
+                      _buildSectionTitle('コミュニケーション'),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildCommRow('LINE', '連携済み', true),
+                            const Divider(),
+                            _buildCommRow('SMS', '連携済み', true),
+                            const Divider(),
+                            _buildCommRow('最終連絡', '3日前', false),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.grey[700]),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommRow(String label, String value, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+            ),
+          ),
+          Row(
+            children: [
+              if (isActive)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isActive ? Colors.green : Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<Map<String, dynamic>> _getDummyMessages() {
@@ -619,10 +1146,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       },
       {
         'id': '3',
-        'sender': '田中太郎',
-        'content': '15時から16時の間でお願いできますか？',
+        'sender': widget.chatId == 'sakana-ai' ? 'あなた' : '田中太郎',
+        'content': widget.chatId == 'sakana-ai' 
+          ? '桜が満開の日本庭園の風景をお願いします' 
+          : '15時から16時の間でお願いできますか？',
         'time': '14:25',
-        'isMe': false,
+        'isMe': widget.chatId == 'sakana-ai' ? true : false,
         'hasRead': true,
         'type': 'text',
       },
@@ -651,10 +1180,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       },
       {
         'id': '6',
-        'sender': '田中太郎',
-        'content': 'ありがとうございます！明日楽しみにしています',
+        'sender': widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中太郎',
+        'content': widget.chatId == 'sakana-ai' 
+          ? '他にも何かお手伝いできることがあればお申し付けください！\n\n動画生成、着せ替え、コード生成など様々な機能をご利用いただけます。' 
+          : 'ありがとうございます！明日楽しみにしています',
         'time': '14:30',
-        'isMe': false,
+        'isMe': widget.chatId == 'sakana-ai' ? false : false,
         'hasRead': false,
         'type': 'text',
       },

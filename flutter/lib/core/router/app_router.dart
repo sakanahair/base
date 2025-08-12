@@ -5,7 +5,6 @@ import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/customers/presentation/pages/smart_customers_page.dart';
 import '../../features/customers/presentation/pages/customers_split_page.dart';
 import '../../features/customers/presentation/pages/enhanced_customers_page.dart';
-import '../../features/ai_chat/presentation/pages/ai_chat_page.dart';
 import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/chat/presentation/pages/chat_conversation_page.dart';
 import '../../features/chat/presentation/pages/qr_code_page.dart';
@@ -26,7 +25,7 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/dashboard', // 開発中は直接ダッシュボードへ
+    initialLocation: '/chat', // チャットページをスタートページに
     redirect: (context, state) {
       // 開発中は認証をスキップ
       return null;
@@ -60,19 +59,6 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const DashboardPage(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: child,
-                );
-              },
-            ),
-          ),
-          GoRoute(
-            path: '/ai-chat',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const AIChatPage(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,

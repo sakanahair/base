@@ -15,7 +15,7 @@ class ChatListPage extends StatefulWidget {
 class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
-  final List<String> _channels = ['すべて', 'LINE', 'SMS', 'App', 'WebChat'];
+  final List<String> _channels = ['すべて', 'SAKANA', 'LINE', 'SMS', 'App', 'WebChat'];
   String _selectedChannel = 'すべて';
 
   @override
@@ -141,34 +141,47 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 const SizedBox(height: 8),
                 // チャンネルフィルター
                 SizedBox(
-                  height: 32,
+                  height: 36,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: _channels.map((channel) {
                         final isSelected = _selectedChannel == channel;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: FilterChip(
-                            label: Text(channel),
-                            selected: isSelected,
-                            onSelected: (selected) {
+                          padding: const EdgeInsets.only(right: 8),
+                          child: InkWell(
+                            onTap: () {
                               setState(() {
                                 _selectedChannel = channel;
                               });
                             },
-                            backgroundColor: Colors.grey[100],
-                            selectedColor: themeService.primaryColorBackground,
-                            checkmarkColor: themeService.primaryColor,
-                            labelStyle: TextStyle(
-                              fontSize: 12,
-                              color: isSelected ? themeService.primaryColor : Colors.grey[700],
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            ),
-                            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                            side: BorderSide(
-                              color: isSelected ? themeService.primaryColor : Colors.grey[300]!,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected 
+                                  ? themeService.primaryColor.withOpacity(0.1)
+                                  : Colors.grey[100],
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected 
+                                    ? themeService.primaryColor 
+                                    : Colors.grey[300]!,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              child: Text(
+                                channel,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isSelected 
+                                    ? themeService.primaryColor 
+                                    : Colors.grey[700],
+                                  fontWeight: isSelected 
+                                    ? FontWeight.w600 
+                                    : FontWeight.normal,
+                                ),
+                              ),
                             ),
                           ),
                         );
@@ -221,35 +234,60 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         final chat = filteredChats[index];
         return ListTile(
           onTap: () => context.go('/chat/conversation/${chat['id']}'),
-          leading: Stack(
-            children: [
-              CircleAvatar(
-                radius: 25,
-                backgroundColor: _getChannelColor(chat['channel']).withOpacity(0.2),
-                child: Text(
-                  chat['name'][0],
-                  style: TextStyle(color: _getChannelColor(chat['channel']), fontSize: 18, fontWeight: FontWeight.w500),
+          leading: InkWell(
+            onTap: chat['id'] != 'sakana-ai' ? () => _showCustomerDetails(context, chat) : null,
+            borderRadius: BorderRadius.circular(25),
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 25,
+                  backgroundColor: chat['id'] == 'sakana-ai' 
+                    ? Colors.white
+                    : _getChannelColor(chat['channel']).withOpacity(0.2),
+                child: chat['id'] == 'sakana-ai' 
+                  ? ClipOval(
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        padding: const EdgeInsets.all(8),
+                        child: Image.network(
+                          '/admin/logo.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.catching_pokemon,
+                              size: 30,
+                              color: _getChannelColor(chat['channel']),
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  : Text(
+                      chat['name'][0],
+                      style: TextStyle(color: _getChannelColor(chat['channel']), fontSize: 18, fontWeight: FontWeight.w500),
+                      ),
                 ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: _getChannelColor(chat['channel']),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Icon(
-                    _getChannelIcon(chat['channel']),
-                    size: 10,
-                    color: Colors.white,
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: _getChannelColor(chat['channel']),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Icon(
+                      _getChannelIcon(chat['channel']),
+                      size: 10,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           title: Row(
             children: [
@@ -406,6 +444,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   Color _getChannelColor(String channel) {
     // くすんだ色合いのバリエーション
     switch (channel) {
+      case 'SAKANA':
+        return const Color(0xFF7FA8A1); // くすんだティール
       case 'LINE':
         return const Color(0xFF7C9885); // くすんだ緑
       case 'SMS':
@@ -421,6 +461,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
 
   IconData _getChannelIcon(String channel) {
     switch (channel) {
+      case 'SAKANA':
+        return Icons.catching_pokemon; // 魚アイコン
       case 'LINE':
         return Icons.chat_bubble;
       case 'SMS':
@@ -436,6 +478,15 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
 
   List<Map<String, dynamic>> _getDummyChats() {
     return [
+      {
+        'id': 'sakana-ai',
+        'name': 'SAKANA AI',
+        'lastMessage': '画像生成、動画生成、着せ替えなど様々な機能をご利用いただけます',
+        'time': '常時',
+        'channel': 'SAKANA',
+        'isRead': true,
+        'unreadCount': 0,
+      },
       {
         'id': '1',
         'name': '田中 太郎',
@@ -517,6 +568,311 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'lastActive': '2日前',
       },
     ];
+  }
+
+  void _showCustomerDetails(BuildContext context, Map<String, dynamic> chat) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ヘッダー
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        chat['name'][0],
+                        style: TextStyle(
+                          color: themeService.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            chat['name'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '090-1234-5678',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // アクションボタン
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(Icons.chat, 'チャット', () {
+                      Navigator.pop(context);
+                      context.go('/chat/conversation/${chat['id']}');
+                    }),
+                    _buildActionButton(Icons.phone, '電話', () {}),
+                    _buildActionButton(Icons.calendar_today, '予約', () {}),
+                    _buildActionButton(Icons.history, '履歴', () {}),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // コンテンツ
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 基本情報
+                      _buildSectionTitle('基本情報'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('メール', chat['name'].replaceAll(' ', '').toLowerCase() + '@example.com'),
+                      _buildInfoRow('誕生日', '1990年1月1日'),
+                      _buildInfoRow('性別', '女性'),
+                      _buildInfoRow('登録日', '2024年1月15日'),
+                      const SizedBox(height: 24),
+                      
+                      // 利用状況
+                      _buildSectionTitle('利用状況'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('累計利用額', '¥125,400', Icons.attach_money, Colors.green),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('来店回数', '24回', Icons.store, Colors.blue),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('最終来店', '3日前', Icons.access_time, Colors.orange),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('平均単価', '¥8,500', Icons.receipt, Colors.purple),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // コミュニケーション
+                      _buildSectionTitle('コミュニケーション'),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildCommRow('LINE', '連携済み', true),
+                            const Divider(),
+                            _buildCommRow('SMS', '連携済み', true),
+                            const Divider(),
+                            _buildCommRow('最終連絡', '3日前', false),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.grey[700]),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommRow(String label, String value, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+            ),
+          ),
+          Row(
+            children: [
+              if (isActive)
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isActive ? Colors.green : Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<Map<String, dynamic>> _getDummyGroups() {
