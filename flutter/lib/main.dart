@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/services/customer_service.dart';
 import 'core/services/theme_service.dart';
+import 'core/services/tag_service.dart';
 import 'core/config/firebase_config.dart';
 import 'shared/widgets/splash_screen.dart';
 
@@ -262,6 +263,7 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => CustomerService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => TagService()),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/tag_service.dart';
+import '../../../../shared/widgets/tag_manager_dialog.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -14,10 +16,13 @@ class ChatListPage extends StatefulWidget {
 
 class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late TextEditingController _searchController;
   String _searchQuery = '';
-  final List<String> _channels = ['すべて', 'SAKANA', 'LINE', 'SMS', 'App', 'WebChat'];
+  final List<String> _channels = ['すべて', 'LINE', 'SMS', 'App', 'WebChat'];
   String _selectedChannel = 'すべて';
+  String _selectedTag = '';
   bool _isDetailMode = false;
+  bool _showTagDropdown = false;
   List<String> _pinnedChats = [];
   List<String> _hiddenChats = [];
 
@@ -25,11 +30,23 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _searchController = TextEditingController();
+    
+    // 初期タグを設定（デモ用）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tagService = Provider.of<TagService>(context, listen: false);
+      tagService.setUserTags('1', ['VIP', '常連']);
+      tagService.setUserTags('2', ['カラー', '新規']);
+      tagService.setUserTags('3', ['要フォロー']);
+      tagService.setUserTags('4', ['常連']);
+      tagService.setUserTags('5', ['パーマ', 'VIP']);
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -148,10 +165,12 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // 検索バーとフィルター
-          Container(
+          Column(
+            children: [
+              // 検索バーとフィルター
+              Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -165,11 +184,23 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 SizedBox(
                   height: 36,
                   child: TextField(
+                    controller: _searchController,
                     style: const TextStyle(fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: '検索',
+                      hintText: '名前、メッセージ、タグで検索',
                       hintStyle: const TextStyle(fontSize: 14),
                       prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty 
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              setState(() {
+                                _searchQuery = '';
+                                _searchController.clear();
+                              });
+                            },
+                          )
+                        : null,
                       filled: true,
                       fillColor: Colors.grey[100],
                       border: OutlineInputBorder(
@@ -186,70 +217,282 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                   ),
                 ),
                 const SizedBox(height: 8),
-                // チャンネルフィルター
-                SizedBox(
-                  height: 36,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _channels.map((channel) {
-                        final isSelected = _selectedChannel == channel;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedChannel = channel;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected 
-                                  ? themeService.primaryColor.withOpacity(0.1)
-                                  : Colors.grey[100],
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected 
-                                    ? themeService.primaryColor 
-                                    : Colors.grey[300]!,
-                                  width: isSelected ? 2 : 1,
+                // チャンネルフィルターとタグフィルター
+                    SizedBox(
+                      height: 36,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ..._channels.map((channel) {
+                              final isSelected = _selectedChannel == channel;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedChannel = channel;
+                                      _selectedTag = '';
+                                      _showTagDropdown = false;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected 
+                                        ? themeService.primaryColor.withOpacity(0.1)
+                                        : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: isSelected 
+                                          ? themeService.primaryColor 
+                                          : Colors.grey[300]!,
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      channel,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isSelected 
+                                          ? themeService.primaryColor 
+                                          : Colors.grey[700],
+                                        fontWeight: isSelected 
+                                          ? FontWeight.w600 
+                                          : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                channel,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isSelected 
-                                    ? themeService.primaryColor 
-                                    : Colors.grey[700],
-                                  fontWeight: isSelected 
-                                    ? FontWeight.w600 
-                                    : FontWeight.normal,
+                              );
+                            }).toList(),
+                            // タグフィルターボタン
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _showTagDropdown = !_showTagDropdown;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTag.isNotEmpty 
+                                      ? themeService.primaryColor.withOpacity(0.1)
+                                      : Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: _selectedTag.isNotEmpty 
+                                        ? themeService.primaryColor 
+                                        : Colors.grey[300]!,
+                                      width: _selectedTag.isNotEmpty ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.label,
+                                        size: 16,
+                                        color: _selectedTag.isNotEmpty 
+                                          ? themeService.primaryColor 
+                                          : Colors.grey[700],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _selectedTag.isEmpty ? 'タグ' : _selectedTag,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: _selectedTag.isNotEmpty 
+                                            ? themeService.primaryColor 
+                                            : Colors.grey[700],
+                                          fontWeight: _selectedTag.isNotEmpty 
+                                            ? FontWeight.w600 
+                                            : FontWeight.normal,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        _showTagDropdown ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                                        size: 18,
+                                        color: _selectedTag.isNotEmpty 
+                                          ? themeService.primaryColor 
+                                          : Colors.grey[700],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+              // チャットリスト
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildChatList(context, themeService),
+                    _buildFriendsList(context, themeService),
+                    _buildGroupsList(context, themeService),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // タグドロップダウンメニュー
+          if (_showTagDropdown)
+            Positioned(
+              top: 90,
+              right: 12,
+              child: Container(
+              alignment: Alignment.topRight,
+              padding: const EdgeInsets.only(right: 12),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(12),
+                child: Consumer<TagService>(
+                    builder: (context, tagService, child) {
+                      // 使用されているタグを収集
+                      final usedTags = <String>{};
+                      for (var chat in _getDummyChats()) {
+                        usedTags.addAll(tagService.getUserTags(chat['id']));
+                      }
+                      
+                      if (usedTags.isEmpty) {
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'タグが登録されていません',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         );
-                      }).toList(),
-                    ),
+                      }
+                      
+                      return Container(
+                        width: 200,
+                        constraints: const BoxConstraints(maxHeight: 300),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(color: Colors.grey[200]!),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.label, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    '登録済みタグ',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                  ),
+                                  const Spacer(),
+                                  if (_selectedTag.isNotEmpty)
+                                    InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedTag = '';
+                                          _searchQuery = '';
+                                          _searchController.clear();
+                                          _showTagDropdown = false;
+                                        });
+                                      },
+                                      child: const Text(
+                                        'クリア',
+                                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(8),
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: usedTags.map((tag) {
+                                    final isSelected = _selectedTag == tag;
+                                    return InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedTag = tag;
+                                          _searchQuery = tag;
+                                          _searchController.text = tag;
+                                          _selectedChannel = 'すべて';
+                                          _showTagDropdown = false;
+                                        });
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                            ? tagService.getTagColor(tag)
+                                            : tagService.getTagColor(tag).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: tagService.getTagColor(tag).withOpacity(0.3),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isSelected
+                                              ? Colors.white
+                                              : tagService.getTagColor(tag),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-          // チャットリスト
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildChatList(context, themeService),
-                _buildFriendsList(context, themeService),
-                _buildGroupsList(context, themeService),
-              ],
-            ),
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -262,10 +505,21 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   Widget _buildChatList(BuildContext context, ThemeService themeService) {
+    final tagService = Provider.of<TagService>(context);
     final chats = _getDummyChats();
     final filteredChats = chats.where((chat) {
-      final matchesSearch = chat['name'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      // 名前とメッセージでの検索
+      final matchesNameOrMessage = chat['name'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
           chat['lastMessage'].toLowerCase().contains(_searchQuery.toLowerCase());
+      
+      // タグでの検索
+      final userTags = tagService.getUserTags(chat['id']);
+      final matchesTags = userTags.any((tag) => 
+          tag.toLowerCase().contains(_searchQuery.toLowerCase()));
+      
+      // いずれかにマッチすれば表示
+      final matchesSearch = _searchQuery.isEmpty || matchesNameOrMessage || matchesTags;
+      
       final matchesChannel = _selectedChannel == 'すべて' || chat['channel'] == _selectedChannel;
       final isNotHidden = !_hiddenChats.contains(chat['id']);
       return matchesSearch && matchesChannel && isNotHidden;
@@ -282,6 +536,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         final chat = filteredChats[index];
         final isPinned = _pinnedChats.contains(chat['id']);
         final isSakanaAI = chat['id'] == 'sakana-ai';
+        final userTags = tagService.getUserTags(chat['id']);
         
         return Dismissible(
           key: Key(chat['id']),
@@ -421,16 +676,16 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (chat['tags'] != null) ...[
+                        if (userTags.isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          ...chat['tags'].map<Widget>((tag) => Container(
+                          ...userTags.map<Widget>((tag) => Container(
                             margin: const EdgeInsets.only(right: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _getTagColor(tag).withOpacity(0.15),
+                              color: tagService.getTagColor(tag).withOpacity(0.15),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: _getTagColor(tag).withOpacity(0.3),
+                                color: tagService.getTagColor(tag).withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -438,7 +693,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                               tag,
                               style: TextStyle(
                                 fontSize: 10,
-                                color: _getTagColor(tag),
+                                color: tagService.getTagColor(tag),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -1203,6 +1458,14 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             contentPadding: EdgeInsets.zero,
           ),
         ),
+        PopupMenuItem<String>(
+          value: 'tags',
+          child: ListTile(
+            leading: const Icon(Icons.label),
+            title: const Text('タグ管理'),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
         const PopupMenuDivider(),
         PopupMenuItem<String>(
           value: 'block',
@@ -1252,6 +1515,15 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             break;
           case 'pin':
             _togglePin(chat['id']);
+            break;
+          case 'tags':
+            showDialog(
+              context: context,
+              builder: (context) => TagManagerDialog(
+                userId: chat['id'],
+                userName: chat['name'],
+              ),
+            );
             break;
           case 'block':
             showDialog(
