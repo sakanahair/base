@@ -13,14 +13,14 @@ build/
 out/
 *.next
 
-# Flutter
-flutter/build/
-flutter/.dart_tool/
-flutter/.flutter-plugins
-flutter/.flutter-plugins-dependencies
-flutter/.packages
-flutter/.pub-cache/
-flutter/.pub/
+# Flutter (開発はローカルで行い、ビルド結果はNext.jsにコピー)
+flutter/
+# flutter/.dart_tool/
+# flutter/.flutter-plugins
+# flutter/.flutter-plugins-dependencies
+# flutter/.packages
+# flutter/.pub-cache/
+# flutter/.pub/
 
 # Logs
 logs/

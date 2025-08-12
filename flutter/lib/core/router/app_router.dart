@@ -26,20 +26,24 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/login',
+    initialLocation: '/dashboard', // 開発中は直接ダッシュボードへ
     redirect: (context, state) {
-      final isAuthenticated = _authService.isAuthenticated;
-      final isLoginPage = state.matchedLocation == '/login';
-      
-      if (!isAuthenticated && !isLoginPage) {
-        return '/login';
-      }
-      
-      if (isAuthenticated && isLoginPage) {
-        return '/dashboard';
-      }
-      
+      // 開発中は認証をスキップ
       return null;
+      
+      // 本番環境では以下のコメントを外す
+      // final isAuthenticated = _authService.isAuthenticated;
+      // final isLoginPage = state.matchedLocation == '/login';
+      // 
+      // if (!isAuthenticated && !isLoginPage) {
+      //   return '/login';
+      // }
+      // 
+      // if (isAuthenticated && isLoginPage) {
+      //   return '/dashboard';
+      // }
+      // 
+      // return null;
     },
     refreshListenable: _authService,
     routes: [

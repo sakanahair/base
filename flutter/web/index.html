@@ -19,6 +19,14 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  
+  <!-- Viewport for mobile responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- Cloudflareキャッシュ無効化 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -45,6 +53,13 @@
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@100;300;400;500;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // キャッシュバスティング用のタイムスタンプ追加
+    var timestamp = new Date().getTime();
+    var script = document.createElement('script');
+    script.src = 'flutter_bootstrap.js?v=' + timestamp;
+    script.async = true;
+    document.body.appendChild(script);
+  </script>
 </body>
 </html>

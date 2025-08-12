@@ -169,6 +169,33 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   }
 
   Widget _buildHeader(BuildContext context, String currentRoute, bool isMobile, bool isTablet, bool isDesktop) {
+    // モバイルではヘッダーを小さくするか、非表示にする
+    if (isMobile) {
+      return Container(
+        height: 48, // モバイルでは小さなヘッダー
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            'SAKANA Platform',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Container(
       height: ResponsiveHelper.getAppBarHeight(context),
       decoration: BoxDecoration(
@@ -183,8 +210,9 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       ),
       child: Row(
         children: [
-          // Mobile Menu Button
-          if (!isDesktop)
+          // Mobile Menu Button - REMOVED for mobile
+          // Only show for tablet
+          if (isTablet)
             IconButton(
               iconSize: context.responsiveIconSize,
               icon: const Icon(Icons.menu, color: Colors.white),
@@ -392,13 +420,16 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     // Only show main navigation items on bottom nav (first 5)
     final mainItems = _menuItems.take(5).toList();
     
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      selectedItemColor: AppTheme.secondaryColor,
-      unselectedItemColor: AppTheme.textSecondary,
-      selectedFontSize: 12,
-      unselectedFontSize: 10,
+    return Container(
+      height: 56, // 固定の高さに設定
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: AppTheme.secondaryColor,
+        unselectedItemColor: AppTheme.textSecondary,
+        selectedFontSize: 11,
+        unselectedFontSize: 10,
+        iconSize: 22,
       currentIndex: _currentBottomNavIndex.clamp(0, mainItems.length - 1),
       onTap: (index) {
         ResponsiveHelper.addHapticFeedback();
@@ -430,6 +461,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           label: _getShortLabel(item.label),
         );
       }).toList(),
+      ),
     );
   }
   

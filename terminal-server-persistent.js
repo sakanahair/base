@@ -236,9 +236,9 @@ async function handleFileUpload(data, session, ws) {
     // Base64デコード
     const buffer = Buffer.from(content, encoding);
     
-    // ファイルサイズチェック（10MB制限）
-    if (buffer.length > 10 * 1024 * 1024) {
-      ws.send('\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
+    // ファイルサイズチェック（100MB制限）
+    if (buffer.length > 100 * 1024 * 1024) {
+      ws.send('\x1B[31mError: File size exceeds 100MB limit\x1B[0m\r\n');
       return;
     }
     

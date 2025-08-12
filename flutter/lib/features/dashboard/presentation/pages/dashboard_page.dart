@@ -35,7 +35,9 @@ class _DashboardPageState extends State<DashboardPage> {
           await Future.delayed(const Duration(seconds: 1));
         },
         child: SingleChildScrollView(
-          padding: context.responsivePadding,
+          padding: isMobile 
+            ? const EdgeInsets.all(12.0) // モバイルでは小さめのパディング
+            : context.responsivePadding,
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

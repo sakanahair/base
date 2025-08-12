@@ -16,7 +16,6 @@ import 'package:file_picker/file_picker.dart';
 
 class TerminalSession {
   final String id;
-  String name;
   final Terminal terminal;
   final TerminalController controller;
   WebSocketChannel? channel;
@@ -26,7 +25,6 @@ class TerminalSession {
   
   TerminalSession({
     required this.id,
-    required this.name,
     this.sessionId,
   }) : terminal = Terminal(maxLines: 10000),
        controller = TerminalController();
@@ -45,6 +43,8 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   int _sessionCounter = 1;
   late DropzoneViewController _dropzoneController;
   bool _isDragging = false;
+  bool _isKeyboardVisible = false;
+  final FocusNode _terminalFocusNode = FocusNode();
   
   @override
   void initState() {
@@ -53,6 +53,13 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
     _tabController = TabController(length: 1, vsync: this);
     // セッションを復元または新規作成
     _loadSessions();
+    
+    // キーボード表示状態の監視
+    _terminalFocusNode.addListener(() {
+      setState(() {
+        _isKeyboardVisible = _terminalFocusNode.hasFocus;
+      });
+    });
   }
   
   Future<void> _loadSessions() async {
@@ -65,7 +72,6 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
         for (final sessionData in sessionsList) {
           final session = TerminalSession(
             id: sessionData['id'],
-            name: sessionData['name'],
             sessionId: sessionData['sessionId'],
           );
           _sessions.add(session);
@@ -81,13 +87,14 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
       _addNewSession();
     } else {
       // TabControllerを更新
-      setState(() {
+      if (mounted) {
         _tabController.dispose();
         _tabController = TabController(
           length: _sessions.length,
           vsync: this,
         );
-      });
+        setState(() {});
+      }
       
       // 既存セッションを再接続
       for (final session in _sessions) {
@@ -100,7 +107,6 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
     final prefs = await SharedPreferences.getInstance();
     final sessionsList = _sessions.map((session) => {
       'id': session.id,
-      'name': session.name,
       'sessionId': session.sessionId,
       'counter': _sessionCounter,
     }).toList();
@@ -110,20 +116,20 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   void _addNewSession() {
     final session = TerminalSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: 'Terminal ${_sessionCounter++}',
     );
+    _sessionCounter++;
     
     if (mounted) {
       setState(() {
         _sessions.add(session);
-        // TabControllerを再作成
-        _tabController.dispose();
-        _tabController = TabController(
-          length: _sessions.length,
-          vsync: this,
-          initialIndex: _sessions.length - 1,
-        );
       });
+      // TabControllerを再作成（setState外で）
+      _tabController.dispose();
+      _tabController = TabController(
+        length: _sessions.length,
+        vsync: this,
+        initialIndex: _sessions.length - 1,
+      );
     }
     
     // 新しいセッションを初期化
@@ -139,19 +145,23 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
     
     final session = _sessions[index];
     session.isActive = false;
-    session.channel?.sink.close(status.goingAway);
+    try {
+      session.channel?.sink.close(status.goingAway);
+    } catch (e) {
+      // WebSocketクローズエラーを無視
+    }
     
     if (mounted) {
       setState(() {
         _sessions.removeAt(index);
-        // TabControllerを再作成
-        _tabController.dispose();
-        _tabController = TabController(
-          length: _sessions.length,
-          vsync: this,
-          initialIndex: index > 0 ? index - 1 : 0,
-        );
       });
+      // TabControllerを再作成（setState外で）
+      _tabController.dispose();
+      _tabController = TabController(
+        length: _sessions.length,
+        vsync: this,
+        initialIndex: index > 0 ? index - 1 : 0,
+      );
     }
     
     _saveSessions();
@@ -170,6 +180,15 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
         print('Terminal input: "${data}" (bytes: ${data.codeUnits})');
       }
       _handleTerminalInput(session, data);
+    };
+    
+    // ターミナル出力時に自動スクロール
+    session.terminal.onTitleChange = (String title) {
+      // タイトル変更時もスクロール
+      Future.delayed(const Duration(milliseconds: 50), () {
+        // 最下部へスクロール
+        session.controller.clearSelection();
+      });
     };
     
     // WebSocket接続
@@ -191,6 +210,15 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
       _handleTerminalInput(session, data);
     };
     
+    // ターミナル出力時に自動スクロール
+    session.terminal.onTitleChange = (String title) {
+      // タイトル変更時もスクロール
+      Future.delayed(const Duration(milliseconds: 50), () {
+        // 最下部へスクロール
+        session.controller.clearSelection();
+      });
+    };
+    
     // WebSocket再接続
     _connectWebSocket(session, reconnect: true);
   }
@@ -203,6 +231,17 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
         // スペースキーが正しく処理されない問題への対処
         // onOutputが空文字列を返すことがあるため、明示的にチェック
         session.channel!.sink.add(data);
+        
+        // 入力後に最下部へスクロール
+        Future.delayed(const Duration(milliseconds: 50), () {
+          if (mounted && session.controller != null) {
+            try {
+              session.controller.clearSelection();
+            } catch (e) {
+              // スクロールエラーを無視
+            }
+          }
+        });
       }
       return;
     }
@@ -256,6 +295,16 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
           
           // サーバーからの出力を表示
           session.terminal.write(message);
+          // 自動的に最下部にスクロール
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (mounted && session.controller != null) {
+              try {
+                session.controller.clearSelection();
+              } catch (e) {
+                // スクロールエラーを無視
+              }
+            }
+          });
         },
         onError: (error) {
           if (!session.isActive) return;
@@ -280,11 +329,17 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
       // セッションハンドシェイク送信
       Future.delayed(Duration(milliseconds: 100), () {
         if (session.channel != null && session.channel!.closeCode == null) {
+          // モバイル用にターミナルサイズを調整
+          final screenWidth = MediaQuery.of(context).size.width;
+          final isMobile = screenWidth < 768;
+          final cols = isMobile ? 60 : 80;
+          final rows = isMobile ? 20 : 30;
+          
           session.channel!.sink.add(json.encode({
             'type': 'session',
             'sessionId': reconnect ? session.sessionId : null,
-            'cols': 80,
-            'rows': 30,
+            'cols': cols,
+            'rows': rows,
           }));
         }
       });
@@ -301,26 +356,46 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   
   @override
   void dispose() {
+    // セッションを先にクリーンアップ
     for (var session in _sessions) {
       session.isActive = false;
-      session.channel?.sink.close(status.goingAway);
+      try {
+        session.channel?.sink.close(status.goingAway);
+      } catch (e) {
+        // エラーを無視
+      }
     }
-    _tabController.dispose();
+    // TabControllerをdispose
+    try {
+      _tabController.dispose();
+    } catch (e) {
+      // エラーを無視
+    }
+    _terminalFocusNode.dispose();
     super.dispose();
   }
   
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final isMobile = screenWidth < 768;
+    final isTablet = screenWidth >= 768 && screenWidth < 1024;
+    final isDesktop = screenWidth >= 1024;
+    
+    // 横向きモバイルでは画面を最大活用
+    final appBarHeight = isMobile && isLandscape ? 48.0 : (isMobile ? 56.0 : 48.0);
+    
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF2D2D30),
-        toolbarHeight: 48,
+        toolbarHeight: appBarHeight,
         title: Row(
           children: [
-            const Icon(Icons.terminal, size: 20),
-            const SizedBox(width: 8),
-            const Text('Multi Terminal', style: TextStyle(fontSize: 16)),
+            Icon(Icons.terminal, size: isMobile ? 24 : 20),
             const Spacer(),
             if (_sessions.isNotEmpty && 
                 _tabController.index < _sessions.length && 
@@ -358,7 +433,7 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
+          preferredSize: Size.fromHeight(isMobile ? 56 : 48),
           child: Row(
             children: [
               Expanded(
@@ -374,12 +449,15 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                     return Tab(
                       child: Row(
                         children: [
-                          Text(session.name, style: const TextStyle(fontSize: 12)),
+                          Icon(Icons.terminal, size: isMobile ? 18 : 14),
                           if (_sessions.length > 1) ...[
                             const SizedBox(width: 8),
                             InkWell(
                               onTap: () => _closeSession(index),
-                              child: const Icon(Icons.close, size: 16),
+                              child: Padding(
+                                padding: EdgeInsets.all(isMobile ? 4 : 2),
+                                child: Icon(Icons.close, size: isMobile ? 20 : 16),
+                              ),
                             ),
                           ],
                         ],
@@ -389,93 +467,88 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.add, size: 20, color: Colors.white),
+                icon: Icon(Icons.add, size: isMobile ? 24 : 20, color: Colors.white),
                 onPressed: _addNewSession,
                 tooltip: 'New Terminal',
+                padding: EdgeInsets.all(isMobile ? 12 : 8),
               ),
             ],
           ),
         ),
-        actions: [
+        actions: isMobile 
+          ? [
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, size: 24),
+                onSelected: (value) {
+                  switch (value) {
+                    case 'upload':
+                      _handleFileUpload();
+                      break;
+                    case 'reset':
+                      _handleResetAll();
+                      break;
+                    case 'clear':
+                      _handleClearTerminal();
+                      break;
+                    case 'close':
+                      Navigator.of(context).pop();
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'upload',
+                    child: ListTile(
+                      leading: Icon(Icons.upload_file),
+                      title: Text('Upload File'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'reset',
+                    child: ListTile(
+                      leading: Icon(Icons.refresh),
+                      title: Text('Reset All'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'clear',
+                    child: ListTile(
+                      leading: Icon(Icons.clear_all),
+                      title: Text('Clear'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'close',
+                    child: ListTile(
+                      leading: Icon(Icons.close),
+                      title: Text('Close'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+            ]
+          : [
           IconButton(
-            icon: const Icon(Icons.upload_file, size: 20),
-            onPressed: () async {
-              // ファイル選択ダイアログ
-              final result = await FilePicker.platform.pickFiles(
-                allowMultiple: false,
-                withData: true,
-              );
-              
-              if (result != null && result.files.isNotEmpty) {
-                final file = result.files.first;
-                final currentSession = _sessions[_tabController.index];
-                
-                // ファイルサイズチェック（10MB制限）
-                if (file.size > 10 * 1024 * 1024) {
-                  currentSession.terminal.write('\r\n\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
-                  return;
-                }
-                
-                if (currentSession.channel != null && 
-                    currentSession.channel!.closeCode == null && 
-                    file.bytes != null) {
-                  // ファイルをBase64エンコード
-                  final base64Content = base64Encode(file.bytes!);
-                  
-                  // ファイルアップロードメッセージを送信
-                  currentSession.channel!.sink.add(json.encode({
-                    'type': 'file_upload',
-                    'filename': file.name,
-                    'content': base64Content,
-                    'encoding': 'base64',
-                  }));
-                  
-                  // アップロード開始通知
-                  currentSession.terminal.write('\r\n\x1B[33mUploading: ${file.name}...\x1B[0m\r\n');
-                }
-              }
-            },
+            icon: Icon(Icons.upload_file, size: isTablet ? 22 : 20),
+            onPressed: _handleFileUpload,
             tooltip: 'Upload File',
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            onPressed: () async {
-              // 全セッションをクリア
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('terminal_sessions');
-              
-              for (var session in _sessions) {
-                session.isActive = false;
-                session.channel?.sink.close(status.goingAway);
-              }
-              
-              if (mounted) {
-                setState(() {
-                  _sessions.clear();
-                  _sessionCounter = 1;
-                  _tabController.dispose();
-                  _tabController = TabController(length: 1, vsync: this);
-                });
-              }
-              
-              _addNewSession();
-            },
+            icon: Icon(Icons.refresh, size: isTablet ? 22 : 20),
+            onPressed: _handleResetAll,
             tooltip: 'Reset All',
           ),
           IconButton(
-            icon: const Icon(Icons.clear_all, size: 20),
-            onPressed: () {
-              if (_sessions.isNotEmpty && _tabController.index < _sessions.length) {
-                final session = _sessions[_tabController.index];
-                session.terminal.buffer.clear();
-                session.terminal.buffer.setCursor(0, 0);
-                session.terminal.write('SAKANA Terminal v1.0.0\r\n\$ ');
-              }
-            },
+            icon: Icon(Icons.clear_all, size: isTablet ? 22 : 20),
+            onPressed: _handleClearTerminal,
             tooltip: 'Clear',
           ),
           IconButton(
-            icon: const Icon(Icons.close, size: 20),
+            icon: Icon(Icons.close, size: isTablet ? 22 : 20),
             onPressed: () => Navigator.of(context).pop(),
             tooltip: 'Close',
           ),
@@ -485,18 +558,64 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
         ? const Center(child: CircularProgressIndicator())
         : Stack(
             children: [
-              TabBarView(
+              // モバイル用タブインジケーター
+              if (isMobile && _sessions.length > 1)
+                Positioned(
+                  top: 8,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_sessions.length, (index) {
+                      return Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _tabController.index == index
+                              ? AppTheme.secondaryColor
+                              : Colors.grey.withOpacity(0.5),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              GestureDetector(
+                // 左右スワイプでタブを切り替え（モバイルのみ）
+                onHorizontalDragEnd: isMobile ? (details) {
+                  if (details.velocity.pixelsPerSecond.dx > 100) {
+                    // 右にスワイプ - 前のタブへ
+                    if (_tabController.index > 0) {
+                      _tabController.animateTo(_tabController.index - 1);
+                    }
+                  } else if (details.velocity.pixelsPerSecond.dx < -100) {
+                    // 左にスワイプ - 次のタブへ
+                    if (_tabController.index < _sessions.length - 1) {
+                      _tabController.animateTo(_tabController.index + 1);
+                    }
+                  }
+                } : null,
+                child: TabBarView(
                 controller: _tabController,
+                physics: isMobile ? const NeverScrollableScrollPhysics() : null,
                 children: _sessions.map((session) {
                   return Stack(
                     children: [
                       Container(
                         color: const Color(0xFF1E1E1E),
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(isMobile ? 4 : 8),
                         child: Stack(
                           children: [
-                            RawKeyboardListener(
-                              focusNode: FocusNode()..requestFocus(),
+                            GestureDetector(
+                              onTap: () {
+                                // モバイルではタップでキーボードを表示
+                                if (isMobile) {
+                                  _terminalFocusNode.requestFocus();
+                                }
+                              },
+                              child: RawKeyboardListener(
+                              focusNode: isMobile ? _terminalFocusNode : (FocusNode()..requestFocus()),
                               onKey: (RawKeyEvent event) {
                                 // スペースキーの特別処理
                                 if (event is RawKeyDownEvent &&
@@ -511,9 +630,16 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                                   }
                                 }
                               },
-                              child: TerminalView(
+                              child: Container(
+                                constraints: BoxConstraints(
+                                  maxHeight: isMobile && _isKeyboardVisible 
+                                    ? (isLandscape ? screenHeight * 0.5 : screenHeight * 0.4)
+                                    : double.infinity,
+                                ),
+                                child: TerminalView(
                                 session.terminal,
                                 controller: session.controller,
+                                autofocus: true,
                                 theme: const TerminalTheme(
                                 cursor: Color(0xFFD4D4D4),
                                 selection: Color(0xFF264F78),
@@ -541,6 +667,8 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                                 ),
                               ),
                             ),
+                          ),
+                        ),
                             DropzoneView(
                               operation: DragOperation.copy,
                               cursor: CursorType.Default,
@@ -612,6 +740,7 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                   );
                 }).toList(),
               ),
+              ),
               // ドラッグオーバーレイ
               if (_isDragging)
                 Container(
@@ -654,6 +783,128 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                 ),
             ],
           ),
+      floatingActionButton: isMobile ? _buildMobileFloatingButtons() : null,
     );
+  }
+  
+  // モバイル用フローティングボタン
+  Widget _buildMobileFloatingButtons() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // キーボード表示/非表示トグル
+        FloatingActionButton.small(
+          heroTag: 'keyboard',
+          backgroundColor: const Color(0xFF2D2D30),
+          onPressed: () {
+            if (_isKeyboardVisible) {
+              FocusScope.of(context).unfocus();
+            } else {
+              _terminalFocusNode.requestFocus();
+            }
+          },
+          child: Icon(
+            _isKeyboardVisible ? Icons.keyboard_hide : Icons.keyboard,
+            size: 20,
+          ),
+        ),
+        const SizedBox(height: 8),
+        // コピー/ペースト用ボタン
+        FloatingActionButton.small(
+          heroTag: 'copy',
+          backgroundColor: const Color(0xFF2D2D30),
+          onPressed: () async {
+            // クリップボードから貼り付け
+            final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+            if (clipboardData != null && clipboardData.text != null) {
+              final currentSession = _sessions[_tabController.index];
+              if (currentSession.channel != null && 
+                  currentSession.channel!.closeCode == null) {
+                currentSession.channel!.sink.add(clipboardData.text!);
+              }
+            }
+          },
+          child: const Icon(Icons.paste, size: 20),
+        ),
+        const SizedBox(height: 8),
+        // 新規タブ追加ボタン
+        FloatingActionButton.small(
+          heroTag: 'add_tab',
+          backgroundColor: AppTheme.secondaryColor,
+          onPressed: _addNewSession,
+          child: const Icon(Icons.add, size: 20),
+        ),
+      ],
+    );
+  }
+  
+  // ファイルアップロード処理
+  Future<void> _handleFileUpload() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: true,
+    );
+    
+    if (result != null && result.files.isNotEmpty) {
+      final file = result.files.first;
+      final currentSession = _sessions[_tabController.index];
+      
+      // ファイルサイズチェック（100MB制限）
+      if (file.size > 100 * 1024 * 1024) {
+        currentSession.terminal.write('\r\n\x1B[31mError: File size exceeds 100MB limit\x1B[0m\r\n');
+        return;
+      }
+      
+      if (currentSession.channel != null && 
+          currentSession.channel!.closeCode == null && 
+          file.bytes != null) {
+        // ファイルをBase64エンコード
+        final base64Content = base64Encode(file.bytes!);
+        
+        // ファイルアップロードメッセージを送信
+        currentSession.channel!.sink.add(json.encode({
+          'type': 'file_upload',
+          'filename': file.name,
+          'content': base64Content,
+          'encoding': 'base64',
+        }));
+        
+        // アップロード開始通知
+        currentSession.terminal.write('\r\n\x1B[33mUploading: ${file.name}...\x1B[0m\r\n');
+      }
+    }
+  }
+  
+  // 全セッションリセット処理
+  Future<void> _handleResetAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('terminal_sessions');
+    
+    for (var session in _sessions) {
+      session.isActive = false;
+      session.channel?.sink.close(status.goingAway);
+    }
+    
+    if (mounted) {
+      setState(() {
+        _sessions.clear();
+        _sessionCounter = 1;
+      });
+      // TabControllerを再作成（setState外で）
+      _tabController.dispose();
+      _tabController = TabController(length: 1, vsync: this);
+    }
+    
+    _addNewSession();
+  }
+  
+  // ターミナルクリア処理
+  void _handleClearTerminal() {
+    if (_sessions.isNotEmpty && _tabController.index < _sessions.length) {
+      final session = _sessions[_tabController.index];
+      session.terminal.buffer.clear();
+      session.terminal.buffer.setCursor(0, 0);
+      session.terminal.write('SAKANA Terminal v1.0.0\r\n\$ ');
+    }
   }
 }
