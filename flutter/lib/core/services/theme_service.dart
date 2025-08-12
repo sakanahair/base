@@ -15,6 +15,11 @@ class ThemeService extends ChangeNotifier {
       color: Color(0xFF5D9B9B),
       icon: Icons.water,
     ),
+    'mint': ThemePreset(
+      name: 'ミントグリーン（オリジナル）',
+      color: Color(0xFFA8D8D0),
+      icon: Icons.eco,
+    ),
     'line': ThemePreset(
       name: 'LINE',
       color: Color(0xFF00B900),

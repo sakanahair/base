@@ -194,8 +194,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go('/chat/new'),
-        backgroundColor: themeService.primaryColor,
-        foregroundColor: themeService.onPrimaryColor,
+        backgroundColor: const Color(0xFF8A9A8D), // くすんだ緑グレー
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add_comment),
       ),
     );
@@ -225,10 +225,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             children: [
               CircleAvatar(
                 radius: 25,
-                backgroundColor: _getChannelColor(chat['channel']),
+                backgroundColor: _getChannelColor(chat['channel']).withOpacity(0.2),
                 child: Text(
                   chat['name'][0],
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                  style: TextStyle(color: _getChannelColor(chat['channel']), fontSize: 18, fontWeight: FontWeight.w500),
                 ),
               ),
               Positioned(
@@ -276,7 +276,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                   height: 8,
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
-                    color: themeService.primaryColor,
+                    color: const Color(0xFF8B95A7), // くすんだ青
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -295,7 +295,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: const Color(0xFFA67B7B), // くすんだ赤
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -325,10 +325,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
           onTap: () => context.go('/chat/conversation/${friend['id']}'),
           leading: CircleAvatar(
             radius: 25,
-            backgroundColor: _getChannelColor(friend['channel']),
+            backgroundColor: _getChannelColor(friend['channel']).withOpacity(0.2),
             child: Text(
               friend['name'][0],
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: _getChannelColor(friend['channel']), fontSize: 18, fontWeight: FontWeight.w500),
             ),
           ),
           title: Text(friend['name']),
@@ -377,12 +377,12 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: themeService.primaryColorBackground,
+                color: const Color(0xFF9B8B9B).withOpacity(0.15), // くすんだ紫の薄い背景
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.group,
-                color: themeService.primaryColor,
+                color: const Color(0xFF9B8B9B), // くすんだ紫
               ),
             ),
             title: Text(
@@ -404,17 +404,18 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   Color _getChannelColor(String channel) {
+    // くすんだ色合いのバリエーション
     switch (channel) {
       case 'LINE':
-        return const Color(0xFF00B900);
+        return const Color(0xFF7C9885); // くすんだ緑
       case 'SMS':
-        return Colors.blue;
+        return const Color(0xFF8B95A7); // くすんだ青
       case 'App':
-        return Colors.purple;
+        return const Color(0xFF9B8B9B); // くすんだ紫
       case 'WebChat':
-        return Colors.orange;
+        return const Color(0xFFA89874); // くすんだオレンジ
       default:
-        return Colors.grey;
+        return const Color(0xFF8B8B8B); // くすんだグレー
     }
   }
 
