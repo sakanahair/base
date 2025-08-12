@@ -2303,7 +2303,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     TextButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        // TODO: 編集画面を開く
+                        _showEditCustomerModal(context, customer);
                       },
                       icon: const Icon(Icons.edit),
                       label: const Text('編集'),
@@ -2609,6 +2609,193 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             ],
           ),
         ),
+      ),
+    );
+  }
+  
+  void _showEditCustomerModal(BuildContext context, Customer customer) {
+    final customerService = Provider.of<CustomerService>(context, listen: false);
+    final tagService = Provider.of<TagService>(context, listen: false);
+    
+    // テキストコントローラーを初期値で設定
+    final nameController = TextEditingController(text: customer.name);
+    final phoneController = TextEditingController(text: customer.phone);
+    final emailController = TextEditingController(text: customer.email);
+    final memoController = TextEditingController(text: customer.memo);
+    String selectedChannel = customer.channel;
+    String selectedGender = customer.gender;
+    DateTime? selectedBirthday = customer.birthday;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('顧客情報編集'),
+        content: SingleChildScrollView(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 名前
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: '名前 *',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 電話番号
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: '電話番号 *',
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+                
+                // メールアドレス
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'メールアドレス',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                
+                // チャンネル
+                DropdownButtonFormField<String>(
+                  value: selectedChannel,
+                  decoration: const InputDecoration(
+                    labelText: 'チャンネル',
+                    prefixIcon: Icon(Icons.chat_bubble),
+                  ),
+                  items: ['なし', 'LINE', 'SMS', 'App', 'WebChat'].map((channel) {
+                    return DropdownMenuItem(
+                      value: channel,
+                      child: Text(channel),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      selectedChannel = value;
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // 性別
+                DropdownButtonFormField<String>(
+                  value: selectedGender.isNotEmpty ? selectedGender : null,
+                  decoration: const InputDecoration(
+                    labelText: '性別',
+                    prefixIcon: Icon(Icons.wc),
+                  ),
+                  items: ['男性', '女性', 'その他'].map((gender) {
+                    return DropdownMenuItem(
+                      value: gender,
+                      child: Text(gender),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      selectedGender = value;
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // 誕生日
+                ListTile(
+                  leading: const Icon(Icons.cake),
+                  title: Text(
+                    selectedBirthday != null 
+                      ? DateFormat('yyyy年MM月dd日').format(selectedBirthday!)
+                      : '誕生日を選択',
+                  ),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedBirthday ?? DateTime(1990, 1, 1),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      selectedBirthday = picked;
+                      (context as Element).markNeedsBuild();
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                
+                // メモ
+                TextField(
+                  controller: memoController,
+                  decoration: const InputDecoration(
+                    labelText: 'メモ',
+                    prefixIcon: Icon(Icons.note),
+                    alignLabelWithHint: true,
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                // 更新したCustomerオブジェクトを作成
+                final updatedCustomer = customer.copyWith(
+                  name: nameController.text,
+                  phone: phoneController.text,
+                  email: emailController.text,
+                  channel: selectedChannel,
+                  gender: selectedGender,
+                  birthday: selectedBirthday,
+                  memo: memoController.text,
+                );
+                
+                // CustomerServiceで更新
+                await customerService.updateCustomer(customer.id, updatedCustomer);
+                
+                // タグも同期（既存のタグは保持）
+                final existingTags = tagService.getUserTags(customer.id);
+                if (existingTags.isNotEmpty) {
+                  await tagService.setUserTags(customer.id, existingTags);
+                }
+                
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${nameController.text}の情報を更新しました'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('名前と電話番号は必須です'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+            child: const Text('更新'),
+          ),
+        ],
       ),
     );
   }

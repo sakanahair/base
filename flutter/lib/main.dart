@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+// Web専用のインポートを条件付きに
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -17,6 +17,10 @@ import 'core/services/multi_tenant_service.dart';
 import 'core/utils/setup_super_admin.dart';
 import 'shared/widgets/splash_screen.dart';
 
+// Web専用のインポートとスタブを条件付きで
+import 'web_url_strategy_stub.dart'
+  if (dart.library.html) 'web_url_strategy.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -28,8 +32,10 @@ void main() async {
   // Optionally disable overflow indicators even in debug mode
   debugDisableClipLayers = true;
   
-  // Set URL strategy for web
-  setUrlStrategy(PathUrlStrategy());
+  // Set URL strategy for web only
+  if (kIsWeb) {
+    setUrlStrategy();
+  }
   
   try {
     // Initialize Firebase with FlutterFire generated options
