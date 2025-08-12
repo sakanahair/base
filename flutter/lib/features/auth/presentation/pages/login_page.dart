@@ -5,7 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/simplified_auth_service.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../shared/widgets/splash_screen.dart';
 import '../../../../shared/utils/responsive_helper.dart';
@@ -18,9 +18,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
-  final _authService = AuthService();
   final _emailController = TextEditingController(text: 'admin@sakana.hair');
-  final _passwordController = TextEditingController();
+  final _passwordController = TextEditingController(text: 'Pass12345');
   bool _showSplash = true;
   bool _isLoading = false;
   late AnimationController _gridController;
@@ -330,15 +329,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     
     await Future.delayed(const Duration(seconds: 1));
     
-    final success = await _authService.loginWithProvider(provider);
-    
-    if (success && mounted) {
-      context.go('/dashboard');
-    } else if (mounted) {
+    // TODO: Implement social login
+    if (mounted) {
       ResponsiveHelper.showResponsiveSnackBar(
         context,
-        message: '${provider}ログインに失敗しました',
-        backgroundColor: AppTheme.errorColor,
+        message: '${provider}ログインは準備中です',
+        backgroundColor: AppTheme.warningColor,
       );
     }
     
@@ -544,7 +540,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       _isLoading = true;
     });
     
-    final success = await _authService.login(
+    final authService = Provider.of<SimplifiedAuthService>(context, listen: false);
+    final success = await authService.login(
       _emailController.text,
       _passwordController.text,
     );

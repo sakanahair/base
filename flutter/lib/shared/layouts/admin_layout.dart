@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/simplified_auth_service.dart';
 import '../../core/services/theme_service.dart';
 import 'package:provider/provider.dart';
 import '../../features/terminal/presentation/pages/terminal_page.dart';
@@ -328,91 +329,195 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
               ],
             ),
           
-          // Profile Menu
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 8 : 16,
-            ),
-            child: PopupMenuButton<String>(
-              child: Container(
+          // Profile Menu with Crown Badge for Super Admin
+          Consumer<SimplifiedAuthService>(
+            builder: (context, authService, child) {
+              final isSuperAdmin = authService.isAdmin;
+              
+              return Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 8 : 12,
-                  vertical: 8,
+                  horizontal: isMobile ? 8 : 16,
                 ),
-                decoration: BoxDecoration(
-                  color: themeService.primaryColor.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppTheme.secondaryColor,
-                          width: 2,
+                child: PopupMenuButton<String>(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 8 : 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: themeService.primaryColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSuperAdmin ? Colors.amber : AppTheme.secondaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.person,
+                                size: 20,
+                                color: isSuperAdmin ? Colors.amber : AppTheme.secondaryColor,
+                              ),
+                            ),
+                            if (isSuperAdmin)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.workspace_premium,
+                                    size: 10,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 20,
-                        color: AppTheme.secondaryColor,
+                        if (!isMobile) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            isSuperAdmin ? 'SUPER管理者' : '管理者',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                                context,
+                                baseFontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_outline, size: 20),
+                          SizedBox(width: 12),
+                          Text('プロフィール'),
+                        ],
                       ),
                     ),
-                    if (!isMobile) ...[
-                      const SizedBox(width: 8),
-                      const Text(
-                        '管理者',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
+                    if (isSuperAdmin) ...[
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'create_user',
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add, size: 20, color: Colors.amber),
+                            SizedBox(width: 12),
+                            Text('ユーザー作成'),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.white,
+                      const PopupMenuItem(
+                        value: 'manage_sites',
+                        child: Row(
+                          children: [
+                            Icon(Icons.business, size: 20, color: Colors.amber),
+                            SizedBox(width: 12),
+                            Text('サイト管理'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'manage_users',
+                        child: Row(
+                          children: [
+                            Icon(Icons.group, size: 20, color: Colors.amber),
+                            SizedBox(width: 12),
+                            Text('ユーザー管理'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'site_assignment',
+                        child: Row(
+                          children: [
+                            Icon(Icons.assignment, size: 20, color: Colors.amber),
+                            SizedBox(width: 12),
+                            Text('サイト割り当て'),
+                          ],
+                        ),
                       ),
                     ],
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, size: 20),
+                          SizedBox(width: 12),
+                          Text('ログアウト'),
+                        ],
+                      ),
+                    ),
                   ],
+                  onSelected: (value) {
+                    if (context.isTouchDevice) {
+                      ResponsiveHelper.addHapticFeedback();
+                    }
+                    switch (value) {
+                      case 'logout':
+                        _authService.logout();
+                        context.go('/login');
+                        break;
+                      case 'create_user':
+                        context.go('/super-admin/create-user');
+                        break;
+                      case 'manage_sites':
+                        context.go('/super-admin/sites');
+                        break;
+                      case 'manage_users':
+                        context.go('/super-admin/users');
+                        break;
+                      case 'site_assignment':
+                        context.go('/super-admin/site-assignment');
+                        break;
+                      case 'profile':
+                        // TODO: Navigate to profile
+                        break;
+                    }
+                  },
                 ),
-              ),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'profile',
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_outline, size: 20),
-                      SizedBox(width: 12),
-                      Text('プロフィール'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout, size: 20),
-                      SizedBox(width: 12),
-                      Text('ログアウト'),
-                    ],
-                  ),
-                ),
-              ],
-              onSelected: (value) {
-                if (context.isTouchDevice) {
-                  ResponsiveHelper.addHapticFeedback();
-                }
-                if (value == 'logout') {
-                  _authService.logout();
-                  context.go('/login');
-                }
-              },
-            ),
+              );
+            },
           ),
         ],
       ),

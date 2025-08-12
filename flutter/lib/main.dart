@@ -11,7 +11,10 @@ import 'core/router/app_router.dart';
 import 'core/services/customer_service.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/tag_service.dart';
-import 'core/services/auth_service.dart';
+import 'core/services/simplified_auth_service.dart';
+import 'core/services/enhanced_auth_service.dart';
+import 'core/services/multi_tenant_service.dart';
+import 'core/utils/setup_super_admin.dart';
 import 'shared/widgets/splash_screen.dart';
 
 void main() async {
@@ -34,6 +37,12 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     debugPrint('Firebase initialized successfully');
+    
+    // スーパー管理者の初期セットアップ（開発時のみ）
+    // 本番環境では削除またはコメントアウトしてください
+    if (!kReleaseMode) {
+      await setupSuperAdmin(); // 初回実行後はコメントアウト推奨
+    }
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
     // Continue without Firebase if initialization fails
@@ -81,7 +90,9 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => SimplifiedAuthService()),
+        ChangeNotifierProvider(create: (_) => EnhancedAuthService()),
+        ChangeNotifierProvider(create: (_) => MultiTenantService()),
         ChangeNotifierProvider(create: (_) => CustomerService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
         ChangeNotifierProvider(create: (_) => TagService()),

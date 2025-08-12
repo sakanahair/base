@@ -15,13 +15,17 @@ import '../../features/analytics/presentation/pages/analytics_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/settings/presentation/pages/theme_settings_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/super_admin/create_user_screen.dart';
+import '../../features/super_admin/site_assignment_screen.dart';
+import '../../features/super_admin/user_management_screen.dart';
+import '../../features/sites/site_management_screen.dart';
 import '../../shared/layouts/admin_layout.dart';
-import '../services/auth_service.dart';
+import '../services/simplified_auth_service.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
-  static final _authService = AuthService();
+  static final _authService = SimplifiedAuthService();
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -189,6 +193,59 @@ class AppRouter {
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
               child: const ThemeSettingsPage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            ),
+          ),
+          // Super Admin Routes
+          GoRoute(
+            path: '/super-admin/create-user',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const CreateUserScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            ),
+          ),
+          GoRoute(
+            path: '/super-admin/sites',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const SiteManagementScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            ),
+          ),
+          GoRoute(
+            path: '/super-admin/users',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const UserManagementScreen(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+            ),
+          ),
+          GoRoute(
+            path: '/super-admin/site-assignment',
+            pageBuilder: (context, state) => CustomTransitionPage(
+              key: state.pageKey,
+              child: const SiteAssignmentScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
                   opacity: animation,

@@ -157,7 +157,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 tabs: const [
                   Tab(text: 'トーク'),
-                  Tab(text: '友だち'),
+                  Tab(text: '顧客'),
                   Tab(text: 'グループ'),
                 ],
               ),
@@ -672,7 +672,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                         Flexible(
                           child: Text(
                             chat['name'],
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -813,48 +816,151 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   Widget _buildFriendsList(BuildContext context, ThemeService themeService) {
     final friends = _getDummyFriends();
     
-    return ListView.builder(
-      itemCount: friends.length,
-      itemBuilder: (context, index) {
-        final friend = friends[index];
-        return ListTile(
-          onTap: () => context.go('/chat/conversation/${friend['id']}'),
-          leading: CircleAvatar(
-            radius: 25,
-            backgroundColor: _getChannelColor(friend['channel']).withOpacity(0.2),
-            child: Text(
-              friend['name'][0],
-              style: TextStyle(color: _getChannelColor(friend['channel']), fontSize: 18, fontWeight: FontWeight.w500),
+    return Column(
+      children: [
+        // 新規顧客作成ボタン
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreateCustomerDialog(context),
+              icon: const Icon(Icons.person_add),
+              label: const Text(
+                '新規顧客作成',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: themeService.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
             ),
           ),
-          title: Text(friend['name']),
-          subtitle: Text(
-            '${friend['channel']} • 最終アクティブ: ${friend['lastActive']}',
-            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-          ),
-          trailing: PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'chat',
-                child: ListTile(
-                  leading: Icon(Icons.chat),
-                  title: Text('チャットを開始'),
-                  contentPadding: EdgeInsets.zero,
+        ),
+        // 顧客リスト
+        Expanded(
+          child: ListView.builder(
+            itemCount: friends.length,
+            itemBuilder: (context, index) {
+              final friend = friends[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey.shade200),
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'block',
                 child: ListTile(
-                  leading: Icon(Icons.block),
-                  title: Text('ブロック'),
-                  contentPadding: EdgeInsets.zero,
+                  onTap: () => _showCustomerDetailsFromFriend(context, friend),
+                  leading: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundColor: _getChannelColor(friend['channel']).withOpacity(0.2),
+                        child: Text(
+                          friend['name'][0],
+                          style: TextStyle(
+                            color: _getChannelColor(friend['channel']), 
+                            fontSize: 18, 
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: _getChannelColor(friend['channel']),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: Icon(
+                            _getChannelIcon(friend['channel']),
+                            size: 10,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  title: Text(
+                    friend['name'],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 2),
+                      Text(
+                        '${friend['channel']} • 登録日: ${friend['registeredDate'] ?? '2024/01/15'}',
+                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      ),
+                      Text(
+                        '最終来店: ${friend['lastVisit'] ?? '3日前'} • 累計: ${friend['totalSpent'] ?? '¥45,000'}',
+                        style: TextStyle(fontSize: 11, color: AppTheme.textTertiary),
+                      ),
+                    ],
+                  ),
+                  trailing: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem<String>(
+                        value: 'chat',
+                        child: ListTile(
+                          leading: Icon(Icons.chat),
+                          title: Text('チャットを開始'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit),
+                          title: Text('顧客情報編集'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete, color: Colors.red),
+                          title: Text('削除', style: TextStyle(color: Colors.red)),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'chat':
+                          context.go('/chat/conversation/${friend['id']}');
+                          break;
+                        case 'edit':
+                          _showCustomerDetailsFromFriend(context, friend);
+                          break;
+                        case 'delete':
+                          _showDeleteCustomerDialog(context, friend);
+                          break;
+                      }
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ).animate().fadeIn(delay: (index * 50).ms);
+            },
           ),
-        ).animate().fadeIn(delay: (index * 50).ms);
-      },
+        ),
+      ],
     );
   }
 
@@ -1680,5 +1786,463 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'channel': 'App',
       },
     ];
+  }
+
+  void _showCreateCustomerDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final phoneController = TextEditingController();
+    final emailController = TextEditingController();
+    String selectedChannel = 'なし';
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('新規顧客作成'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: '名前',
+                  hintText: '例: 田中 太郎',
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: '電話番号',
+                  hintText: '例: 090-1234-5678',
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'メールアドレス',
+                  hintText: '例: customer@example.com',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedChannel,
+                decoration: const InputDecoration(
+                  labelText: 'チャンネル',
+                  prefixIcon: Icon(Icons.chat_bubble),
+                ),
+                items: ['なし', 'LINE', 'SMS', 'App', 'WebChat'].map((channel) {
+                  return DropdownMenuItem(
+                    value: channel,
+                    child: Text(channel),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    selectedChannel = value;
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${nameController.text}を顧客として登録しました'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('名前と電話番号は必須です'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            },
+            child: const Text('作成'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditCustomerDialog(BuildContext context, Map<String, dynamic> customer) {
+    final nameController = TextEditingController(text: customer['name']);
+    final phoneController = TextEditingController(text: '090-1234-5678');
+    final emailController = TextEditingController(
+      text: customer['name'].replaceAll(' ', '').toLowerCase() + '@example.com',
+    );
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('顧客情報編集'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: '名前',
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(
+                  labelText: '電話番号',
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'メールアドレス',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('顧客情報を更新しました'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('更新'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteCustomerDialog(BuildContext context, Map<String, dynamic> customer) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('顧客削除確認'),
+        content: Text('${customer['name']}を削除してもよろしいですか？\nこの操作は取り消せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${customer['name']}を削除しました'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('削除', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomerDetailsFromFriend(BuildContext context, Map<String, dynamic> friend) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    final tagService = Provider.of<TagService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ヘッダー
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        friend['name'][0],
+                        style: TextStyle(
+                          color: themeService.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            friend['name'],
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '090-1234-5678',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // アクションボタン
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(Icons.chat, 'チャット', () {
+                      Navigator.pop(context);
+                      context.go('/chat/conversation/${friend['id']}');
+                    }),
+                    _buildActionButton(Icons.phone, '電話', () {}),
+                    _buildActionButton(Icons.calendar_today, '予約', () {}),
+                    _buildActionButton(Icons.history, '履歴', () {}),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // コンテンツ
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // タグ
+                      if (tagService.getUserTags(friend['id']).isNotEmpty) ...[
+                        _buildSectionTitle('タグ'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: tagService.getUserTags(friend['id']).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: tagService.getTagColor(tag).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: tagService.getTagColor(tag).withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                tag,
+                                style: TextStyle(
+                                  color: tagService.getTagColor(tag),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // 基本情報
+                      _buildSectionTitle('基本情報'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('電話番号', '090-1234-5678'),
+                      _buildInfoRow('メール', friend['name'].replaceAll(' ', '').toLowerCase() + '@example.com'),
+                      _buildInfoRow('誕生日', '1990年1月1日'),
+                      _buildInfoRow('性別', '女性'),
+                      _buildInfoRow('登録日', friend['registeredDate'] ?? '2024年1月15日'),
+                      _buildInfoRow('チャンネル', friend['channel']),
+                      const SizedBox(height: 24),
+                      
+                      // 利用状況
+                      _buildSectionTitle('利用状況'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('累計利用額', friend['totalSpent'] ?? '¥45,000', Icons.attach_money, Colors.green),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('来店回数', '12回', Icons.store, Colors.blue),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('最終来店', friend['lastVisit'] ?? '3日前', Icons.access_time, Colors.orange),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('平均単価', '¥3,750', Icons.receipt, Colors.purple),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // コミュニケーション
+                      _buildSectionTitle('コミュニケーション'),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildCommRow(friend['channel'], '連携済み', true),
+                            const Divider(),
+                            _buildCommRow('最終連絡', friend['lastActive'] ?? '1時間前', false),
+                            const Divider(),
+                            _buildCommRow('メッセージ数', '25通', false),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // メモ
+                      _buildSectionTitle('メモ'),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: const Text(
+                          'カラーにこだわりがあるお客様。\n前回はアッシュ系のカラーを希望。',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // フッター
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showEditCustomerDialog(context, friend);
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('編集'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        showDialog(
+                          context: context,
+                          builder: (context) => TagManagerDialog(
+                            userId: friend['id'],
+                            userName: friend['name'],
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.label),
+                      label: const Text('タグ管理'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.go('/chat/conversation/${friend['id']}');
+                      },
+                      icon: const Icon(Icons.chat),
+                      label: const Text('チャット開始'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: themeService.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
