@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/models/customer.dart';
-import '../../../../core/services/customer_service.dart';
+import '../../../../core/services/mock_customer_service.dart' as mock;
 import '../../../../shared/utils/responsive_helper.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_detail_view.dart';
@@ -43,7 +43,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
     // 顧客サービスの初期化
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('SmartCustomersPage: Initializing customers...');
-      final service = context.read<CustomerService>();
+      final service = context.read<mock.CustomerService>();
       service.initializeCustomers();
       debugPrint('SmartCustomersPage: Customers count = ${service.customers.length}');
     });
@@ -68,7 +68,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
     
     // 未読をクリア
     if (customer.unreadCount > 0) {
-      context.read<CustomerService>().markAsRead(customer.id);
+      context.read<mock.CustomerService>().markAsRead(customer.id);
     }
     
     // モバイルの場合
@@ -245,7 +245,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
               controller: _searchController,
               focusNode: _searchFocus,
               onChanged: (value) {
-                context.read<CustomerService>().search(value);
+                context.read<mock.CustomerService>().search(value);
               },
               decoration: InputDecoration(
                 hintText: '顧客を検索...',
@@ -262,7 +262,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          context.read<CustomerService>().search('');
+                          context.read<mock.CustomerService>().search('');
                         },
                       )
                     : null,
@@ -282,7 +282,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
           const SizedBox(width: 12),
           
           // ソートボタン
-          PopupMenuButton<CustomerSortType>(
+          PopupMenuButton<mock.CustomerSortType>(
             icon: Icon(
               Icons.sort,
               color: AppTheme.textSecondary,
@@ -291,11 +291,11 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
               borderRadius: BorderRadius.circular(12),
             ),
             onSelected: (type) {
-              context.read<CustomerService>().setSortType(type);
+              context.read<mock.CustomerService>().setSortType(type);
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: CustomerSortType.unread,
+                value: mock.CustomerSortType.unread,
                 child: Row(
                   children: [
                     Icon(Icons.mark_email_unread, size: 20),
@@ -305,7 +305,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.recent,
+                value: mock.CustomerSortType.recent,
                 child: Row(
                   children: [
                     Icon(Icons.access_time, size: 20),
@@ -315,7 +315,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.vip,
+                value: mock.CustomerSortType.vip,
                 child: Row(
                   children: [
                     Icon(Icons.star, size: 20),
@@ -325,7 +325,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.purchase,
+                value: mock.CustomerSortType.purchase,
                 child: Row(
                   children: [
                     Icon(Icons.attach_money, size: 20),
@@ -335,7 +335,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.reservation,
+                value: mock.CustomerSortType.reservation,
                 child: Row(
                   children: [
                     Icon(Icons.calendar_today, size: 20),
@@ -345,7 +345,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.name,
+                value: mock.CustomerSortType.name,
                 child: Row(
                   children: [
                     Icon(Icons.sort_by_alpha, size: 20),
@@ -355,7 +355,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
                 ),
               ),
               const PopupMenuItem(
-                value: CustomerSortType.activity,
+                value: mock.CustomerSortType.activity,
                 child: Row(
                   children: [
                     Icon(Icons.local_fire_department, size: 20, color: Colors.orange),
@@ -392,7 +392,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
   }
 
   Widget _buildCustomerList() {
-    return Consumer<CustomerService>(
+    return Consumer<mock.CustomerService>(
       builder: (context, service, child) {
         debugPrint('_buildCustomerList: isLoading=${service.isLoading}, customers=${service.customers.length}');
         
@@ -544,7 +544,7 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
               title: Text(customer.isVip ? 'VIPを解除' : 'VIPに設定'),
               onTap: () {
                 Navigator.pop(context);
-                context.read<CustomerService>().toggleVip(customer.id);
+                context.read<mock.CustomerService>().toggleVip(customer.id);
               },
             ),
             ListTile(

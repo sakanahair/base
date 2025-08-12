@@ -4,7 +4,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/utils/responsive_helper.dart';
 import '../widgets/customer_card.dart';
 import '../../../../core/models/customer.dart';
-import '../../../../core/services/customer_service.dart';
 import '../../../../core/services/mock_customer_service.dart';
 
 enum ViewMode { list, chat, split }
@@ -17,7 +16,7 @@ class CustomersSplitPage extends StatefulWidget {
 }
 
 class _CustomersSplitPageState extends State<CustomersSplitPage> {
-  final CustomerService _customerService = CustomerService();
+  final MockCustomerService _customerService = MockCustomerService();
   List<Customer> _customers = [];
   Customer? _selectedCustomer;
   ViewMode _viewMode = ViewMode.split;

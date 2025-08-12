@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/services/customer_service.dart';
+import '../../../../core/services/mock_customer_service.dart';
 import '../../../../shared/utils/responsive_helper.dart';
 
 class CustomerFilterBar extends StatefulWidget {

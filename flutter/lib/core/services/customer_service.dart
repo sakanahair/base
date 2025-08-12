@@ -1,444 +1,645 @@
 import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/customer.dart';
-import 'mock_customer_service.dart';
-
-enum CustomerSortType {
-  unread,      // 未読順
-  recent,      // 最新順
-  vip,         // VIP順
-  purchase,    // 購入額順
-  reservation, // 予約日順
-  name,        // 名前順
-  activity,    // アクティビティスコア順（新規追加）
-}
-
-enum CustomerFilterType {
-  all,
-  unread,
-  vip,
-  online,
-  hasReservation,
-  birthday,
-}
+import 'dart:convert';
+import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CustomerService extends ChangeNotifier {
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final List<Customer> _customers = [];
+  static const String _storageKey = 'sakana_customers';
+  static const String _lastSyncKey = 'sakana_customers_last_sync';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  List<Customer> _customers = [];
-  List<Customer> _filteredCustomers = [];
-  bool _isLoading = false;
-  String _searchQuery = '';
-  CustomerSortType _sortType = CustomerSortType.unread; // デフォルトを未読順に戻す
-  Set<CustomerFilterType> _activeFilters = {CustomerFilterType.all};
+  DateTime? _lastSyncTime;
+  Timer? _syncTimer;
+  final List<PendingChange> _offlineQueue = [];
+  bool _isOnline = true;
+  bool _isSyncing = false;
   
-  // Getters
-  List<Customer> get customers => _filteredCustomers;
-  bool get isLoading => _isLoading;
-  CustomerSortType get sortType => _sortType;
-  Set<CustomerFilterType> get activeFilters => _activeFilters;
-  String get searchQuery => _searchQuery;
-  
-  // 統計情報
-  int get totalCustomers => _customers.length;
-  int get unreadCount => _customers.where((c) => c.unreadCount > 0).length;
-  int get onlineCount => _customers.where((c) => c.status == CustomerStatus.online).length;
-  int get vipCount => _customers.where((c) => c.isVip).length;
-
-  // 顧客リストの初期化とリアルタイム監視
-  void initializeCustomers() {
-    debugPrint('CustomerService: initializeCustomers called');
-    if (_customers.isNotEmpty) {
-      debugPrint('CustomerService: Already initialized with ${_customers.length} customers');
-      return; // 既に初期化済みの場合はスキップ
-    }
-    
-    _isLoading = true;
-    notifyListeners();
-
-    // モックデータを使用（開発環境）
-    // TODO: 本番環境ではFirestoreを使用
-    _customers = MockCustomerService.generateMockCustomers(count: 50);
-    debugPrint('CustomerService: Generated ${_customers.length} mock customers');
-    _applyFiltersAndSort();
-    debugPrint('CustomerService: After filtering, ${_filteredCustomers.length} customers');
-    _isLoading = false;
-    notifyListeners();
-    
-    // リアルタイムの更新をシミュレート
-    _simulateRealtimeUpdates();
-
-    // Firestore版（本番用・現在はコメントアウト）
-    // _firestore
-    //     .collection('customers')
-    //     .snapshots()
-    //     .listen((snapshot) {
-    //   _customers = snapshot.docs
-    //       .map((doc) => Customer.fromFirestore(doc))
-    //       .toList();
-    //   
-    //   _applyFiltersAndSort();
-    //   _isLoading = false;
-    //   notifyListeners();
-    // });
+  CustomerService() {
+    _initialize();
   }
   
-  // リアルタイム更新のシミュレーション
-  void _simulateRealtimeUpdates() {
-    // 5秒ごとにランダムな顧客のステータスを更新
-    Future.delayed(const Duration(seconds: 5), () {
-      if (_customers.isNotEmpty) {
-        final randomIndex = DateTime.now().millisecond % _customers.length;
-        final customer = _customers[randomIndex];
-        
-        // ランダムにステータスを変更
-        final updates = <String, dynamic>{};
-        
-        // 20%の確率でオンライン状態を切り替え
-        if (DateTime.now().millisecond % 5 == 0) {
-          final newStatus = customer.status == CustomerStatus.online
-              ? CustomerStatus.offline
-              : CustomerStatus.online;
-          _customers[randomIndex] = customer.copyWith(status: newStatus);
+  Future<void> _initialize() async {
+    // 1. LocalStorageから高速読み込み
+    await _loadFromLocalStorage();
+    
+    // 2. Firebaseとの同期を開始
+    _startFirebaseSync();
+    
+    // 3. 定期同期タイマーを設定（5分ごと）
+    _syncTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      _syncWithFirebase();
+    });
+  }
+  
+  @override
+  void dispose() {
+    _syncTimer?.cancel();
+    super.dispose();
+  }
+  
+  // LocalStorageから顧客データを高速読み込み
+  Future<void> _loadFromLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? customersJson = prefs.getString(_storageKey);
+      
+      if (customersJson != null && customersJson.isNotEmpty) {
+        final List<dynamic> customersList = json.decode(customersJson);
+        _customers.clear();
+        _customers.addAll(
+          customersList.map((data) => Customer.fromJson(data)).toList()
+        );
+        notifyListeners();
+      } else {
+        // 初回起動時のみデモデータを設定
+        _initializeDemoData();
+      }
+      
+      // 最終同期時刻を読み込み
+      final String? lastSyncStr = prefs.getString(_lastSyncKey);
+      if (lastSyncStr != null) {
+        _lastSyncTime = DateTime.parse(lastSyncStr);
+      }
+    } catch (e) {
+      print('Error loading customers: $e');
+      // エラー時はデモデータを設定
+      _initializeDemoData();
+    }
+  }
+  
+  // LocalStorageに顧客データを保存
+  Future<void> _saveToLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String customersJson = json.encode(
+        _customers.map((c) => c.toJson()).toList()
+      );
+      await prefs.setString(_storageKey, customersJson);
+      
+      // 最終同期時刻も保存
+      if (_lastSyncTime != null) {
+        await prefs.setString(_lastSyncKey, _lastSyncTime!.toIso8601String());
+      }
+    } catch (e) {
+      print('Error saving customers: $e');
+    }
+  }
+  
+  // 初期デモデータを設定
+  void _initializeDemoData() {
+    _customers.addAll([
+      Customer(
+        id: 'f1',
+        name: '田中 太郎',
+        phone: '090-1234-5678',
+        email: 'tanaka@example.com',
+        channel: 'LINE',
+        registeredDate: DateTime(2024, 1, 15),
+        lastVisit: DateTime.now().subtract(const Duration(days: 3)),
+        totalSpent: 125400,
+        visitCount: 24,
+        birthday: DateTime(1990, 3, 15),
+        gender: '男性',
+        memo: 'カラーにこだわりがあるお客様。前回はアッシュ系のカラーを希望。',
+        tags: ['顧客', 'VIP', '常連'],
+      ),
+      Customer(
+        id: 'f2',
+        name: '佐藤 花子',
+        phone: '080-2345-6789',
+        email: 'sato@example.com',
+        channel: 'WebChat',
+        registeredDate: DateTime(2024, 2, 1),
+        lastVisit: DateTime.now().subtract(const Duration(days: 7)),
+        totalSpent: 32000,
+        visitCount: 5,
+        birthday: DateTime(1985, 7, 1),
+        gender: '女性',
+        memo: 'パーマの持ちを気にされている。',
+        tags: ['顧客', 'カラー', '新規'],
+      ),
+      Customer(
+        id: 'f3',
+        name: '山田 美咲',
+        phone: '090-3456-7890',
+        email: 'yamada@example.com',
+        channel: 'SMS',
+        registeredDate: DateTime(2023, 11, 20),
+        lastVisit: DateTime.now().subtract(const Duration(days: 14)),
+        totalSpent: 45000,
+        visitCount: 8,
+        birthday: DateTime(1995, 11, 20),
+        gender: '女性',
+        memo: '',
+        tags: ['顧客', '要フォロー'],
+      ),
+      Customer(
+        id: 'f4',
+        name: '鈴木 健一',
+        phone: '080-4567-8901',
+        email: 'suzuki@example.com',
+        channel: 'LINE',
+        registeredDate: DateTime(2023, 5, 5),
+        lastVisit: DateTime.now().subtract(const Duration(days: 1)),
+        totalSpent: 78500,
+        visitCount: 15,
+        birthday: DateTime(1988, 5, 5),
+        gender: '男性',
+        memo: '',
+        tags: ['顧客', '常連'],
+      ),
+      Customer(
+        id: 'f5',
+        name: '高橋 めぐみ',
+        phone: '090-5678-9012',
+        email: 'takahashi@example.com',
+        channel: 'App',
+        registeredDate: DateTime(2023, 9, 10),
+        lastVisit: DateTime.now().subtract(const Duration(days: 5)),
+        totalSpent: 210000,
+        visitCount: 30,
+        birthday: DateTime(1992, 9, 10),
+        gender: '女性',
+        memo: 'VIP顧客。特別対応が必要。',
+        tags: ['顧客', 'パーマ', 'VIP'],
+      ),
+    ]);
+    _saveToLocalStorage(); // 初期データをローカルに保存
+    _syncWithFirebase(); // Firebaseにも同期
+  }
+  
+  // Firebaseとの同期を開始
+  void _startFirebaseSync() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('User not authenticated, skipping Firebase sync');
+      return;
+    }
+    
+    // リアルタイムリスナーを設定
+    _firestore
+        .collection('customers')
+        .where('tenantId', isEqualTo: user.uid)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        if (!_isSyncing) {
+          _handleFirebaseChanges(snapshot);
         }
-        
-        // 10%の確率で新しいメッセージ
-        if (DateTime.now().millisecond % 10 == 0) {
-          _customers[randomIndex] = customer.copyWith(
-            unreadCount: customer.unreadCount + 1,
-            lastMessage: '新しいメッセージが届きました',
-            lastMessageAt: DateTime.now(),
+      },
+      onError: (error) {
+        print('Firebase listener error: $error');
+        _isOnline = false;
+      },
+    );
+  }
+  
+  // Firebaseの変更を処理
+  void _handleFirebaseChanges(QuerySnapshot snapshot) async {
+    if (snapshot.docChanges.isEmpty) return;
+    
+    bool hasChanges = false;
+    
+    for (final change in snapshot.docChanges) {
+      final data = change.doc.data() as Map<String, dynamic>;
+      final customer = Customer.fromFirestore(change.doc.id, data);
+      
+      switch (change.type) {
+        case DocumentChangeType.added:
+          final existingIndex = _customers.indexWhere((c) => c.id == customer.id);
+          if (existingIndex == -1) {
+            _customers.add(customer);
+            hasChanges = true;
+          }
+          break;
+        case DocumentChangeType.modified:
+          final index = _customers.indexWhere((c) => c.id == customer.id);
+          if (index != -1) {
+            _customers[index] = customer;
+            hasChanges = true;
+          }
+          break;
+        case DocumentChangeType.removed:
+          _customers.removeWhere((c) => c.id == customer.id);
+          hasChanges = true;
+          break;
+      }
+    }
+    
+    if (hasChanges) {
+      _lastSyncTime = DateTime.now();
+      await _saveToLocalStorage();
+      notifyListeners();
+    }
+  }
+  
+  // Firebaseと同期（差分同期）
+  Future<void> _syncWithFirebase() async {
+    if (_isSyncing) return;
+    
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('User not authenticated, skipping sync');
+      return;
+    }
+    
+    _isSyncing = true;
+    
+    try {
+      // オフラインキューを処理
+      await _processOfflineQueue();
+      
+      // 最終同期時刻以降の変更を取得
+      Query query = _firestore
+          .collection('customers')
+          .where('tenantId', isEqualTo: user.uid);
+      
+      if (_lastSyncTime != null) {
+        // 差分同期：最終同期時刻以降の変更のみ取得
+        query = query.where('updatedAt', isGreaterThan: _lastSyncTime!);
+      }
+      
+      final snapshot = await query.get();
+      
+      if (snapshot.docs.isNotEmpty) {
+        for (final doc in snapshot.docs) {
+          final customer = Customer.fromFirestore(
+            doc.id, 
+            doc.data() as Map<String, dynamic>
           );
+          
+          final index = _customers.indexWhere((c) => c.id == customer.id);
+          if (index != -1) {
+            _customers[index] = customer;
+          } else {
+            _customers.add(customer);
+          }
         }
         
-        // 5%の確率でタイピング状態を切り替え
-        if (DateTime.now().millisecond % 20 == 0) {
-          _customers[randomIndex] = customer.copyWith(
-            isTyping: !customer.isTyping,
-          );
-        }
-        
-        _applyFiltersAndSort();
+        _lastSyncTime = DateTime.now();
+        await _saveToLocalStorage();
         notifyListeners();
       }
       
-      // 継続的に更新
-      _simulateRealtimeUpdates();
-    });
+      _isOnline = true;
+    } catch (e) {
+      print('Sync error: $e');
+      _isOnline = false;
+    } finally {
+      _isSyncing = false;
+    }
   }
-
-  // 検索
-  void search(String query) {
-    _searchQuery = query.toLowerCase();
-    _applyFiltersAndSort();
-  }
-
-  // ソート変更
-  void setSortType(CustomerSortType type) {
-    _sortType = type;
-    _applyFiltersAndSort();
-  }
-
-  // フィルター追加/削除
-  void toggleFilter(CustomerFilterType filter) {
-    if (filter == CustomerFilterType.all) {
-      _activeFilters = {CustomerFilterType.all};
-    } else {
-      _activeFilters.remove(CustomerFilterType.all);
-      if (_activeFilters.contains(filter)) {
-        _activeFilters.remove(filter);
-        if (_activeFilters.isEmpty) {
-          _activeFilters.add(CustomerFilterType.all);
-        }
-      } else {
-        _activeFilters.add(filter);
+  
+  // オフラインキューを処理
+  Future<void> _processOfflineQueue() async {
+    if (_offlineQueue.isEmpty) return;
+    
+    final user = _auth.currentUser;
+    if (user == null) return;
+    
+    final batch = _firestore.batch();
+    
+    for (final change in _offlineQueue) {
+      final docRef = _firestore.collection('customers').doc(change.customerId);
+      
+      switch (change.type) {
+        case ChangeType.create:
+        case ChangeType.update:
+          final customerData = change.customerData!;
+          customerData['tenantId'] = user.uid;
+          customerData['updatedAt'] = FieldValue.serverTimestamp();
+          batch.set(docRef, customerData, SetOptions(merge: true));
+          break;
+        case ChangeType.delete:
+          batch.delete(docRef);
+          break;
       }
     }
-    _applyFiltersAndSort();
+    
+    try {
+      await batch.commit();
+      _offlineQueue.clear();
+    } catch (e) {
+      print('Failed to process offline queue: $e');
+    }
   }
-
-  // フィルターとソートを適用
-  void _applyFiltersAndSort() {
-    var filtered = List<Customer>.from(_customers);
-
-    // 検索フィルター
-    if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((customer) {
-        return customer.name.toLowerCase().contains(_searchQuery) ||
-               (customer.email?.toLowerCase().contains(_searchQuery) ?? false) ||
-               (customer.phone?.contains(_searchQuery) ?? false) ||
-               customer.tags.any((tag) => tag.toLowerCase().contains(_searchQuery));
-      }).toList();
+  
+  List<Customer> get customers => List.unmodifiable(_customers);
+  
+  // 顧客を追加
+  Future<void> addCustomer(Customer customer) async {
+    // 顧客タグを自動的に追加
+    if (!customer.tags.contains('顧客')) {
+      customer.tags.insert(0, '顧客');
     }
-
-    // タイプフィルター
-    if (!_activeFilters.contains(CustomerFilterType.all)) {
-      filtered = filtered.where((customer) {
-        for (var filter in _activeFilters) {
-          switch (filter) {
-            case CustomerFilterType.unread:
-              if (customer.unreadCount > 0) return true;
-              break;
-            case CustomerFilterType.vip:
-              if (customer.isVip) return true;
-              break;
-            case CustomerFilterType.online:
-              if (customer.status == CustomerStatus.online) return true;
-              break;
-            case CustomerFilterType.hasReservation:
-              if (customer.nextReservationAt != null) return true;
-              break;
-            case CustomerFilterType.birthday:
-              if (customer.isBirthdaySoon) return true;
-              break;
-            default:
-              break;
-          }
-        }
-        return false;
-      }).toList();
-    }
-
-    // ソート
-    switch (_sortType) {
-      case CustomerSortType.unread:
-        filtered.sort((a, b) {
-          // 未読がある顧客を上に
-          if (a.unreadCount > 0 && b.unreadCount == 0) return -1;
-          if (a.unreadCount == 0 && b.unreadCount > 0) return 1;
-          // 未読数が多い順
-          if (a.unreadCount != b.unreadCount) {
-            return b.unreadCount.compareTo(a.unreadCount);
-          }
-          // 最新メッセージ順
-          if (a.lastMessageAt != null && b.lastMessageAt != null) {
-            return b.lastMessageAt!.compareTo(a.lastMessageAt!);
-          }
-          return 0;
-        });
-        break;
-      case CustomerSortType.recent:
-        filtered.sort((a, b) {
-          if (a.lastMessageAt == null) return 1;
-          if (b.lastMessageAt == null) return -1;
-          return b.lastMessageAt!.compareTo(a.lastMessageAt!);
-        });
-        break;
-      case CustomerSortType.vip:
-        filtered.sort((a, b) {
-          if (a.isVip && !b.isVip) return -1;
-          if (!a.isVip && b.isVip) return 1;
-          return b.totalPurchaseAmount.compareTo(a.totalPurchaseAmount);
-        });
-        break;
-      case CustomerSortType.purchase:
-        filtered.sort((a, b) => b.totalPurchaseAmount.compareTo(a.totalPurchaseAmount));
-        break;
-      case CustomerSortType.reservation:
-        filtered.sort((a, b) {
-          if (a.nextReservationAt == null) return 1;
-          if (b.nextReservationAt == null) return -1;
-          return a.nextReservationAt!.compareTo(b.nextReservationAt!);
-        });
-        break;
-      case CustomerSortType.name:
-        filtered.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case CustomerSortType.activity:
-        // 未読を最優先、次にアクティビティスコア
-        filtered.sort((a, b) {
-          // 未読がある場合は最優先
-          if (a.unreadCount > 0 && b.unreadCount == 0) return -1;
-          if (a.unreadCount == 0 && b.unreadCount > 0) return 1;
-          
-          // 両方未読ありの場合は未読数で比較
-          if (a.unreadCount > 0 && b.unreadCount > 0) {
-            if (a.unreadCount != b.unreadCount) {
-              return b.unreadCount.compareTo(a.unreadCount);
-            }
-          }
-          
-          // 未読がない場合はアクティビティスコアで比較
-          if (a.activityScore != b.activityScore) {
-            return b.activityScore.compareTo(a.activityScore);
-          }
-          
-          // 最後に最新メッセージ時間で比較
-          if (a.lastMessageAt != null && b.lastMessageAt != null) {
-            return b.lastMessageAt!.compareTo(a.lastMessageAt!);
-          }
-          return 0;
-        });
-        break;
-    }
-
-    _filteredCustomers = filtered;
+    _customers.add(customer);
+    await _saveToLocalStorage(); // ローカル保存
     notifyListeners();
+    
+    // Firebaseに保存
+    await _saveToFirebase(customer, ChangeType.create);
   }
-
-  // 顧客を取得
-  Customer? getCustomer(String id) {
+  
+  // 顧客を更新
+  Future<void> updateCustomer(String id, Customer updatedCustomer) async {
+    final index = _customers.indexWhere((c) => c.id == id);
+    if (index != -1) {
+      // 顧客タグを確保
+      if (!updatedCustomer.tags.contains('顧客')) {
+        updatedCustomer.tags.insert(0, '顧客');
+      }
+      _customers[index] = updatedCustomer;
+      await _saveToLocalStorage(); // ローカル保存
+      notifyListeners();
+      
+      // Firebaseに保存
+      await _saveToFirebase(updatedCustomer, ChangeType.update);
+    }
+  }
+  
+  // 顧客を削除
+  Future<void> deleteCustomer(String id) async {
+    final customer = _customers.firstWhere((c) => c.id == id);
+    _customers.removeWhere((c) => c.id == id);
+    await _saveToLocalStorage(); // ローカル保存
+    notifyListeners();
+    
+    // Firebaseから削除
+    await _saveToFirebase(customer, ChangeType.delete);
+  }
+  
+  // Firebaseに保存（オンライン/オフライン対応）
+  Future<void> _saveToFirebase(Customer customer, ChangeType type) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('User not authenticated');
+      return;
+    }
+    
+    try {
+      final docRef = _firestore.collection('customers').doc(customer.id);
+      
+      if (type == ChangeType.delete) {
+        await docRef.delete();
+      } else {
+        final data = customer.toFirestore();
+        data['tenantId'] = user.uid;
+        data['updatedAt'] = FieldValue.serverTimestamp();
+        
+        await docRef.set(data, SetOptions(merge: true));
+      }
+      
+      _lastSyncTime = DateTime.now();
+      await _saveToLocalStorage();
+    } catch (e) {
+      print('Firebase save error: $e');
+      // オフラインの場合はキューに追加
+      _offlineQueue.add(PendingChange(
+        customerId: customer.id,
+        type: type,
+        customerData: type != ChangeType.delete ? customer.toFirestore() : null,
+        timestamp: DateTime.now(),
+      ));
+    }
+  }
+  
+  // 顧客を検索
+  Customer? getCustomerById(String id) {
     try {
       return _customers.firstWhere((c) => c.id == id);
     } catch (e) {
       return null;
     }
   }
-
-  // 顧客を更新
-  Future<void> updateCustomer(String id, Map<String, dynamic> updates) async {
-    try {
-      // モック環境では直接更新
-      final index = _customers.indexWhere((c) => c.id == id);
-      if (index != -1) {
-        final customer = _customers[index];
-        Customer updatedCustomer = customer;
-        
-        // 各フィールドを更新
-        if (updates.containsKey('unreadCount')) {
-          updatedCustomer = updatedCustomer.copyWith(unreadCount: updates['unreadCount']);
-        }
-        if (updates.containsKey('priority')) {
-          updatedCustomer = updatedCustomer.copyWith(
-            priority: updates['priority'] == 'vip' 
-                ? CustomerPriority.vip 
-                : CustomerPriority.normal,
-          );
-        }
-        if (updates.containsKey('tags')) {
-          updatedCustomer = updatedCustomer.copyWith(tags: List<String>.from(updates['tags']));
-        }
-        if (updates.containsKey('notes')) {
-          updatedCustomer = updatedCustomer.copyWith(notes: updates['notes']);
-        }
-        if (updates.containsKey('isTyping')) {
-          updatedCustomer = updatedCustomer.copyWith(isTyping: updates['isTyping']);
-        }
-        if (updates.containsKey('status')) {
-          final status = CustomerStatus.values.firstWhere(
-            (s) => s.name == updates['status'],
-            orElse: () => CustomerStatus.offline,
-          );
-          updatedCustomer = updatedCustomer.copyWith(status: status);
-        }
-        
-        _customers[index] = updatedCustomer.copyWith(
-          updatedAt: DateTime.now(),
-        );
-        
-        _applyFiltersAndSort();
-        notifyListeners();
-      }
-      
-      // Firestore版（本番用・現在はコメントアウト）
-      // updates['updatedAt'] = FieldValue.serverTimestamp();
-      // await _firestore.collection('customers').doc(id).update(updates);
-    } catch (e) {
-      debugPrint('Error updating customer: $e');
-      rethrow;
-    }
-  }
-
-  // 未読をクリア
-  Future<void> markAsRead(String customerId) async {
-    await updateCustomer(customerId, {'unreadCount': 0});
-  }
-
-  // VIP設定を切り替え
-  Future<void> toggleVip(String customerId) async {
-    final customer = getCustomer(customerId);
-    if (customer != null) {
-      final newPriority = customer.priority == CustomerPriority.vip 
-          ? CustomerPriority.normal 
-          : CustomerPriority.vip;
-      await updateCustomer(customerId, {'priority': newPriority.name});
-    }
-  }
-
-  // タグを追加
-  Future<void> addTag(String customerId, String tag) async {
-    final customer = getCustomer(customerId);
-    if (customer != null && !customer.tags.contains(tag)) {
-      final tags = List<String>.from(customer.tags)..add(tag);
-      await updateCustomer(customerId, {'tags': tags});
-    }
-  }
-
-  // タグを削除
-  Future<void> removeTag(String customerId, String tag) async {
-    final customer = getCustomer(customerId);
-    if (customer != null && customer.tags.contains(tag)) {
-      final tags = List<String>.from(customer.tags)..remove(tag);
-      await updateCustomer(customerId, {'tags': tags});
-    }
-  }
-
-  // メモを更新
-  Future<void> updateNotes(String customerId, String notes) async {
-    await updateCustomer(customerId, {'notes': notes});
-  }
-
-  // タイピング状態を更新
-  Future<void> setTyping(String customerId, bool isTyping) async {
-    await updateCustomer(customerId, {'isTyping': isTyping});
-  }
-
-  // オンラインステータスを更新
-  Future<void> updateStatus(String customerId, CustomerStatus status) async {
-    await updateCustomer(customerId, {'status': status.name});
-  }
-
-  // 新規顧客を作成（モック版）
-  Future<String> createCustomer({
+  
+  // 新規顧客作成
+  Future<Customer> createNewCustomer({
     required String name,
+    required String phone,
     String? email,
-    String? phone,
-    String? lineUserId,
-    List<String>? tags,
+    String channel = 'なし',
   }) async {
-    try {
-      // モック実装：新しい顧客を作成してリストに追加
-      final newCustomer = Customer(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        email: email,
-        phone: phone,
-        lineUserId: lineUserId,
-        tags: tags ?? [],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      
-      _customers.add(newCustomer);
-      _applyFiltersAndSort();
-      notifyListeners();
-      
-      return newCustomer.id;
-      
-      // Firebase版（本番用・現在はコメントアウト）
-      // final doc = await _firestore.collection('customers').add({
-      //   'name': name,
-      //   'email': email,
-      //   'phone': phone,
-      //   'lineUserId': lineUserId,
-      //   'tags': tags ?? [],
-      //   'status': CustomerStatus.offline.name,
-      //   'priority': CustomerPriority.normal.name,
-      //   'unreadCount': 0,
-      //   'totalPurchaseAmount': 0,
-      //   'purchaseCount': 0,
-      //   'createdAt': FieldValue.serverTimestamp(),
-      //   'updatedAt': FieldValue.serverTimestamp(),
-      // });
-      // return doc.id;
-    } catch (e) {
-      debugPrint('Error creating customer: $e');
-      rethrow;
-    }
+    final newCustomer = Customer(
+      id: 'c${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      phone: phone,
+      email: email ?? '',
+      channel: channel,
+      registeredDate: DateTime.now(),
+      lastVisit: null,
+      totalSpent: 0,
+      visitCount: 0,
+      birthday: null,
+      gender: '',
+      memo: '',
+      tags: ['顧客', '新規'],
+    );
+    
+    await addCustomer(newCustomer);
+    return newCustomer;
   }
+  
+  // チャンネル別に顧客を取得
+  List<Customer> getCustomersByChannel(String channel) {
+    if (channel == 'すべて' || channel.isEmpty) {
+      return customers;
+    }
+    return _customers.where((c) => c.channel == channel).toList();
+  }
+  
+  // タグで顧客を検索
+  List<Customer> getCustomersByTag(String tag) {
+    return _customers.where((c) => c.tags.contains(tag)).toList();
+  }
+  
+  // オンライン/オフライン状態
+  bool get isOnline => _isOnline;
+  
+  // 手動同期をトリガー
+  Future<void> forceSync() async {
+    await _syncWithFirebase();
+  }
+}
 
-  @override
-  void dispose() {
-    super.dispose();
+// オフライン変更を追跡するクラス
+class PendingChange {
+  final String customerId;
+  final ChangeType type;
+  final Map<String, dynamic>? customerData;
+  final DateTime timestamp;
+  
+  PendingChange({
+    required this.customerId,
+    required this.type,
+    this.customerData,
+    required this.timestamp,
+  });
+}
+
+enum ChangeType {
+  create,
+  update,
+  delete,
+}
+
+class Customer {
+  final String id;
+  final String name;
+  final String phone;
+  final String email;
+  final String channel;
+  final DateTime registeredDate;
+  final DateTime? lastVisit;
+  final int totalSpent;
+  final int visitCount;
+  final DateTime? birthday;
+  final String gender;
+  final String memo;
+  final List<String> tags;
+  
+  Customer({
+    required this.id,
+    required this.name,
+    required this.phone,
+    required this.email,
+    required this.channel,
+    required this.registeredDate,
+    this.lastVisit,
+    required this.totalSpent,
+    required this.visitCount,
+    this.birthday,
+    required this.gender,
+    required this.memo,
+    required this.tags,
+  });
+  
+  // 平均単価を計算
+  int get averageSpent {
+    if (visitCount == 0) return 0;
+    return (totalSpent / visitCount).round();
+  }
+  
+  // 最終来店からの日数
+  String get lastVisitText {
+    if (lastVisit == null) return '未来店';
+    final days = DateTime.now().difference(lastVisit!).inDays;
+    if (days == 0) return '今日';
+    if (days == 1) return '昨日';
+    if (days < 7) return '$days日前';
+    if (days < 30) return '${(days / 7).round()}週間前';
+    if (days < 365) return '${(days / 30).round()}ヶ月前';
+    return '${(days / 365).round()}年前';
+  }
+  
+  // JSONに変換
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'channel': channel,
+      'registeredDate': registeredDate.toIso8601String(),
+      'lastVisit': lastVisit?.toIso8601String(),
+      'totalSpent': totalSpent,
+      'visitCount': visitCount,
+      'birthday': birthday?.toIso8601String(),
+      'gender': gender,
+      'memo': memo,
+      'tags': tags,
+    };
+  }
+  
+  // JSONから作成
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    return Customer(
+      id: json['id'],
+      name: json['name'],
+      phone: json['phone'],
+      email: json['email'],
+      channel: json['channel'],
+      registeredDate: DateTime.parse(json['registeredDate']),
+      lastVisit: json['lastVisit'] != null ? DateTime.parse(json['lastVisit']) : null,
+      totalSpent: json['totalSpent'],
+      visitCount: json['visitCount'],
+      birthday: json['birthday'] != null ? DateTime.parse(json['birthday']) : null,
+      gender: json['gender'] ?? '',
+      memo: json['memo'] ?? '',
+      tags: List<String>.from(json['tags'] ?? []),
+    );
+  }
+  
+  // Firestoreから作成
+  factory Customer.fromFirestore(String id, Map<String, dynamic> data) {
+    return Customer(
+      id: id,
+      name: data['name'] ?? '',
+      phone: data['phone'] ?? '',
+      email: data['email'] ?? '',
+      channel: data['channel'] ?? 'なし',
+      registeredDate: (data['registeredDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      lastVisit: data['lastVisit'] != null ? (data['lastVisit'] as Timestamp).toDate() : null,
+      totalSpent: data['totalSpent'] ?? 0,
+      visitCount: data['visitCount'] ?? 0,
+      birthday: data['birthday'] != null ? (data['birthday'] as Timestamp).toDate() : null,
+      gender: data['gender'] ?? '',
+      memo: data['memo'] ?? '',
+      tags: List<String>.from(data['tags'] ?? ['顧客']),
+    );
+  }
+  
+  // Firestoreに変換
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'channel': channel,
+      'registeredDate': Timestamp.fromDate(registeredDate),
+      'lastVisit': lastVisit != null ? Timestamp.fromDate(lastVisit!) : null,
+      'totalSpent': totalSpent,
+      'visitCount': visitCount,
+      'birthday': birthday != null ? Timestamp.fromDate(birthday!) : null,
+      'gender': gender,
+      'memo': memo,
+      'tags': tags,
+    };
+  }
+  
+  // コピーして更新
+  Customer copyWith({
+    String? id,
+    String? name,
+    String? phone,
+    String? email,
+    String? channel,
+    DateTime? registeredDate,
+    DateTime? lastVisit,
+    int? totalSpent,
+    int? visitCount,
+    DateTime? birthday,
+    String? gender,
+    String? memo,
+    List<String>? tags,
+  }) {
+    return Customer(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      email: email ?? this.email,
+      channel: channel ?? this.channel,
+      registeredDate: registeredDate ?? this.registeredDate,
+      lastVisit: lastVisit ?? this.lastVisit,
+      totalSpent: totalSpent ?? this.totalSpent,
+      visitCount: visitCount ?? this.visitCount,
+      birthday: birthday ?? this.birthday,
+      gender: gender ?? this.gender,
+      memo: memo ?? this.memo,
+      tags: tags ?? List.from(this.tags),
+    );
   }
 }

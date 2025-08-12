@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/tag_service.dart';
+import '../../../../core/services/customer_service.dart';
 import '../../../../shared/widgets/tag_manager_dialog.dart';
+import 'package:intl/intl.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
@@ -25,6 +27,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   bool _showTagDropdown = false;
   List<String> _pinnedChats = [];
   List<String> _hiddenChats = [];
+  int _currentTabIndex = 0;  // 現在のタブインデックスを保持
 
   @override
   void initState() {
@@ -32,14 +35,26 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
     _tabController = TabController(length: 3, vsync: this);
     _searchController = TextEditingController();
     
-    // 初期タグを設定（デモ用）
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 初期タグを設定（CustomerServiceの顧客データと同期）
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final tagService = Provider.of<TagService>(context, listen: false);
-      tagService.setUserTags('1', ['VIP', '常連']);
-      tagService.setUserTags('2', ['カラー', '新規']);
-      tagService.setUserTags('3', ['要フォロー']);
-      tagService.setUserTags('4', ['常連']);
-      tagService.setUserTags('5', ['パーマ', 'VIP']);
+      final customerService = Provider.of<CustomerService>(context, listen: false);
+      
+      // CustomerServiceの顧客データからタグを同期
+      for (var customer in customerService.customers) {
+        if (customer.tags.isNotEmpty) {
+          await tagService.setUserTags(customer.id, customer.tags);
+        }
+      }
+    });
+    
+    // タブコントローラーのリスナーを追加
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          _currentTabIndex = _tabController.index;
+        });
+      }
     });
   }
 
@@ -334,10 +349,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
               ],
             ),
           ),
-              // チャットリスト
+              // チャットリスト（タブコンテンツを固定表示）
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+                child: IndexedStack(
+                  index: _currentTabIndex,
                   children: [
                     _buildChatList(context, themeService),
                     _buildFriendsList(context, themeService),
@@ -814,7 +829,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   Widget _buildFriendsList(BuildContext context, ThemeService themeService) {
-    final friends = _getDummyFriends();
+    return Consumer2<CustomerService, TagService>(
+      builder: (context, customerService, tagService, child) {
+        final customers = customerService.customers;
+        final dateFormat = DateFormat('yyyy/MM/dd');
     
     return Column(
       children: [
@@ -845,9 +863,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         // 顧客リスト
         Expanded(
           child: ListView.builder(
-            itemCount: friends.length,
+            itemCount: customers.length,
             itemBuilder: (context, index) {
-              final friend = friends[index];
+              final customer = customers[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 elevation: 0,
@@ -856,16 +874,16 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                   side: BorderSide(color: Colors.grey.shade200),
                 ),
                 child: ListTile(
-                  onTap: () => _showCustomerDetailsFromFriend(context, friend),
+                  onTap: () => _showCustomerDetailsFromCustomer(context, customer),
                   leading: Stack(
                     children: [
                       CircleAvatar(
                         radius: 25,
-                        backgroundColor: _getChannelColor(friend['channel']).withOpacity(0.2),
+                        backgroundColor: _getChannelColor(customer.channel).withOpacity(0.2),
                         child: Text(
-                          friend['name'][0],
+                          customer.name[0],
                           style: TextStyle(
-                            color: _getChannelColor(friend['channel']), 
+                            color: _getChannelColor(customer.channel), 
                             fontSize: 18, 
                             fontWeight: FontWeight.w500,
                           ),
@@ -878,12 +896,12 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                           width: 16,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: _getChannelColor(friend['channel']),
+                            color: _getChannelColor(customer.channel),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
                           child: Icon(
-                            _getChannelIcon(friend['channel']),
+                            _getChannelIcon(customer.channel),
                             size: 10,
                             color: Colors.white,
                           ),
@@ -892,7 +910,7 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     ],
                   ),
                   title: Text(
-                    friend['name'],
+                    customer.name,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
@@ -903,12 +921,68 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     children: [
                       const SizedBox(height: 2),
                       Text(
-                        '${friend['channel']} • 登録日: ${friend['registeredDate'] ?? '2024/01/15'}',
+                        '${customer.channel} • 登録日: ${dateFormat.format(customer.registeredDate)}',
                         style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                       ),
                       Text(
-                        '最終来店: ${friend['lastVisit'] ?? '3日前'} • 累計: ${friend['totalSpent'] ?? '¥45,000'}',
+                        '最終来店: ${customer.lastVisitText} • 累計: ¥${customer.totalSpent.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
                         style: TextStyle(fontSize: 11, color: AppTheme.textTertiary),
+                      ),
+                      const SizedBox(height: 4),
+                      // タグを表示（タグサービスから最新のタグを取得）
+                      Builder(
+                        builder: (context) {
+                          final customerTags = tagService.getUserTags(customer.id).isNotEmpty 
+                              ? tagService.getUserTags(customer.id) 
+                              : customer.tags;
+                          
+                          if (customerTags.isEmpty) return const SizedBox(height: 4);
+                          
+                          return Wrap(
+                            spacing: 4,
+                            runSpacing: 2,
+                            children: customerTags.take(3).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: tagService.getTagColor(tag).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: tagService.getTagColor(tag).withOpacity(0.3),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                tag,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: tagService.getTagColor(tag),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList()
+                          ..addAll(
+                            customerTags.length > 3
+                                ? [Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '+${customerTags.length - 3}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  )]
+                                : [],
+                          ),
+                        );
+                        },
                       ),
                     ],
                   ),
@@ -931,6 +1005,14 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
+                      const PopupMenuItem<String>(
+                        value: 'tags',
+                        child: ListTile(
+                          leading: Icon(Icons.label),
+                          title: Text('タグ管理'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
                       const PopupMenuDivider(),
                       const PopupMenuItem<String>(
                         value: 'delete',
@@ -944,13 +1026,22 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     onSelected: (value) {
                       switch (value) {
                         case 'chat':
-                          context.go('/chat/conversation/${friend['id']}');
+                          context.go('/chat/conversation/${customer.id}');
                           break;
                         case 'edit':
-                          _showCustomerDetailsFromFriend(context, friend);
+                          _showCustomerDetailsFromCustomer(context, customer);
+                          break;
+                        case 'tags':
+                          showDialog(
+                            context: context,
+                            builder: (context) => TagManagerDialog(
+                              userId: customer.id,
+                              userName: customer.name,
+                            ),
+                          );
                           break;
                         case 'delete':
-                          _showDeleteCustomerDialog(context, friend);
+                          _showDeleteCustomerFromService(context, customer, customerService);
                           break;
                       }
                     },
@@ -961,6 +1052,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
           ),
         ),
       ],
+    );
+      },
     );
   }
 
@@ -1062,7 +1155,11 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   List<Map<String, dynamic>> _getDummyChats() {
-    return [
+    final customerService = Provider.of<CustomerService>(context, listen: false);
+    final customers = customerService.customers;
+    final dateFormat = DateFormat('M月d日');
+    
+    final List<Map<String, dynamic>> chats = [
       {
         'id': 'sakana-ai',
         'name': 'SAKANA AI',
@@ -1076,108 +1173,61 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         'birthday': null,
         'totalSpent': null,
       },
-      {
-        'id': '1',
-        'name': '田中 太郎',
-        'lastMessage': 'ありがとうございます！明日の予約楽しみにしています',
-        'time': '14:30',
-        'channel': 'LINE',
-        'isRead': false,
-        'unreadCount': 2,
-        'tags': ['VIP', '常連'],
-        'phone': '090-1234-5678',
-        'birthday': '3月15日',
-        'totalSpent': '¥125,400',
-      },
-      {
-        'id': '2',
-        'name': '佐藤 花子',
-        'lastMessage': 'カラーの相談をしたいのですが',
-        'time': '13:15',
-        'channel': 'WebChat',
-        'isRead': true,
-        'unreadCount': 0,
-        'tags': ['カラー', '新規'],
-        'phone': '080-2345-6789',
-        'birthday': '7月1日',
-        'totalSpent': '¥32,000',
-      },
-      {
-        'id': '3',
-        'name': '山田 美咲',
-        'lastMessage': '予約確認のメッセージ届きました',
-        'time': '12:00',
-        'channel': 'SMS',
-        'isRead': false,
-        'unreadCount': 1,
-        'tags': ['要フォロー'],
-        'phone': '090-3456-7890',
-        'birthday': '11月20日',
-        'totalSpent': '¥45,000',
-      },
-      {
-        'id': '4',
-        'name': '鈴木 健一',
-        'lastMessage': 'スタンプ',
-        'time': '昨日',
-        'channel': 'LINE',
-        'isRead': true,
-        'unreadCount': 0,
-        'tags': ['常連'],
-        'phone': '080-4567-8901',
-        'birthday': '5月5日',
-        'totalSpent': '¥78,500',
-      },
-      {
-        'id': '5',
-        'name': '高橋 めぐみ',
-        'lastMessage': 'パーマの持ちはどのくらいですか？',
-        'time': '昨日',
-        'channel': 'App',
-        'isRead': true,
-        'unreadCount': 0,
-        'tags': ['パーマ', 'VIP'],
-        'phone': '090-5678-9012',
-        'birthday': '9月10日',
-        'totalSpent': '¥210,000',
-      },
     ];
+    
+    // CustomerServiceの顧客データをチャットリストに変換
+    for (var customer in customers.take(5)) {
+      chats.add({
+        'id': customer.id,
+        'name': customer.name,
+        'lastMessage': _getRandomMessage(customer),
+        'time': _getTimeText(customer.lastVisit),
+        'channel': customer.channel,
+        'isRead': customers.indexOf(customer) % 2 == 0,
+        'unreadCount': customers.indexOf(customer) == 0 ? 2 : (customers.indexOf(customer) == 2 ? 1 : 0),
+        'tags': customer.tags,
+        'phone': customer.phone,
+        'birthday': customer.birthday != null ? dateFormat.format(customer.birthday!) : null,
+        'totalSpent': '¥${customer.totalSpent.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+      });
+    }
+    
+    return chats;
+  }
+  
+  String _getRandomMessage(Customer customer) {
+    final messages = [
+      'ありがとうございます！明日の予約楽しみにしています',
+      'カラーの相談をしたいのですが',
+      '予約確認のメッセージ届きました',
+      'スタンプ',
+      'パーマの持ちはどのくらいですか？',
+      '次回の予約はいつ頃が空いていますか？',
+      'ありがとうございました！',
+    ];
+    return messages[customer.name.hashCode % messages.length];
+  }
+  
+  String _getTimeText(DateTime? lastVisit) {
+    if (lastVisit == null) return '未連絡';
+    final now = DateTime.now();
+    final diff = now.difference(lastVisit);
+    
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}分前';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}時間前';
+    } else if (diff.inDays == 0) {
+      return '今日';
+    } else if (diff.inDays == 1) {
+      return '昨日';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays}日前';
+    } else {
+      return DateFormat('M/d').format(lastVisit);
+    }
   }
 
-  List<Map<String, dynamic>> _getDummyFriends() {
-    return [
-      {
-        'id': 'f1',
-        'name': '田中 太郎',
-        'channel': 'LINE',
-        'lastActive': '3分前',
-      },
-      {
-        'id': 'f2',
-        'name': '佐藤 花子',
-        'channel': 'WebChat',
-        'lastActive': '1時間前',
-      },
-      {
-        'id': 'f3',
-        'name': '山田 美咲',
-        'channel': 'SMS',
-        'lastActive': '3時間前',
-      },
-      {
-        'id': 'f4',
-        'name': '鈴木 健一',
-        'channel': 'LINE',
-        'lastActive': '昨日',
-      },
-      {
-        'id': 'f5',
-        'name': '高橋 めぐみ',
-        'channel': 'App',
-        'lastActive': '2日前',
-      },
-    ];
-  }
 
   void _showCustomerDetails(BuildContext context, Map<String, dynamic> chat) {
     final themeService = Provider.of<ThemeService>(context, listen: false);
@@ -1789,6 +1839,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   void _showCreateCustomerDialog(BuildContext context) {
+    final customerService = Provider.of<CustomerService>(context, listen: false);
+    final tagService = Provider.of<TagService>(context, listen: false);
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
     final emailController = TextEditingController();
@@ -1858,8 +1910,19 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             child: const Text('キャンセル'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                // 新規顧客を作成
+                final newCustomer = await customerService.createNewCustomer(
+                  name: nameController.text,
+                  phone: phoneController.text,
+                  email: emailController.text.isNotEmpty ? emailController.text : null,
+                  channel: selectedChannel,
+                );
+                
+                // タグサービスにも顧客タグを設定（Firebase同期）
+                await tagService.setUserTags(newCustomer.id, newCustomer.tags);
+                
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -1975,6 +2038,310 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
             child: const Text('削除', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showDeleteCustomerFromService(BuildContext context, Customer customer, CustomerService customerService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('顧客削除確認'),
+        content: Text('${customer.name}を削除してもよろしいですか？\nこの操作は取り消せません。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await customerService.deleteCustomer(customer.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${customer.name}を削除しました'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('削除', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomerDetailsFromCustomer(BuildContext context, Customer customer) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    final dateFormat = DateFormat('yyyy年M月d日');
+    
+    showDialog(
+      context: context,
+      builder: (context) => Consumer<TagService>(
+        builder: (context, tagService, child) {
+          // タグサービスから最新のタグを取得
+          final currentTags = tagService.getUserTags(customer.id);
+          
+          // 初回表示時に顧客データのタグを同期
+          if (currentTags.isEmpty && customer.tags.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              await tagService.setUserTags(customer.id, customer.tags);
+            });
+          }
+          
+          return Dialog(
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ヘッダー
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        customer.name[0],
+                        style: TextStyle(
+                          color: themeService.primaryColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            customer.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            customer.phone,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // アクションボタン
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(Icons.chat, 'チャット', () {
+                      Navigator.pop(context);
+                      context.go('/chat/conversation/${customer.id}');
+                    }),
+                    _buildActionButton(Icons.phone, '電話', () {}),
+                    _buildActionButton(Icons.calendar_today, '予約', () {}),
+                    _buildActionButton(Icons.history, '履歴', () {}),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // コンテンツ
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // タグ
+                      if (currentTags.isNotEmpty) ...[
+                        _buildSectionTitle('タグ'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: currentTags.map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: tagService.getTagColor(tag).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: tagService.getTagColor(tag).withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                tag,
+                                style: TextStyle(
+                                  color: tagService.getTagColor(tag),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // 基本情報
+                      _buildSectionTitle('基本情報'),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('電話番号', customer.phone),
+                      _buildInfoRow('メール', customer.email.isNotEmpty ? customer.email : '未登録'),
+                      _buildInfoRow('誕生日', customer.birthday != null ? dateFormat.format(customer.birthday!) : '未登録'),
+                      _buildInfoRow('性別', customer.gender.isNotEmpty ? customer.gender : '未登録'),
+                      _buildInfoRow('登録日', dateFormat.format(customer.registeredDate)),
+                      _buildInfoRow('チャンネル', customer.channel),
+                      const SizedBox(height: 24),
+                      
+                      // 利用状況
+                      _buildSectionTitle('利用状況'),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              '累計利用額', 
+                              '¥${customer.totalSpent.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}', 
+                              Icons.attach_money, 
+                              Colors.green
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard('来店回数', '${customer.visitCount}回', Icons.store, Colors.blue),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard('最終来店', customer.lastVisitText, Icons.access_time, Colors.orange),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              '平均単価', 
+                              '¥${customer.averageSpent.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}', 
+                              Icons.receipt, 
+                              Colors.purple
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // メモ
+                      if (customer.memo.isNotEmpty) ...[
+                        _buildSectionTitle('メモ'),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Text(
+                            customer.memo,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              // フッター
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // TODO: 編集画面を開く
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('編集'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        showDialog(
+                          context: context,
+                          builder: (context) => TagManagerDialog(
+                            userId: customer.id,
+                            userName: customer.name,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.label),
+                      label: const Text('タグ管理'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.go('/chat/conversation/${customer.id}');
+                      },
+                      icon: const Icon(Icons.chat),
+                      label: const Text('チャット開始'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: themeService.primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+        },
       ),
     );
   }
