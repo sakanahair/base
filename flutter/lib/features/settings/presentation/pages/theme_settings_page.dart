@@ -59,6 +59,15 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
             
             const SizedBox(height: 32),
             
+            // フォント設定
+            _buildSection(
+              title: 'フォント設定',
+              subtitle: 'フォントファミリーとサイズを選択',
+              child: _buildFontSettings(themeService),
+            ),
+            
+            const SizedBox(height: 32),
+            
             // その他の設定
             _buildSection(
               title: 'その他の設定',
@@ -260,6 +269,62 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // 現在のフォント情報表示
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '現在のフォント: ${themeService.fontFamily}',
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // フォントプレビューテキスト
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'あいうえお かきくけこ',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ABCDEFG 12345',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'このフォントで表示されています',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
             // ボタンプレビュー
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -359,6 +424,284 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
     );
   }
 
+  Widget _buildFontSettings(ThemeService themeService) {
+    return Column(
+      children: [
+        // フォントサイズ選択
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'フォントサイズ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFontSizeButton(themeService, 'xs', '極小'),
+                    _buildFontSizeButton(themeService, 's', '小'),
+                    _buildFontSizeButton(themeService, 'm', '中'),
+                    _buildFontSizeButton(themeService, 'l', '大'),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // 詳細サイズ設定ボタン
+                TextButton.icon(
+                  onPressed: () => _showDetailedFontSizeDialog(context, themeService),
+                  icon: const Icon(Icons.tune),
+                  label: const Text('詳細サイズ設定'),
+                ),
+                const SizedBox(height: 16),
+                // プレビューテキスト
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'このテキストはプレビューです。現在のサイズ: ${
+                      themeService.fontSize == 'xs' ? '極小' :
+                      themeService.fontSize == 's' ? '小' :
+                      themeService.fontSize == 'm' ? '中' : '大'
+                    }',
+                    style: TextStyle(
+                      fontSize: themeService.getFontSize('body'),
+                      fontFamily: themeService.fontFamily,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // フォントファミリー選択
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'フォントファミリー',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: themeService.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: themeService.primaryColor,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '現在: ${themeService.fontFamily}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: themeService.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // 大きなプレビューボックス
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        themeService.primaryColor.withOpacity(0.05),
+                        themeService.primaryColor.withOpacity(0.02),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: themeService.primaryColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'フォントプレビュー',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: themeService.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'あいうえお かきくけこ さしすせそ',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'The quick brown fox jumps over the lazy dog',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '1234567890 !@#\$%^&*()',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // 日本語フォント
+                ExpansionTile(
+                  title: const Text('日本語フォント'),
+                  initiallyExpanded: true,
+                  children: [
+                    _buildFontGrid(
+                      themeService,
+                      ThemeService.fontPresets.entries
+                        .where((e) => e.value.category == 'japanese')
+                        .toList(),
+                    ),
+                  ],
+                ),
+                
+                // スタンダードフォント
+                ExpansionTile(
+                  title: const Text('スタンダードフォント'),
+                  children: [
+                    _buildFontGrid(
+                      themeService,
+                      ThemeService.fontPresets.entries
+                        .where((e) => e.value.category == 'standard')
+                        .toList(),
+                    ),
+                  ],
+                ),
+                
+                // デザインフォント
+                ExpansionTile(
+                  title: const Text('デザインフォント'),
+                  children: [
+                    _buildFontGrid(
+                      themeService,
+                      ThemeService.fontPresets.entries
+                        .where((e) => e.value.category == 'design')
+                        .toList(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildFontSizeButton(ThemeService themeService, String size, String label) {
+    final isSelected = themeService.fontSize == size;
+    return InkWell(
+      onTap: () => themeService.setFontSize(size),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? themeService.primaryColor : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? themeService.primaryColor : AppTheme.borderColor,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? themeService.onPrimaryColor : AppTheme.textPrimary,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontSize: ThemeService.defaultFontSizes[size]!['button']!,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFontGrid(
+    ThemeService themeService,
+    List<MapEntry<String, FontPreset>> fonts,
+  ) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.5,
+      ),
+      itemCount: fonts.length,
+      itemBuilder: (context, index) {
+        final font = fonts[index].value;
+        final isSelected = themeService.fontFamily == font.name;
+        
+        return InkWell(
+          onTap: () {
+            print('フォント選択: ${font.name}');
+            themeService.setFontFamily(font.name);
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected ? themeService.primaryColorBackground : Colors.white,
+              border: Border.all(
+                color: isSelected ? themeService.primaryColor : AppTheme.borderColor,
+                width: isSelected ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              font.name,
+              style: TextStyle(
+                fontFamily: font.name,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? themeService.primaryColor : AppTheme.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ).animate().fadeIn(delay: (index * 30).ms);
+      },
+    );
+  }
+  
   Widget _buildOtherSettings(ThemeService themeService) {
     return Card(
       child: Padding(
@@ -380,7 +723,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
             ListTile(
               leading: const Icon(Icons.refresh),
               title: const Text('デフォルトに戻す'),
-              subtitle: const Text('テーマカラーを初期状態に戻します'),
+              subtitle: const Text('テーマ・フォント設定を初期状態に戻します'),
               trailing: TextButton(
                 onPressed: () {
                   showDialog(
@@ -418,6 +761,79 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
     );
   }
 
+  void _showDetailedFontSizeDialog(BuildContext context, ThemeService themeService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('詳細フォントサイズ設定'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('現在のサイズ: ${themeService.fontSize == 'xs' ? '極小' : themeService.fontSize == 's' ? '小' : themeService.fontSize == 'm' ? '中' : '大'}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildSizeSlider(context, themeService, 'body', '本文'),
+              _buildSizeSlider(context, themeService, 'headline', '見出し'),
+              _buildSizeSlider(context, themeService, 'title', 'タイトル'),
+              _buildSizeSlider(context, themeService, 'subtitle', 'サブタイトル'),
+              _buildSizeSlider(context, themeService, 'button', 'ボタン'),
+              _buildSizeSlider(context, themeService, 'caption', 'キャプション'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // デフォルトにリセット
+              Navigator.pop(context);
+            },
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('完了'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildSizeSlider(BuildContext context, ThemeService themeService, String type, String label) {
+    final currentSize = themeService.getFontSize(type);
+    return StatefulBuilder(
+      builder: (context, setState) {
+        double sliderValue = currentSize;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label),
+                Text('${sliderValue.toInt()}px'),
+              ],
+            ),
+            Slider(
+              value: sliderValue,
+              min: 8,
+              max: 32,
+              divisions: 24,
+              onChanged: (value) {
+                setState(() {
+                  sliderValue = value;
+                });
+                themeService.setCustomFontSize(themeService.fontSize, type, value);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+  
   @override
   void dispose() {
     _hexController.dispose();

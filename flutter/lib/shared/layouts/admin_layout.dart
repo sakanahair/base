@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
@@ -115,6 +116,20 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     final isMobile = context.isMobile;
     final isTablet = context.isTablet;
     final isDesktop = context.isDesktop;
+    final themeService = context.watch<ThemeService>();
+    
+    // iOSのステータスバーの色を設定
+    if (!kIsWeb && Theme.of(context).platform == TargetPlatform.iOS) {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarBrightness: themeService.isDarkMode ? Brightness.dark : Brightness.light,
+          statusBarIconBrightness: themeService.onPrimaryColor == Colors.white 
+            ? Brightness.light 
+            : Brightness.dark,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -186,8 +201,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
         child: Center(
           child: Text(
             'SAKANA Platform',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: themeService.onPrimaryColor,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -215,7 +230,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           if (isTablet)
             IconButton(
               iconSize: context.responsiveIconSize,
-              icon: const Icon(Icons.menu, color: Colors.white),
+              icon: Icon(Icons.menu, color: themeService.onPrimaryColor),
               onPressed: () {
                 ResponsiveHelper.addHapticFeedback();
                 Scaffold.of(context).openDrawer();
@@ -228,7 +243,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
               iconSize: context.responsiveIconSize,
               icon: Icon(
                 _isSidebarCollapsed ? Icons.menu_open : Icons.menu,
-                color: Colors.white,
+                color: themeService.onPrimaryColor,
               ),
               onPressed: () {
                 setState(() {
@@ -243,7 +258,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           Text(
             isMobile ? 'SAKANA' : 'SAKANA Admin',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.white,
+              color: themeService.onPrimaryColor,
               fontWeight: FontWeight.w300,
               fontSize: ResponsiveHelper.getResponsiveFontSize(
                 context,
@@ -260,7 +275,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           if (kDebugMode)
             IconButton(
               iconSize: context.responsiveIconSize,
-              icon: const Icon(Icons.terminal, color: Colors.white),
+              icon: Icon(Icons.terminal, color: themeService.onPrimaryColor),
               onPressed: () {
                 if (context.isTouchDevice) {
                   ResponsiveHelper.addHapticFeedback();
@@ -300,7 +315,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           if (!isMobile || isTablet)
             IconButton(
               iconSize: context.responsiveIconSize,
-              icon: const Icon(Icons.note_alt_outlined, color: Colors.white),
+              icon: Icon(Icons.note_alt_outlined, color: themeService.onPrimaryColor),
               onPressed: () {
                 if (context.isTouchDevice) {
                   ResponsiveHelper.addHapticFeedback();
@@ -338,7 +353,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
               children: [
                 IconButton(
                   iconSize: context.responsiveIconSize,
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  icon: Icon(Icons.notifications_outlined, color: themeService.onPrimaryColor),
                   onPressed: () {
                     if (context.isTouchDevice) {
                       ResponsiveHelper.addHapticFeedback();
@@ -438,7 +453,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                           Text(
                             isSuperAdmin ? 'SUPER管理者' : '管理者',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: themeService.onPrimaryColor,
                               fontWeight: FontWeight.w500,
                               fontSize: ResponsiveHelper.getResponsiveFontSize(
                                 context,
@@ -447,9 +462,9 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(
+                          Icon(
                             Icons.arrow_drop_down,
-                            color: Colors.white,
+                            color: themeService.onPrimaryColor,
                           ),
                         ],
                       ],

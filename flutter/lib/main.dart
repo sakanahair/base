@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 // Web専用のインポートを条件付きに
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -109,6 +110,19 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
+          // iOSのステータスバーの色を設定
+          if (!kIsWeb && Theme.of(context).platform == TargetPlatform.iOS) {
+            SystemChrome.setSystemUIOverlayStyle(
+              SystemUiOverlayStyle(
+                statusBarColor: themeService.primaryColor,
+                statusBarBrightness: themeService.isDarkMode ? Brightness.dark : Brightness.light,
+                statusBarIconBrightness: themeService.onPrimaryColor == Colors.white 
+                  ? Brightness.light 
+                  : Brightness.dark,
+              ),
+            );
+          }
+          
           return MaterialApp.router(
             title: 'SAKANA Platform',
             theme: themeService.generateThemeData(),
