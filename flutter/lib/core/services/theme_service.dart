@@ -97,9 +97,9 @@ class ThemeService extends ChangeNotifier {
     },
   };
   
-  // フォントファミリー設定
+  // フォントファミリー設定（日本語フォント中心）
   static const Map<String, FontPreset> fontPresets = {
-    // 日本語フォント
+    // 日本語フォント（メイン）
     'mplus_rounded': FontPreset(name: 'M PLUS Rounded 1c', category: 'japanese', googleFont: 'M+PLUS+Rounded+1c'),
     'noto_sans_jp': FontPreset(name: 'Noto Sans JP', category: 'japanese', googleFont: 'Noto+Sans+JP'),
     'kosugi_maru': FontPreset(name: 'Kosugi Maru', category: 'japanese', googleFont: 'Kosugi+Maru'),
@@ -116,44 +116,19 @@ class ThemeService extends ChangeNotifier {
     'rocknroll_one': FontPreset(name: 'RocknRoll One', category: 'japanese', googleFont: 'RocknRoll+One'),
     'stick': FontPreset(name: 'Stick', category: 'japanese', googleFont: 'Stick'),
     
-    // 欧文フォント（スタンダード）
+    // 日本語対応のシンプルフォント（追加推奨）
+    'noto_serif_jp': FontPreset(name: 'Noto Serif JP', category: 'japanese_serif', googleFont: 'Noto+Serif+JP'),
+    'murecho': FontPreset(name: 'Murecho', category: 'japanese', googleFont: 'Murecho'),
+    'rampart_one': FontPreset(name: 'Rampart One', category: 'japanese_design', googleFont: 'Rampart+One'),
+    'dotgothic': FontPreset(name: 'DotGothic16', category: 'japanese_design', googleFont: 'DotGothic16'),
+    'potta_one': FontPreset(name: 'Potta One', category: 'japanese_design', googleFont: 'Potta+One'),
+    'dela_gothic': FontPreset(name: 'Dela Gothic One', category: 'japanese_design', googleFont: 'Dela+Gothic+One'),
+    'train_one': FontPreset(name: 'Train One', category: 'japanese_design', googleFont: 'Train+One'),
+    
+    // 欧文フォント（最小限）
     'roboto': FontPreset(name: 'Roboto', category: 'standard', googleFont: 'Roboto'),
-    'open_sans': FontPreset(name: 'Open Sans', category: 'standard', googleFont: 'Open+Sans'),
-    'lato': FontPreset(name: 'Lato', category: 'standard', googleFont: 'Lato'),
-    'montserrat': FontPreset(name: 'Montserrat', category: 'standard', googleFont: 'Montserrat'),
-    'poppins': FontPreset(name: 'Poppins', category: 'standard', googleFont: 'Poppins'),
-    'raleway': FontPreset(name: 'Raleway', category: 'standard', googleFont: 'Raleway'),
     'inter': FontPreset(name: 'Inter', category: 'standard', googleFont: 'Inter'),
     'nunito': FontPreset(name: 'Nunito', category: 'standard', googleFont: 'Nunito'),
-    'ubuntu': FontPreset(name: 'Ubuntu', category: 'standard', googleFont: 'Ubuntu'),
-    'rubik': FontPreset(name: 'Rubik', category: 'standard', googleFont: 'Rubik'),
-    'work_sans': FontPreset(name: 'Work Sans', category: 'standard', googleFont: 'Work+Sans'),
-    'fira_sans': FontPreset(name: 'Fira Sans', category: 'standard', googleFont: 'Fira+Sans'),
-    'barlow': FontPreset(name: 'Barlow', category: 'standard', googleFont: 'Barlow'),
-    'oxygen': FontPreset(name: 'Oxygen', category: 'standard', googleFont: 'Oxygen'),
-    'source_sans': FontPreset(name: 'Source Sans Pro', category: 'standard', googleFont: 'Source+Sans+Pro'),
-    'josefin_sans': FontPreset(name: 'Josefin Sans', category: 'standard', googleFont: 'Josefin+Sans'),
-    'cabin': FontPreset(name: 'Cabin', category: 'standard', googleFont: 'Cabin'),
-    'karla': FontPreset(name: 'Karla', category: 'standard', googleFont: 'Karla'),
-    'hind': FontPreset(name: 'Hind', category: 'standard', googleFont: 'Hind'),
-    'quicksand': FontPreset(name: 'Quicksand', category: 'standard', googleFont: 'Quicksand'),
-    
-    // デザインフォント
-    'playfair': FontPreset(name: 'Playfair Display', category: 'design', googleFont: 'Playfair+Display'),
-    'dancing_script': FontPreset(name: 'Dancing Script', category: 'design', googleFont: 'Dancing+Script'),
-    'pacifico': FontPreset(name: 'Pacifico', category: 'design', googleFont: 'Pacifico'),
-    'lobster': FontPreset(name: 'Lobster', category: 'design', googleFont: 'Lobster'),
-    'comfortaa': FontPreset(name: 'Comfortaa', category: 'design', googleFont: 'Comfortaa'),
-    'caveat': FontPreset(name: 'Caveat', category: 'design', googleFont: 'Caveat'),
-    'satisfy': FontPreset(name: 'Satisfy', category: 'design', googleFont: 'Satisfy'),
-    'bebas_neue': FontPreset(name: 'Bebas Neue', category: 'design', googleFont: 'Bebas+Neue'),
-    'righteous': FontPreset(name: 'Righteous', category: 'design', googleFont: 'Righteous'),
-    'alfa_slab': FontPreset(name: 'Alfa Slab One', category: 'design', googleFont: 'Alfa+Slab+One'),
-    'abril_fatface': FontPreset(name: 'Abril Fatface', category: 'design', googleFont: 'Abril+Fatface'),
-    'fredoka': FontPreset(name: 'Fredoka', category: 'design', googleFont: 'Fredoka'),
-    'shadows_into': FontPreset(name: 'Shadows Into Light', category: 'design', googleFont: 'Shadows+Into+Light'),
-    'indie_flower': FontPreset(name: 'Indie Flower', category: 'design', googleFont: 'Indie+Flower'),
-    'permanent_marker': FontPreset(name: 'Permanent Marker', category: 'design', googleFont: 'Permanent+Marker'),
   };
 
   Color _primaryColor = defaultColor;
@@ -352,79 +327,29 @@ class ThemeService extends ChangeNotifier {
       case 'Stick':
         return GoogleFonts.stick(textStyle: baseStyle);
       
-      // スタンダードフォント
+      // 日本語対応のシンプルフォント  
+      case 'Noto Serif JP':
+        return GoogleFonts.notoSerifJp(textStyle: baseStyle);
+      case 'Murecho':
+        return GoogleFonts.murecho(textStyle: baseStyle);
+      case 'Rampart One':
+        return GoogleFonts.rampartOne(textStyle: baseStyle);
+      case 'DotGothic16':
+        return GoogleFonts.dotGothic16(textStyle: baseStyle);
+      case 'Potta One':
+        return GoogleFonts.pottaOne(textStyle: baseStyle);
+      case 'Dela Gothic One':
+        return GoogleFonts.delaGothicOne(textStyle: baseStyle);
+      case 'Train One':
+        return GoogleFonts.trainOne(textStyle: baseStyle);
+      
+      // スタンダードフォント（最小限）
       case 'Roboto':
         return GoogleFonts.roboto(textStyle: baseStyle);
-      case 'Open Sans':
-        return GoogleFonts.openSans(textStyle: baseStyle);
-      case 'Lato':
-        return GoogleFonts.lato(textStyle: baseStyle);
-      case 'Montserrat':
-        return GoogleFonts.montserrat(textStyle: baseStyle);
-      case 'Poppins':
-        return GoogleFonts.poppins(textStyle: baseStyle);
-      case 'Raleway':
-        return GoogleFonts.raleway(textStyle: baseStyle);
       case 'Inter':
         return GoogleFonts.inter(textStyle: baseStyle);
       case 'Nunito':
         return GoogleFonts.nunito(textStyle: baseStyle);
-      case 'Ubuntu':
-        return GoogleFonts.ubuntu(textStyle: baseStyle);
-      case 'Rubik':
-        return GoogleFonts.rubik(textStyle: baseStyle);
-      case 'Work Sans':
-        return GoogleFonts.workSans(textStyle: baseStyle);
-      case 'Fira Sans':
-        return GoogleFonts.firaSans(textStyle: baseStyle);
-      case 'Barlow':
-        return GoogleFonts.barlow(textStyle: baseStyle);
-      case 'Oxygen':
-        return GoogleFonts.oxygen(textStyle: baseStyle);
-      case 'Source Sans Pro':
-        return GoogleFonts.sourceSans3(textStyle: baseStyle);
-      case 'Josefin Sans':
-        return GoogleFonts.josefinSans(textStyle: baseStyle);
-      case 'Cabin':
-        return GoogleFonts.cabin(textStyle: baseStyle);
-      case 'Karla':
-        return GoogleFonts.karla(textStyle: baseStyle);
-      case 'Hind':
-        return GoogleFonts.hind(textStyle: baseStyle);
-      case 'Quicksand':
-        return GoogleFonts.quicksand(textStyle: baseStyle);
-      
-      // デザインフォント
-      case 'Playfair Display':
-        return GoogleFonts.playfairDisplay(textStyle: baseStyle);
-      case 'Dancing Script':
-        return GoogleFonts.dancingScript(textStyle: baseStyle);
-      case 'Pacifico':
-        return GoogleFonts.pacifico(textStyle: baseStyle);
-      case 'Lobster':
-        return GoogleFonts.lobster(textStyle: baseStyle);
-      case 'Comfortaa':
-        return GoogleFonts.comfortaa(textStyle: baseStyle);
-      case 'Caveat':
-        return GoogleFonts.caveat(textStyle: baseStyle);
-      case 'Satisfy':
-        return GoogleFonts.satisfy(textStyle: baseStyle);
-      case 'Bebas Neue':
-        return GoogleFonts.bebasNeue(textStyle: baseStyle);
-      case 'Righteous':
-        return GoogleFonts.righteous(textStyle: baseStyle);
-      case 'Alfa Slab One':
-        return GoogleFonts.alfaSlabOne(textStyle: baseStyle);
-      case 'Abril Fatface':
-        return GoogleFonts.abrilFatface(textStyle: baseStyle);
-      case 'Fredoka':
-        return GoogleFonts.fredoka(textStyle: baseStyle);
-      case 'Shadows Into Light':
-        return GoogleFonts.shadowsIntoLight(textStyle: baseStyle);
-      case 'Indie Flower':
-        return GoogleFonts.indieFlower(textStyle: baseStyle);
-      case 'Permanent Marker':
-        return GoogleFonts.permanentMarker(textStyle: baseStyle);
       
       default:
         return GoogleFonts.mPlusRounded1c(textStyle: baseStyle);

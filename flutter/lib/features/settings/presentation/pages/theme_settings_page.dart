@@ -575,9 +575,9 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 
-                // 日本語フォント
+                // ゴシック体フォント（標準）
                 ExpansionTile(
-                  title: const Text('日本語フォント'),
+                  title: const Text('ゴシック体（標準）'),
                   initiallyExpanded: true,
                   children: [
                     _buildFontGrid(
@@ -589,14 +589,14 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                   ],
                 ),
                 
-                // スタンダードフォント
+                // 明朝体・ビジネスフォント
                 ExpansionTile(
-                  title: const Text('スタンダードフォント'),
+                  title: const Text('明朝体・ビジネス'),
                   children: [
                     _buildFontGrid(
                       themeService,
                       ThemeService.fontPresets.entries
-                        .where((e) => e.value.category == 'standard')
+                        .where((e) => e.value.category == 'japanese_serif' || e.value.category == 'japanese_business')
                         .toList(),
                     ),
                   ],
@@ -604,12 +604,25 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 
                 // デザインフォント
                 ExpansionTile(
-                  title: const Text('デザインフォント'),
+                  title: const Text('デザイン・装飾'),
                   children: [
                     _buildFontGrid(
                       themeService,
                       ThemeService.fontPresets.entries
-                        .where((e) => e.value.category == 'design')
+                        .where((e) => e.value.category == 'japanese_design')
+                        .toList(),
+                    ),
+                  ],
+                ),
+                
+                // 欧文フォント（オプション）
+                ExpansionTile(
+                  title: const Text('欧文フォント（補助）'),
+                  children: [
+                    _buildFontGrid(
+                      themeService,
+                      ThemeService.fontPresets.entries
+                        .where((e) => e.value.category == 'standard')
                         .toList(),
                     ),
                   ],
