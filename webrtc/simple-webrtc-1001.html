@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple WebRTC Test - 1001</title>
+    <script src="jssip.min.js"></script>
+</head>
+<body>
+    <h1>Simple WebRTC Test - 1001</h1>
+    <div id="status">Disconnected</div>
+    <button onclick="connect()">Connect</button>
+    <button onclick="callExtension('1000')">Call 1000</button>
+    <button onclick="hangup()">Hangup</button>
+    
+    <audio id="remoteAudio" autoplay></audio>
+    <div id="log"></div>
+
+    <script>
+        let ua = null;
+        let session = null;
+        const SERVER = 'phone.sakana.hair';
+        const USERNAME = '1001';
+        const PASSWORD = '111111';
+
+        function log(message) {
+            console.log(message);
+            document.getElementById('log').innerHTML += message + '<br>';
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+        }
+
+        function connect() {
+            const socket = new JsSIP.WebSocketInterface(`wss://${SERVER}:8089/ws`);
+            const configuration = {
+                sockets: [socket],
+                uri: `sip:${USERNAME}@${SERVER}`,
+                password: PASSWORD,
+                register: true,
+                session_timers: false,
+                user_agent: 'Simple WebRTC Test'
+            };
+
+            ua = new JsSIP.UA(configuration);
+
+            ua.on('connecting', () => {
+                log('Connecting...');
+                updateStatus('Connecting...');
+            });
+
+            ua.on('connected', () => {
+                log('Connected to WebSocket');
+                updateStatus('Connected');
+            });
+
+            ua.on('disconnected', () => {
+                log('Disconnected from WebSocket');
+                updateStatus('Disconnected');
+            });
+
+            ua.on('registered', () => {
+                log('Registered successfully');
+                updateStatus('Registered');
+            });
+
+            ua.on('registrationFailed', (e) => {
+                log('Registration failed: ' + e.cause);
+                updateStatus('Registration Failed');
+            });
+
+            ua.on('newRTCSession', (e) => {
+                session = e.session;
+                
+                session.on('peerconnection', (e) => {
+                    const pc = e.peerconnection;
+                    log('Peerconnection established');
+                    
+                    pc.addEventListener('track', (e) => {
+                        log('Remote track received');
+                        const remoteAudio = document.getElementById('remoteAudio');
+                        if (e.streams && e.streams[0]) {
+                            log('Setting remote audio stream');
+                            remoteAudio.srcObject = e.streams[0];
+                        }
+                    });
+                });
+
+                session.on('progress', () => {
+                    log('Call in progress');
+                    updateStatus('Ringing');
+                });
+
+                session.on('accepted', () => {
+                    log('Call accepted');
+                    updateStatus('In Call');
+                });
+
+                session.on('ended', () => {
+                    log('Call ended');
+                    updateStatus('Registered');
+                    session = null;
+                });
+
+                session.on('failed', (e) => {
+                    log('Call failed: ' + e.cause);
+                    updateStatus('Call Failed');
+                    session = null;
+                });
+
+                // Auto-answer incoming calls
+                if (e.originator === 'remote') {
+                    log('Incoming call - auto answering');
+                    session.answer({
+                        mediaConstraints: { audio: true, video: false }
+                    });
+                }
+            });
+
+            ua.start();
+        }
+
+        function callExtension(extension) {
+            if (!ua || !ua.isRegistered()) {
+                log('Not registered');
+                return;
+            }
+
+            if (session) {
+                log('Already in call');
+                return;
+            }
+
+            log(`Calling ${extension}...`);
+            const callOptions = {
+                mediaConstraints: { audio: true, video: false },
+                pcConfig: {
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                }
+            };
+
+            session = ua.call(`sip:${extension}@${SERVER}`, callOptions);
+        }
+
+        function hangup() {
+            if (session) {
+                log('Hanging up...');
+                session.terminate();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -11,6 +11,7 @@ import 'core/router/app_router.dart';
 import 'core/services/customer_service.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/tag_service.dart';
+import 'core/services/memo_service.dart';
 import 'core/services/simplified_auth_service.dart';
 import 'core/services/enhanced_auth_service.dart';
 import 'core/services/multi_tenant_service.dart';
@@ -102,6 +103,7 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
         ChangeNotifierProvider(create: (_) => CustomerService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
         ChangeNotifierProvider(create: (_) => TagService()),
+        ChangeNotifierProvider(create: (_) => MemoService()),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Test - 1000</title>
+    <script src="jssip.min.js"></script>
+</head>
+<body>
+    <h1>WebRTC Test - Account 1000</h1>
+    <div id="status">Initializing...</div>
+    <button id="register">Register</button>
+    <button id="unregister">Unregister</button>
+    <button id="call1001">Call 1001</button>
+    <button id="hangup">Hangup</button>
+    
+    <h2>Audio:</h2>
+    <audio id="remoteAudio" autoplay></audio>
+    
+    <h2>Log:</h2>
+    <pre id="log"></pre>
+
+    <script>
+        const log = (msg) => {
+            document.getElementById('log').innerHTML += msg + '\n';
+            console.log(msg);
+        };
+
+        // Configuration
+        const socket = new JsSIP.WebSocketInterface('wss://phone.sakana.hair:8089/ws');
+        const configuration = {
+            sockets: [socket],
+            uri: 'sip:1000@phone.sakana.hair',
+            password: '111111',
+            realm: 'phone.sakana.hair',
+            display_name: 'Test User 1000',
+            register: false,
+            register_expires: 600,
+            session_timers: false,
+            user_agent: 'Test WebRTC Client'
+        };
+
+        // Create UA
+        const ua = new JsSIP.UA(configuration);
+
+        // Events
+        ua.on('connected', function(e) {
+            log('Connected to WebSocket');
+            document.getElementById('status').innerHTML = 'Connected';
+        });
+
+        ua.on('disconnected', function(e) {
+            log('Disconnected from WebSocket');
+            document.getElementById('status').innerHTML = 'Disconnected';
+        });
+
+        ua.on('registered', function(e) {
+            log('Registered successfully!');
+            document.getElementById('status').innerHTML = 'Registered';
+        });
+
+        ua.on('unregistered', function(e) {
+            log('Unregistered');
+            document.getElementById('status').innerHTML = 'Unregistered';
+        });
+
+        ua.on('registrationFailed', function(e) {
+            log('Registration failed: ' + e.cause);
+            log('Response: ' + (e.response ? e.response.status_code + ' ' + e.response.reason_phrase : 'No response'));
+            document.getElementById('status').innerHTML = 'Registration Failed';
+        });
+
+        // Buttons
+        document.getElementById('register').onclick = function() {
+            log('Attempting to register...');
+            ua.register();
+        };
+
+        document.getElementById('unregister').onclick = function() {
+            log('Attempting to unregister...');
+            ua.unregister();
+        };
+
+        let session = null;
+        
+        ua.on('newRTCSession', function(e) {
+            const newSession = e.session;
+            
+            if (session) {
+                session.terminate();
+            }
+            
+            session = newSession;
+            
+            // Set up peerconnection handler immediately
+            session.on('peerconnection', function(e) {
+                const pc = e.peerconnection;
+                log('Peerconnection created');
+                
+                // Use addEventListener like the working client
+                pc.addEventListener('track', function(e) {
+                    log('Track event received');
+                    const remoteAudio = document.getElementById('remoteAudio');
+                    if (e.streams && e.streams[0]) {
+                        log('Setting remote audio stream');
+                        remoteAudio.srcObject = e.streams[0];
+                    }
+                });
+            });
+            
+            session.on('accepted', function() {
+                log('Call accepted');
+                document.getElementById('status').innerHTML = 'In Call';
+            });
+            
+            session.on('ended', function() {
+                log('Call ended');
+                document.getElementById('status').innerHTML = 'Registered';
+                session = null;
+            });
+            
+            session.on('failed', function(e) {
+                log('Call failed: ' + e.cause);
+                document.getElementById('status').innerHTML = 'Call Failed';
+                session = null;
+            });
+            
+            // Handle incoming call
+            if (e.originator === 'remote') {
+                log('Incoming call from ' + e.request.from);
+                // Auto-answer
+                session.answer({
+                    mediaConstraints: {
+                        audio: true,
+                        video: false
+                    }
+                });
+            }
+        });
+
+        document.getElementById('call1001').onclick = function() {
+            if (session) {
+                log('Already in call');
+                return;
+            }
+            
+            log('Calling 1001...');
+            
+            const callOptions = {
+                mediaConstraints: {
+                    audio: true,
+                    video: false
+                },
+                pcConfig: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ]
+                }
+            };
+            
+            session = ua.call('sip:1001@phone.sakana.hair', callOptions);
+        };
+
+        document.getElementById('hangup').onclick = function() {
+            if (session) {
+                log('Hanging up...');
+                session.terminate();
+            }
+        };
+
+        // Start
+        ua.start();
+        log('UA started');
+    </script>
+</body>
+</html>

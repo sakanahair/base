@@ -1,94 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isSuperAdmin() {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
-    }
-    
-    function isSiteAdmin(siteId) {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'site_admin' &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.siteId == siteId;
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    
-    // Users collection
-    match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
-      allow create: if isSuperAdmin();
-      allow update: if isOwner(userId) || isSuperAdmin();
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Sites collection
-    match /sites/{siteId} {
-      allow read: if isAuthenticated();
-      allow create: if isSuperAdmin();
-      allow update: if isSuperAdmin() || isSiteAdmin(siteId);
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Customers collection
-    match /customers/{customerId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isSuperAdmin() || isSiteAdmin(resource.data.siteId);
-    }
-    
-    // Appointments collection
-    match /appointments/{appointmentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
-    }
-    
-    // Services collection
-    match /services/{serviceId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Staff collection
-    match /staff/{staffId} {
-      allow read: if isAuthenticated();
-      allow create: if isSuperAdmin() || isSiteAdmin(resource.data.siteId);
-      allow update: if isSuperAdmin() || isSiteAdmin(resource.data.siteId);
-      allow delete: if isSuperAdmin();
-    }
-    
-    // Tags collection
-    match /tags/{tagId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if isAuthenticated();
-    }
-    
-    // Messages/Chat collections
-    match /messages/{messageId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow delete: if false; // Messages should not be deleted
-    }
-    
-    // System settings (only super admin)
-    match /settings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
+    // 開発環境用: 全てのアクセスを許可
+    // 本番環境では必ず適切な権限設定に変更してください
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

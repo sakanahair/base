@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Phone - Asterisk Sample</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .phone-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .phone-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .phone-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status.calling {
+            background: #f59e0b;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.ringing {
+            background: #3b82f6;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .display {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+
+        .display-number {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .display-status {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .key {
+            background: #f3f4f6;
+            border: none;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .key:hover {
+            background: #e5e7eb;
+            transform: scale(1.05);
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .key.special {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .key.special:hover {
+            background: #ede9fe;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-call {
+            background: #10b981;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-call:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-hangup {
+            background: #ef4444;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-hangup:hover:not(:disabled) {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-answer {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-answer:hover:not(:disabled) {
+            background: #2563eb;
+        }
+
+        .btn-reject {
+            background: #f87171;
+            color: white;
+        }
+
+        .btn-reject:hover:not(:disabled) {
+            background: #ef4444;
+        }
+
+        .quick-dial {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .quick-dial h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .quick-dial-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #7c3aed;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .audio-container {
+            display: none;
+        }
+
+        .incoming-call {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .incoming-call.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .incoming-call h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .incoming-call .caller {
+            font-size: 24px;
+            font-weight: bold;
+            color: #7c3aed;
+            margin-bottom: 20px;
+        }
+
+        .logs {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .logs h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #999;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .log-entry {
+            font-size: 12px;
+            color: #666;
+            padding: 5px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .log-entry.error {
+            color: #ef4444;
+        }
+
+        .log-entry.success {
+            color: #10b981;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .phone-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Phone 1000 -->
+        <div class="phone-card" id="phone1000">
+            <div class="phone-header">
+                <div class="phone-number">📞 1000</div>
+                <span class="status disconnected" id="status1000">切断中</span>
+            </div>
+
+            <div class="display">
+                <div class="display-number" id="display1000"></div>
+                <div class="display-status" id="displayStatus1000">番号を入力してください</div>
+            </div>
+
+            <div class="keypad" data-phone="1000">
+                <button class="key" data-key="1">1</button>
+                <button class="key" data-key="2">2</button>
+                <button class="key" data-key="3">3</button>
+                <button class="key" data-key="4">4</button>
+                <button class="key" data-key="5">5</button>
+                <button class="key" data-key="6">6</button>
+                <button class="key" data-key="7">7</button>
+                <button class="key" data-key="8">8</button>
+                <button class="key" data-key="9">9</button>
+                <button class="key special" data-key="*">*</button>
+                <button class="key" data-key="0">0</button>
+                <button class="key special" data-key="#">#</button>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-call" id="call1000" disabled>発信</button>
+                <button class="btn btn-hangup" id="hangup1000" style="display: none;">切断</button>
+            </div>
+
+            <div class="quick-dial">
+                <h3>クイックダイヤル</h3>
+                <div class="quick-dial-buttons">
+                    <button class="quick-btn" data-phone="1000" data-number="1001">→ 1001</button>
+                    <button class="quick-btn" data-phone="1000" data-number="1002">→ 1002</button>
+                    <button class="quick-btn" data-phone="1000" data-number="9999">エコーテスト</button>
+                </div>
+            </div>
+
+            <div class="logs">
+                <h3>ログ</h3>
+                <div id="log1000"></div>
+            </div>
+
+            <div class="audio-container">
+                <audio id="audio1000" autoplay></audio>
+            </div>
+        </div>
+
+        <!-- Phone 1001 -->
+        <div class="phone-card" id="phone1001">
+            <div class="phone-header">
+                <div class="phone-number">📞 1001</div>
+                <span class="status disconnected" id="status1001">切断中</span>
+            </div>
+
+            <div class="display">
+                <div class="display-number" id="display1001"></div>
+                <div class="display-status" id="displayStatus1001">番号を入力してください</div>
+            </div>
+
+            <div class="keypad" data-phone="1001">
+                <button class="key" data-key="1">1</button>
+                <button class="key" data-key="2">2</button>
+                <button class="key" data-key="3">3</button>
+                <button class="key" data-key="4">4</button>
+                <button class="key" data-key="5">5</button>
+                <button class="key" data-key="6">6</button>
+                <button class="key" data-key="7">7</button>
+                <button class="key" data-key="8">8</button>
+                <button class="key" data-key="9">9</button>
+                <button class="key special" data-key="*">*</button>
+                <button class="key" data-key="0">0</button>
+                <button class="key special" data-key="#">#</button>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-call" id="call1001" disabled>発信</button>
+                <button class="btn btn-hangup" id="hangup1001" style="display: none;">切断</button>
+            </div>
+
+            <div class="quick-dial">
+                <h3>クイックダイヤル</h3>
+                <div class="quick-dial-buttons">
+                    <button class="quick-btn" data-phone="1001" data-number="1000">→ 1000</button>
+                    <button class="quick-btn" data-phone="1001" data-number="1002">→ 1002</button>
+                    <button class="quick-btn" data-phone="1001" data-number="9999">エコーテスト</button>
+                </div>
+            </div>
+
+            <div class="logs">
+                <h3>ログ</h3>
+                <div id="log1001"></div>
+            </div>
+
+            <div class="audio-container">
+                <audio id="audio1001" autoplay></audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incoming Call Dialog -->
+    <div class="incoming-call" id="incomingCall">
+        <h2>📞 着信</h2>
+        <div class="caller" id="callerNumber">Unknown</div>
+        <div class="action-buttons">
+            <button class="btn btn-answer" id="answerCall">応答</button>
+            <button class="btn btn-reject" id="rejectCall">拒否</button>
+        </div>
+    </div>
+
+    <!-- JsSIP Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jssip@3.10.0/dist/jssip.min.js"></script>
+
+    <script>
+        // Configuration
+        const config = {
+            server: 'wss://phone.sakana.hair:8089/ws',
+            domain: 'phone.sakana.hair',
+            endpoints: {
+                '1000': {
+                    username: 'test1000',
+                    password: 'test123'
+                },
+                '1001': {
+                    username: '1001',
+                    password: 'webrtc_pass_1001'
+                }
+            }
+        };
+
+        // Phone instances
+        const phones = {};
+        const sessions = {};
+        const displays = {
+            '1000': '',
+            '1001': ''
+        };
+
+        // Initialize phones
+        function initPhone(extension) {
+            const socket = new JsSIP.WebSocketInterface(config.server);
+            const configuration = {
+                sockets: [socket],
+                uri: `sip:${extension}@${config.domain}`,
+                password: config.endpoints[extension].password,
+                session_timers: false,
+                register: true,
+                register_expires: 600
+            };
+
+            const ua = new JsSIP.UA(configuration);
+            phones[extension] = ua;
+
+            // Event handlers
+            ua.on('connected', () => {
+                addLog(extension, `WebSocket接続成功`, 'success');
+                updateStatus(extension, '接続中', 'connected');
+            });
+
+            ua.on('disconnected', () => {
+                addLog(extension, `WebSocket切断`, 'error');
+                updateStatus(extension, '切断中', 'disconnected');
+                document.getElementById(`call${extension}`).disabled = true;
+            });
+
+            ua.on('registered', () => {
+                addLog(extension, `登録完了`, 'success');
+                updateStatus(extension, 'オンライン', 'connected');
+                document.getElementById(`call${extension}`).disabled = false;
+            });
+
+            ua.on('unregistered', () => {
+                addLog(extension, `登録解除`, 'error');
+                updateStatus(extension, 'オフライン', 'disconnected');
+            });
+
+            ua.on('registrationFailed', (e) => {
+                addLog(extension, `登録失敗: ${e.cause}`, 'error');
+                updateStatus(extension, '登録失敗', 'disconnected');
+            });
+
+            ua.on('newRTCSession', (e) => {
+                const session = e.session;
+                sessions[extension] = session;
+
+                if (e.originator === 'remote') {
+                    // Incoming call
+                    addLog(extension, `着信: ${e.request.from.display_name || e.request.from.uri.user}`);
+                    showIncomingCall(extension, e.request.from.uri.user);
+                    
+                    session.on('ended', () => {
+                        hideIncomingCall();
+                        endCall(extension);
+                    });
+
+                    session.on('failed', () => {
+                        hideIncomingCall();
+                        endCall(extension);
+                    });
+
+                    session.on('accepted', () => {
+                        hideIncomingCall();
+                        updateStatus(extension, '通話中', 'connected');
+                        showHangupButton(extension);
+                    });
+
+                    // Auto-answer for demo (remove in production)
+                    if (confirm(`${e.request.from.uri.user}からの着信に応答しますか？`)) {
+                        session.answer({
+                            mediaConstraints: { audio: true, video: false },
+                            pcConfig: {
+                                iceServers: [
+                                    { urls: 'stun:stun.l.google.com:19302' }
+                                ]
+                            }
+                        });
+                    }
+                } else {
+                    // Outgoing call
+                    session.on('progress', () => {
+                        addLog(extension, `呼び出し中...`);
+                        updateStatus(extension, '呼び出し中', 'calling');
+                    });
+
+                    session.on('accepted', () => {
+                        addLog(extension, `通話開始`, 'success');
+                        updateStatus(extension, '通話中', 'connected');
+                        showHangupButton(extension);
+                    });
+
+                    session.on('ended', () => {
+                        addLog(extension, `通話終了`);
+                        endCall(extension);
+                    });
+
+                    session.on('failed', (e) => {
+                        addLog(extension, `通話失敗: ${e.cause}`, 'error');
+                        endCall(extension);
+                    });
+                }
+
+                // Handle media
+                session.on('peerconnection', (e) => {
+                    const pc = e.peerconnection;
+                    
+                    pc.ontrack = (event) => {
+                        const audio = document.getElementById(`audio${extension}`);
+                        audio.srcObject = event.streams[0];
+                    };
+                });
+            });
+
+            // Start the UA
+            ua.start();
+        }
+
+        // Make a call
+        function makeCall(from, to) {
+            if (!phones[from] || !to) return;
+
+            const options = {
+                mediaConstraints: { audio: true, video: false },
+                pcConfig: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ]
+                }
+            };
+
+            addLog(from, `発信: ${to}`);
+            phones[from].call(`sip:${to}@${config.domain}`, options);
+        }
+
+        // Hang up
+        function hangup(extension) {
+            if (sessions[extension]) {
+                sessions[extension].terminate();
+                delete sessions[extension];
+            }
+            endCall(extension);
+        }
+
+        // UI Functions
+        function updateStatus(extension, text, className) {
+            const status = document.getElementById(`status${extension}`);
+            status.textContent = text;
+            status.className = `status ${className}`;
+        }
+
+        function showHangupButton(extension) {
+            document.getElementById(`call${extension}`).style.display = 'none';
+            document.getElementById(`hangup${extension}`).style.display = 'block';
+        }
+
+        function showCallButton(extension) {
+            document.getElementById(`call${extension}`).style.display = 'block';
+            document.getElementById(`hangup${extension}`).style.display = 'none';
+        }
+
+        function endCall(extension) {
+            updateStatus(extension, 'オンライン', 'connected');
+            showCallButton(extension);
+            clearDisplay(extension);
+        }
+
+        function showIncomingCall(extension, caller) {
+            const dialog = document.getElementById('incomingCall');
+            document.getElementById('callerNumber').textContent = caller;
+            dialog.classList.add('show');
+            dialog.dataset.extension = extension;
+        }
+
+        function hideIncomingCall() {
+            document.getElementById('incomingCall').classList.remove('show');
+        }
+
+        function addLog(extension, message, type = '') {
+            const logDiv = document.getElementById(`log${extension}`);
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            
+            // Keep only last 10 entries
+            while (logDiv.children.length > 10) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+
+        function updateDisplay(extension, digit) {
+            displays[extension] += digit;
+            document.getElementById(`display${extension}`).textContent = displays[extension];
+            document.getElementById(`displayStatus${extension}`).textContent = '';
+        }
+
+        function clearDisplay(extension) {
+            displays[extension] = '';
+            document.getElementById(`display${extension}`).textContent = '';
+            document.getElementById(`displayStatus${extension}`).textContent = '番号を入力してください';
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize both phones
+            initPhone('1000');
+            initPhone('1001');
+
+            // Keypad buttons
+            document.querySelectorAll('.key').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const phone = e.target.closest('.keypad').dataset.phone;
+                    const key = e.target.dataset.key;
+                    updateDisplay(phone, key);
+                    
+                    // Send DTMF if in call
+                    if (sessions[phone] && sessions[phone].isEstablished()) {
+                        sessions[phone].sendDTMF(key);
+                    }
+                });
+            });
+
+            // Call buttons
+            document.getElementById('call1000').addEventListener('click', () => {
+                if (displays['1000']) {
+                    makeCall('1000', displays['1000']);
+                }
+            });
+
+            document.getElementById('call1001').addEventListener('click', () => {
+                if (displays['1001']) {
+                    makeCall('1001', displays['1001']);
+                }
+            });
+
+            // Hangup buttons
+            document.getElementById('hangup1000').addEventListener('click', () => {
+                hangup('1000');
+            });
+
+            document.getElementById('hangup1001').addEventListener('click', () => {
+                hangup('1001');
+            });
+
+            // Quick dial buttons
+            document.querySelectorAll('.quick-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const phone = e.target.dataset.phone;
+                    const number = e.target.dataset.number;
+                    displays[phone] = number;
+                    document.getElementById(`display${phone}`).textContent = number;
+                    makeCall(phone, number);
+                });
+            });
+
+            // Incoming call buttons
+            document.getElementById('answerCall').addEventListener('click', () => {
+                const extension = document.getElementById('incomingCall').dataset.extension;
+                if (sessions[extension]) {
+                    sessions[extension].answer({
+                        mediaConstraints: { audio: true, video: false }
+                    });
+                }
+                hideIncomingCall();
+            });
+
+            document.getElementById('rejectCall').addEventListener('click', () => {
+                const extension = document.getElementById('incomingCall').dataset.extension;
+                if (sessions[extension]) {
+                    sessions[extension].terminate();
+                }
+                hideIncomingCall();
+            });
+
+            // Clear display on backspace
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    // Find active phone (focused)
+                    const activeElement = document.activeElement;
+                    const phoneCard = activeElement.closest('.phone-card');
+                    if (phoneCard) {
+                        const phone = phoneCard.id.replace('phone', '');
+                        if (displays[phone].length > 0) {
+                            displays[phone] = displays[phone].slice(0, -1);
+                            document.getElementById(`display${phone}`).textContent = displays[phone];
+                        }
+                    }
+                }
+            });
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            Object.values(phones).forEach(ua => {
+                if (ua) ua.stop();
+            });
+        });
+    </script>
+</body>
+</html>

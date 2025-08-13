@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:xterm/xterm.dart';

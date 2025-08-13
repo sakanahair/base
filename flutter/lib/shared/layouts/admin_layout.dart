@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import '../../features/terminal/presentation/pages/terminal_page.dart';
 import '../../features/terminal/presentation/pages/multi_terminal_page.dart';
 import '../utils/responsive_helper.dart';
+import '../widgets/smart_memo_pad.dart';
+import '../../core/services/memo_service.dart';
 
 class AdminLayout extends StatefulWidget {
   final Widget child;
@@ -298,6 +300,42 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                 );
               },
               tooltip: 'Terminal',
+            ),
+          
+          // Memo Button
+          if (!isMobile || isTablet)
+            IconButton(
+              iconSize: context.responsiveIconSize,
+              icon: const Icon(Icons.note_alt_outlined, color: Colors.white),
+              onPressed: () {
+                if (context.isTouchDevice) {
+                  ResponsiveHelper.addHapticFeedback();
+                }
+                // メモ帳を開く
+                showDialog(
+                  context: context,
+                  builder: (dialogContext) => Dialog(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      height: MediaQuery.of(context).size.height * 0.8,
+                      constraints: const BoxConstraints(
+                        maxWidth: 800,
+                        maxHeight: 600,
+                      ),
+                      child: Consumer<MemoService>(
+                        builder: (context, memoService, child) {
+                          final generalMemo = memoService.getGeneralMemo();
+                          return SmartMemoPad(
+                            isDialog: true,
+                            initialText: generalMemo.isNotEmpty ? generalMemo : null,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+              tooltip: 'メモ帳',
             ),
           
           // Notification Button

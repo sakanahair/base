@@ -1,1 +1,18 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"sakana-76364","configurations":{"web":"1:425845959532:web:8f4d30501ee4d033ffe149"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "sakana-76364",
+          "configurations": {
+            "web": "1:425845959532:web:8f4d30501ee4d033ffe149"
+          }
+        }
+      }
+    }
+  }
+}

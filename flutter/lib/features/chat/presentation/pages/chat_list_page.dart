@@ -6,7 +6,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/tag_service.dart';
 import '../../../../core/services/customer_service.dart';
+import '../../../../core/services/memo_service.dart';
 import '../../../../shared/widgets/tag_manager_dialog.dart';
+import '../../../../shared/widgets/smart_memo_pad.dart';
 import 'package:intl/intl.dart';
 
 class ChatListPage extends StatefulWidget {
@@ -2265,24 +2267,37 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 24),
                       
-                      // メモ
-                      if (customer.memo.isNotEmpty) ...[
-                        _buildSectionTitle('メモ'),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Text(
-                            customer.memo,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
+                      // メモ（MemoServiceから取得）
+                      Consumer<MemoService>(
+                        builder: (context, memoService, child) {
+                          final customerMemo = memoService.getCustomerMemo(customer.id);
+                          final displayMemo = customerMemo.isNotEmpty ? customerMemo : customer.memo;
+                          
+                          if (displayMemo.isNotEmpty) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionTitle('メモ'),
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: Text(
+                                    displayMemo,
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -2325,10 +2340,34 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                     TextButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        context.go('/chat/conversation/${customer.id}');
+                        // メモ帳を開く
+                        showDialog(
+                          context: context,
+                          builder: (context) => Dialog(
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              height: MediaQuery.of(context).size.height * 0.8,
+                              constraints: const BoxConstraints(
+                                maxWidth: 800,
+                                maxHeight: 600,
+                              ),
+                              child: Consumer<MemoService>(
+                                builder: (context, memoService, child) {
+                                  final customerMemo = memoService.getCustomerMemo(customer.id);
+                                  return SmartMemoPad(
+                                    initialText: customerMemo,
+                                    customerId: customer.id,
+                                    customerName: customer.name,
+                                    isDialog: true,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
                       },
-                      icon: const Icon(Icons.chat),
-                      label: const Text('チャット開始'),
+                      icon: const Icon(Icons.note_alt),
+                      label: const Text('メモ帳'),
                       style: TextButton.styleFrom(
                         backgroundColor: themeService.primaryColor,
                         foregroundColor: Colors.white,
@@ -2616,12 +2655,15 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   void _showEditCustomerModal(BuildContext context, Customer customer) {
     final customerService = Provider.of<CustomerService>(context, listen: false);
     final tagService = Provider.of<TagService>(context, listen: false);
+    final memoService = Provider.of<MemoService>(context, listen: false);
     
     // テキストコントローラーを初期値で設定
     final nameController = TextEditingController(text: customer.name);
     final phoneController = TextEditingController(text: customer.phone);
     final emailController = TextEditingController(text: customer.email);
-    final memoController = TextEditingController(text: customer.memo);
+    // MemoServiceから顧客のメモを読み込む
+    final customerMemo = memoService.getCustomerMemo(customer.id);
+    final memoController = TextEditingController(text: customerMemo.isNotEmpty ? customerMemo : customer.memo);
     String selectedChannel = customer.channel;
     String selectedGender = customer.gender;
     DateTime? selectedBirthday = customer.birthday;
@@ -2732,18 +2774,6 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                       (context as Element).markNeedsBuild();
                     }
                   },
-                ),
-                const SizedBox(height: 16),
-                
-                // メモ
-                TextField(
-                  controller: memoController,
-                  decoration: const InputDecoration(
-                    labelText: 'メモ',
-                    prefixIcon: Icon(Icons.note),
-                    alignLabelWithHint: true,
-                  ),
-                  maxLines: 3,
                 ),
               ],
             ),

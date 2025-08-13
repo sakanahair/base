@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    function isSiteAdmin(siteId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'site_admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.siteId == siteId;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function belongsToTenant() {
+      return isAuthenticated() && 
+        resource.data.tenantId == request.auth.uid;
+    }
+    
+    function isCreatingForTenant() {
+      return isAuthenticated() && 
+        request.resource.data.tenantId == request.auth.uid;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(userId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Sites collection
+    match /sites/{siteId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || isSiteAdmin(siteId);
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Customers collection (マルチテナント対応)
+    match /customers/{customerId} {
+      allow read: if isAuthenticated() && belongsToTenant();
+      allow create: if isAuthenticated() && isCreatingForTenant();
+      allow update: if isAuthenticated() && belongsToTenant();
+      allow delete: if isAuthenticated() && belongsToTenant();
+    }
+    
+    // UserTags collection (マルチテナント対応)
+    match /userTags/{tagId} {
+      allow read: if isAuthenticated() && belongsToTenant();
+      allow create: if isAuthenticated() && isCreatingForTenant();
+      allow update: if isAuthenticated() && belongsToTenant();
+      allow delete: if isAuthenticated() && belongsToTenant();
+    }
+    
+    // Memos collection (マルチテナント対応)
+    match /memos/{memoId} {
+      allow read: if isAuthenticated() && belongsToTenant();
+      allow create: if isAuthenticated() && isCreatingForTenant();
+      allow update: if isAuthenticated() && belongsToTenant();
+      allow delete: if isAuthenticated() && belongsToTenant();
+    }
+    
+    // Appointments collection
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && belongsToTenant();
+      allow create: if isAuthenticated() && isCreatingForTenant();
+      allow update: if isAuthenticated() && belongsToTenant();
+      allow delete: if isAuthenticated() && belongsToTenant();
+    }
+    
+    // Services collection
+    match /services/{serviceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Staff collection
+    match /staff/{staffId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || (isSiteAdmin(resource.data.siteId) && isAuthenticated());
+      allow update: if isSuperAdmin() || (isSiteAdmin(resource.data.siteId) && isAuthenticated());
+      allow delete: if isSuperAdmin();
+    }
+    
+    // Tags collection
+    match /tags/{tagId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // Messages/Chat collections
+    match /messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false; // Messages should not be deleted
+    }
+    
+    // System settings (only super admin)
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+  }
+}
