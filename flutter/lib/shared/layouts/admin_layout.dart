@@ -45,12 +45,6 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       customIcon: 'assets/images/sakana_logo.png',
     ),
     _MenuItem(
-      icon: Icons.people_outline,
-      activeIcon: Icons.people,
-      label: '顧客管理',
-      route: '/customers',
-    ),
-    _MenuItem(
       icon: Icons.calendar_today_outlined,
       activeIcon: Icons.calendar_today,
       label: '予約管理',
@@ -566,47 +560,59 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     // Only show main navigation items on bottom nav (first 5)
     final mainItems = _menuItems.take(5).toList();
     
-    return Container(
-      height: 56, // 固定の高さに設定
+    return Theme(
+      data: Theme.of(context).copyWith(
+        // BottomNavigationBarの高さとパディングを調整
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
       child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: AppTheme.secondaryColor,
         unselectedItemColor: AppTheme.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 10,
-        iconSize: 22,
-      currentIndex: _currentBottomNavIndex.clamp(0, mainItems.length - 1),
-      onTap: (index) {
-        ResponsiveHelper.addHapticFeedback();
-        final item = mainItems[index];
-        context.go(item.route);
-        setState(() {
-          _currentBottomNavIndex = index;
-        });
-      },
-      items: mainItems.map((item) {
-        final isActive = _menuItems.indexOf(item) == _currentBottomNavIndex;
-        return BottomNavigationBarItem(
-          icon: item.customIcon != null
-              ? Image.network(
-                  '/admin/logo.png',
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.catching_pokemon,
-                      size: 24,
-                    );
-                  },
-                )
-              : Icon(
-                  isActive ? item.activeIcon : item.icon,
-                  size: 24,
-                ),
-          label: _getShortLabel(item.label),
-        );
-      }).toList(),
+        selectedFontSize: 10,
+        unselectedFontSize: 9,
+        iconSize: 20,
+        elevation: 8,
+        // アイテムの高さを調整
+        selectedLabelStyle: const TextStyle(height: 1.0),
+        unselectedLabelStyle: const TextStyle(height: 1.0),
+        currentIndex: _currentBottomNavIndex.clamp(0, mainItems.length - 1),
+        onTap: (index) {
+          ResponsiveHelper.addHapticFeedback();
+          final item = mainItems[index];
+          context.go(item.route);
+          setState(() {
+            _currentBottomNavIndex = index;
+          });
+        },
+        items: mainItems.map((item) {
+          final isActive = _menuItems.indexOf(item) == _currentBottomNavIndex;
+          return BottomNavigationBarItem(
+            icon: Container(
+              height: 20,
+              width: 20,
+              child: item.customIcon != null
+                  ? Image.network(
+                      '/admin/logo.png',
+                      width: 20,
+                      height: 20,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.catching_pokemon,
+                          size: 20,
+                        );
+                      },
+                    )
+                  : Icon(
+                      isActive ? item.activeIcon : item.icon,
+                      size: 20,
+                    ),
+            ),
+            label: _getShortLabel(item.label),
+          );
+        }).toList(),
       ),
     );
   }

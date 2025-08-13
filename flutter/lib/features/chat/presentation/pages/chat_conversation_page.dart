@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
 
@@ -20,10 +22,13 @@ class ChatConversationPage extends StatefulWidget {
 class _ChatConversationPageState extends State<ChatConversationPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _messageFocusNode = FocusNode();
   bool _isTyping = false;
   String _selectedChannel = 'LINE';
   String _selectedAIFunction = 'チャット';
   bool _webSearchEnabled = false;
+  Timer? _scrollTimer;
+  bool _isKeyboardVisible = false;
   
   // AIモデルの定義
   final List<Map<String, String>> _aiModels = [
@@ -57,12 +62,55 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     } else {
       _selectedChannel = 'LINE';
     }
+    
+    // 初回スクロール
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom(animate: false);
+    });
+    
+    // キーボード表示監視
+    _setupKeyboardListener();
+  }
+  
+  void _setupKeyboardListener() {
+    WidgetsBinding.instance.addObserver(_KeyboardObserver(
+      onKeyboardShow: () {
+        setState(() {
+          _isKeyboardVisible = true;
+        });
+        // キーボード表示時に最下部へスクロール
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _scrollToBottom();
+        });
+      },
+      onKeyboardHide: () {
+        setState(() {
+          _isKeyboardVisible = false;
+        });
+      },
+    ));
+  }
+  
+  void _scrollToBottom({bool animate = true}) {
+    if (_scrollController.hasClients) {
+      if (animate) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    }
   }
 
   @override
   void dispose() {
+    _scrollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -70,310 +118,345 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   Widget build(BuildContext context) {
     final themeService = Provider.of<ThemeService>(context);
     
-    return Scaffold(
-      backgroundColor: _selectedChannel == 'LINE' 
-        ? const Color(0xFF93AAD4) // LINE風背景色
-        : Colors.white, // その他は白背景
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 1,
-        leadingWidth: 40,
-        title: Row(
-          children: [
-            InkWell(
-              onTap: widget.chatId != 'sakana-ai' ? () => _showCustomerDetails(context) : null,
-              borderRadius: BorderRadius.circular(18),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundColor: widget.chatId == 'sakana-ai' ? Colors.white : _getChannelColor(),
-                child: widget.chatId == 'sakana-ai' 
-                  ? ClipOval(
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        padding: const EdgeInsets.all(6),
-                        child: Image.network(
-                          '/admin/logo.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.catching_pokemon,
-                              size: 24,
-                              color: _getChannelColor(),
-                            );
-                          },
+    return GestureDetector(
+      onTap: () {
+        // 画面をタップしたときキーボードを閉じる（ただし入力欄は除く）
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: _selectedChannel == 'LINE' 
+          ? const Color(0xFF93AAD4) // LINE風背景色
+          : Colors.white, // その他は白背景
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 1,
+          leadingWidth: 40,
+          title: Row(
+            children: [
+              InkWell(
+                onTap: widget.chatId != 'sakana-ai' ? () => _showCustomerDetails(context) : null,
+                borderRadius: BorderRadius.circular(18),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: widget.chatId == 'sakana-ai' ? Colors.white : _getChannelColor(),
+                  child: widget.chatId == 'sakana-ai' 
+                    ? ClipOval(
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          padding: const EdgeInsets.all(6),
+                          child: Image.network(
+                            '/admin/logo.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.catching_pokemon,
+                                size: 24,
+                                color: _getChannelColor(),
+                              );
+                            },
+                          ),
                         ),
+                      )
+                    : Text(
+                        '田',
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
                       ),
-                    )
-                  : Text(
-                      '田',
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中 太郎',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中 太郎',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _getChannelColor(),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'オンライン',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: widget.chatId == 'sakana-ai' 
+            ? [
+                // モデル選択ボタン
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: PopupMenuButton<Map<String, String>>(
+                    onSelected: (model) {
+                      setState(() {
+                        _selectedModel = model;
+                      });
+                    },
+                    itemBuilder: (context) => _aiModels.map((model) {
+                      return PopupMenuItem<Map<String, String>>(
+                        value: model,
+                        child: Row(
+                          children: [
+                            Text(model['icon']!, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 8),
+                            Text(model['displayName']!),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_selectedModel['icon']!, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 4),
+                          Text(
+                            _selectedModel['displayName']!,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.arrow_drop_down, size: 16),
+                        ],
+                      ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _getChannelColor(),
-                          shape: BoxShape.circle,
-                        ),
+                ),
+                // ウェブ検索チェックボックス
+                IconButton(
+                  icon: Icon(
+                    Icons.search,
+                    color: _webSearchEnabled ? Colors.blue : Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _webSearchEnabled = !_webSearchEnabled;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(_webSearchEnabled ? 'ウェブ検索を有効にしました' : 'ウェブ検索を無効にしました'),
+                        duration: const Duration(seconds: 2),
                       ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'オンライン',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                    );
+                  },
+                  tooltip: 'ウェブ検索',
+                ),
+                PopupMenuButton(
+                  icon: const Icon(Icons.more_vert),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'clear',
+                      child: ListTile(
+                        leading: Icon(Icons.clear_all),
+                        title: Text('会話をクリア'),
+                        contentPadding: EdgeInsets.zero,
                       ),
-                    ],
+                    ),
+                    const PopupMenuItem(
+                      value: 'settings',
+                      child: ListTile(
+                        leading: Icon(Icons.settings),
+                        title: Text('設定'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ),
+              ]
+            : [
+                IconButton(
+                  icon: const Icon(Icons.phone),
+                  onPressed: () {},
+                ),
+                IconButton(
+                  icon: const Icon(Icons.videocam),
+                  onPressed: () {},
+                ),
+                PopupMenuButton(
+              icon: const Icon(Icons.more_vert),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'profile',
+                  child: ListTile(
+                    leading: Icon(Icons.person),
+                    title: Text('プロフィール'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'search',
+                  child: ListTile(
+                    leading: Icon(Icons.search),
+                    title: Text('検索'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'mute',
+                  child: ListTile(
+                    leading: Icon(Icons.notifications_off),
+                    title: Text('通知OFF'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            // チャンネル切り替え or AI機能切り替え
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    widget.chatId == 'sakana-ai' ? 'AI機能:' : 'チャンネル:',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(width: 8),
+                  if (widget.chatId == 'sakana-ai')
+                    ..._buildAIFunctionChips(themeService)
+                  else
+                    ..._buildChannelChips(themeService),
+                ],
+              ),
+            ),
+            // メッセージリスト
+            Expanded(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (notification) {
+                  // スクロール中はキーボードを閉じる
+                  if (notification is ScrollStartNotification) {
+                    if (_messageFocusNode.hasFocus) {
+                      FocusScope.of(context).unfocus();
+                    }
+                  }
+                  return false;
+                },
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: 16 + (_isKeyboardVisible ? 0 : MediaQuery.of(context).padding.bottom),
+                  ),
+                  itemCount: _getDummyMessages().length,
+                  itemBuilder: (context, index) {
+                    final message = _getDummyMessages()[index];
+                    return _buildMessageBubble(message, themeService);
+                  },
+                ),
+              ),
+            ),
+            // 入力エリア
+            Container(
+              color: Colors.white,
+              padding: EdgeInsets.only(
+                left: 8,
+                right: 8,
+                top: 8,
+                bottom: MediaQuery.of(context).padding.bottom + 8,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: Colors.grey[600],
+                    onPressed: () => _showAttachmentOptions(context, themeService),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.emoji_emotions_outlined),
+                    color: Colors.grey[600],
+                    onPressed: () {
+                      // 絵文字ピッカーを表示
+                    },
+                  ),
+                  Expanded(
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minHeight: 48,
+                        maxHeight: 120,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        focusNode: _messageFocusNode,
+                        maxLines: null,
+                        minLines: 1,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        decoration: const InputDecoration(
+                          hintText: 'メッセージを入力',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: (text) {
+                          setState(() {
+                            _isTyping = text.isNotEmpty;
+                          });
+                        },
+                        onSubmitted: (text) {
+                          // Enterキーでは送信しない（改行のため）
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _isTyping ? themeService.primaryColor : Colors.grey[400],
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        _isTyping ? Icons.send : Icons.mic,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: _isTyping ? _sendMessage : _startVoiceRecording,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        actions: widget.chatId == 'sakana-ai' 
-          ? [
-              // モデル選択ボタン
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: PopupMenuButton<Map<String, String>>(
-                  onSelected: (model) {
-                    setState(() {
-                      _selectedModel = model;
-                    });
-                  },
-                  itemBuilder: (context) => _aiModels.map((model) {
-                    return PopupMenuItem<Map<String, String>>(
-                      value: model,
-                      child: Row(
-                        children: [
-                          Text(model['icon']!, style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 8),
-                          Text(model['displayName']!),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_selectedModel['icon']!, style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 4),
-                        Text(
-                          _selectedModel['displayName']!,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.arrow_drop_down, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // ウェブ検索チェックボックス
-              IconButton(
-                icon: Icon(
-                  Icons.search,
-                  color: _webSearchEnabled ? Colors.blue : Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _webSearchEnabled = !_webSearchEnabled;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_webSearchEnabled ? 'ウェブ検索を有効にしました' : 'ウェブ検索を無効にしました'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                tooltip: 'ウェブ検索',
-              ),
-              PopupMenuButton(
-                icon: const Icon(Icons.more_vert),
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'clear',
-                    child: ListTile(
-                      leading: Icon(Icons.clear_all),
-                      title: Text('会話をクリア'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'settings',
-                    child: ListTile(
-                      leading: Icon(Icons.settings),
-                      title: Text('設定'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-            ]
-          : [
-              IconButton(
-                icon: const Icon(Icons.phone),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.videocam),
-                onPressed: () {},
-              ),
-              PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'profile',
-                child: ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('プロフィール'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'search',
-                child: ListTile(
-                  leading: Icon(Icons.search),
-                  title: Text('検索'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'mute',
-                child: ListTile(
-                  leading: Icon(Icons.notifications_off),
-                  title: Text('通知OFF'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // チャンネル切り替え or AI機能切り替え
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Text(
-                  widget.chatId == 'sakana-ai' ? 'AI機能:' : 'チャンネル:',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(width: 8),
-                if (widget.chatId == 'sakana-ai')
-                  ..._buildAIFunctionChips(themeService)
-                else
-                  ..._buildChannelChips(themeService),
-              ],
-            ),
-          ),
-          // メッセージリスト
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _getDummyMessages().length,
-              itemBuilder: (context, index) {
-                final message = _getDummyMessages()[index];
-                return _buildMessageBubble(message, themeService);
-              },
-            ),
-          ),
-          // 入力エリア
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.only(
-              left: 8,
-              right: 8,
-              top: 8,
-              bottom: MediaQuery.of(context).padding.bottom + 8,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: Colors.grey[600],
-                  onPressed: () => _showAttachmentOptions(context, themeService),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.emoji_emotions_outlined),
-                  color: Colors.grey[600],
-                  onPressed: () {},
-                ),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: TextField(
-                      controller: _messageController,
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      decoration: const InputDecoration(
-                        hintText: 'メッセージを入力',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (text) {
-                        setState(() {
-                          _isTyping = text.isNotEmpty;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: _isTyping ? themeService.primaryColor : Colors.grey[400],
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _isTyping ? Icons.send : Icons.mic,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: _isTyping ? _sendMessage : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -700,6 +783,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   }
 
   void _showAttachmentOptions(BuildContext context, ThemeService themeService) {
+    // キーボードを一旦閉じる
+    FocusScope.of(context).unfocus();
+    
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -717,25 +803,37 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                   icon: Icons.image,
                   label: '画像',
                   color: Colors.green,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // 画像選択処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.camera_alt,
                   label: 'カメラ',
                   color: Colors.blue,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // カメラ起動処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.attach_file,
                   label: 'ファイル',
                   color: Colors.purple,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // ファイル選択処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.location_on,
                   label: '位置情報',
                   color: Colors.orange,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // 位置情報送信処理
+                  },
                 ),
               ],
             ),
@@ -747,25 +845,37 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                   icon: Icons.contact_phone,
                   label: '連絡先',
                   color: Colors.teal,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // 連絡先選択処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.card_giftcard,
                   label: 'クーポン',
                   color: Colors.red,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // クーポン送信処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.calendar_today,
                   label: '予約',
                   color: Colors.indigo,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // 予約作成処理
+                  },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.web,
                   label: 'リッチ',
                   color: themeService.primaryColor,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.pop(context);
+                    // リッチメッセージ作成処理
+                  },
                 ),
               ],
             ),
@@ -811,13 +921,30 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   void _sendMessage() {
     if (_messageController.text.trim().isNotEmpty) {
       // メッセージ送信処理
+      final messageText = _messageController.text;
       _messageController.clear();
       setState(() {
         _isTyping = false;
       });
+      
+      // TODO: 実際のメッセージ送信処理を実装
+      print('送信: $messageText');
+      
+      // 送信後に最下部へスクロール
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom();
+      });
+      
+      // キーボードを維持（再度フォーカス）
+      _messageFocusNode.requestFocus();
     }
   }
-
+  
+  void _startVoiceRecording() {
+    // 音声録音処理
+    HapticFeedback.lightImpact();
+    print('音声録音開始');
+  }
 
   void _showCustomerDetails(BuildContext context) {
     final customerName = widget.chatId == 'sakana-ai' ? 'SAKANA AI' : '田中 太郎';
@@ -1190,5 +1317,26 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         'type': 'text',
       },
     ];
+  }
+}
+
+// キーボード表示監視用のObserver
+class _KeyboardObserver extends WidgetsBindingObserver {
+  final VoidCallback onKeyboardShow;
+  final VoidCallback onKeyboardHide;
+  
+  _KeyboardObserver({
+    required this.onKeyboardShow,
+    required this.onKeyboardHide,
+  });
+  
+  @override
+  void didChangeMetrics() {
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+    if (bottomInset > 0) {
+      onKeyboardShow();
+    } else {
+      onKeyboardHide();
+    }
   }
 }

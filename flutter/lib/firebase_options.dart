@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -61,5 +58,15 @@ class DefaultFirebaseOptions {
     databaseURL: 'https://sakana-76364-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'sakana-76364.firebasestorage.app',
     measurementId: 'G-7T3J772WBV',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDRgKvjBYHk6ccFKNfKh7xVELhxKHFwXT0',
+    appId: '1:425845959532:ios:8d42eca89c6d9927ffe149',
+    messagingSenderId: '425845959532',
+    projectId: 'sakana-76364',
+    storageBucket: 'sakana-76364.firebasestorage.app',
+    databaseURL: 'https://sakana-76364-default-rtdb.asia-southeast1.firebasedatabase.app',
+    iosBundleId: 'com.example.sakanaAdmin',
   );
 }

@@ -5,23 +5,64 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="SAKANA Admin Platform">
+  <meta name="description" content="美容室・サロン向け管理プラットフォーム">
+  <meta name="keywords" content="美容室,サロン,管理,予約,顧客管理,SAKANA">
+  <meta name="author" content="SAKANA">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- ビューポート設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   
+  <!-- キャッシュ制御 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
 
+  <!-- PWA設定 -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="sakana_admin">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SAKANA Admin">
+  <meta name="application-name" content="SAKANA Admin">
+  <meta name="msapplication-TileColor" content="#6366F1">
+  <meta name="msapplication-TileImage" content="icons/Icon-144.png">
+  <meta name="theme-color" content="#6366F1">
+  
+  <!-- iOS用アイコン -->
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/Icon-120.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">
+  
+  <!-- スプラッシュスクリーン（iOS） -->
+  <link rel="apple-touch-startup-image" href="splash/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="splash/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+  <link rel="apple-touch-startup-image" href="splash/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="splash/splash-1668x2224.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)">
+  <link rel="apple-touch-startup-image" href="splash/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
 
+  <!-- ファビコン -->
   <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/Icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/Icon-16.png">
+  <link rel="shortcut icon" href="favicon.ico">
 
-  <title>Sakana Hair Admin</title>
+  <title>SAKANA Admin Platform - 美容室・サロン向け管理システム</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://your-domain.com/admin/">
+  <meta property="og:title" content="SAKANA Admin Platform">
+  <meta property="og:description" content="美容室・サロン向け管理プラットフォーム">
+  <meta property="og:image" content="icons/Icon-512.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://your-domain.com/admin/">
+  <meta property="twitter:title" content="SAKANA Admin Platform">
+  <meta property="twitter:description" content="美容室・サロン向け管理プラットフォーム">
+  <meta property="twitter:image" content="icons/Icon-512.png">
   
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
@@ -32,8 +73,126 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@100;300;400;500;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- PWA install prompt only -->
+  <script>
+    // PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      console.log('PWA install available');
+    });
+
+    // Track PWA install
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('PWA was installed');
+      deferredPrompt = null;
+    });
+  </script>
+  
+  <style>
+    /* PWA splash screen styles - matching splash_screen.dart */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Loading container */
+    .loading-container {
+      text-align: center;
+    }
+    
+    /* SAKANA HAIR text */
+    .loading-text {
+      font-size: 24px;
+      font-weight: 200;
+      letter-spacing: 7.2px; /* 0.3em * 24px */
+      color: #1A1A1A;
+      animation: fadeInUp 1.5s ease-out;
+    }
+    
+    /* Loading bar */
+    .loading-bar-container {
+      width: 60px;
+      height: 1px;
+      margin: 20px auto 0;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .loading-bar {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to right,
+        transparent,
+        #8B7962,
+        transparent
+      );
+      animation: slideBar 3s ease-in-out infinite;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      50% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes slideBar {
+      0% {
+        transform: translateX(-100%);
+      }
+      50% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    /* Hide loading when Flutter loads */
+    .flutter-loading {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
+  <!-- Loading indicator -->
+  <div class="loading-container" id="loading">
+    <div class="loading-text">SAKANA HAIR</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar"></div>
+    </div>
+  </div>
+  
+  <!-- Noscript fallback -->
+  <noscript>
+    <div style="text-align: center; padding: 50px; font-family: sans-serif;">
+      <h1>JavaScriptを有効にしてください</h1>
+      <p>SAKANA Admin Platform を使用するには、JavaScriptを有効にする必要があります。</p>
+    </div>
+  </noscript>
+  
+  <script>
+    // Hide loading indicator when Flutter starts
+    window.addEventListener('flutter-first-frame', function () {
+      document.getElementById('loading').classList.add('flutter-loading');
+    });
+  </script>
+  
   <script src="flutter_bootstrap.js" defer></script>
 </body>
 </html>

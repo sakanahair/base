@@ -833,8 +833,30 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   Widget _buildFriendsList(BuildContext context, ThemeService themeService) {
     return Consumer2<CustomerService, TagService>(
       builder: (context, customerService, tagService, child) {
-        final customers = customerService.customers;
+        final allCustomers = customerService.customers;
         final dateFormat = DateFormat('yyyy/MM/dd');
+        
+        // 検索とフィルターを適用
+        final filteredCustomers = allCustomers.where((customer) {
+          // 名前、電話番号、メールでの検索
+          final matchesNameOrContact = 
+              customer.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              customer.phone.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              customer.email.toLowerCase().contains(_searchQuery.toLowerCase());
+          
+          // タグでの検索
+          final userTags = tagService.getUserTags(customer.id);
+          final matchesTags = userTags.any((tag) => 
+              tag.toLowerCase().contains(_searchQuery.toLowerCase()));
+          
+          // いずれかにマッチすれば表示
+          final matchesSearch = _searchQuery.isEmpty || matchesNameOrContact || matchesTags;
+          
+          // チャンネルフィルター
+          final matchesChannel = _selectedChannel == 'すべて' || customer.channel == _selectedChannel;
+          
+          return matchesSearch && matchesChannel;
+        }).toList();
     
     return Column(
       children: [
@@ -865,9 +887,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
         // 顧客リスト
         Expanded(
           child: ListView.builder(
-            itemCount: customers.length,
+            itemCount: filteredCustomers.length,
             itemBuilder: (context, index) {
-              final customer = customers[index];
+              final customer = filteredCustomers[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 elevation: 0,
@@ -1060,12 +1082,25 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   }
 
   Widget _buildGroupsList(BuildContext context, ThemeService themeService) {
-    final groups = _getDummyGroups();
+    final allGroups = _getDummyGroups();
+    
+    // 検索フィルターを適用
+    final filteredGroups = allGroups.where((group) {
+      // グループ名と説明での検索
+      final matchesNameOrDescription = 
+          group['name'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (group['description'] ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+      
+      // チャンネルフィルター（グループは全チャンネル共通なので常にtrue）
+      final matchesChannel = _selectedChannel == 'すべて' || _selectedChannel == 'App';
+      
+      return (_searchQuery.isEmpty || matchesNameOrDescription) && matchesChannel;
+    }).toList();
     
     return ListView.builder(
-      itemCount: groups.length,
+      itemCount: filteredGroups.length,
       itemBuilder: (context, index) {
-        final group = groups[index];
+        final group = filteredGroups[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(

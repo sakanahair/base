@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -41,7 +40,7 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
   late TabController _tabController;
   final List<TerminalSession> _sessions = [];
   int _sessionCounter = 1;
-  late DropzoneViewController _dropzoneController;
+  DropzoneViewController? _dropzoneController;
   bool _isDragging = false;
   bool _isKeyboardVisible = false;
   final FocusNode _terminalFocusNode = FocusNode();
@@ -669,70 +668,39 @@ class _MultiTerminalPageState extends State<MultiTerminalPage> with TickerProvid
                             ),
                           ),
                         ),
-                            DropzoneView(
-                              operation: DragOperation.copy,
-                              cursor: CursorType.Default,
-                              onCreated: (controller) {
-                                _dropzoneController = controller;
-                              },
-                              onDrop: (event) async {
-                                setState(() {
-                                  _isDragging = false;
-                                });
-                                
-                                if (event is html.File) {
-                                  final file = event as html.File;
+                            if (kIsWeb)
+                              DropzoneView(
+                                operation: DragOperation.copy,
+                                cursor: CursorType.Default,
+                                onCreated: (controller) {
+                                  _dropzoneController = controller;
+                                },
+                                onDrop: (event) async {
+                                  setState(() {
+                                    _isDragging = false;
+                                  });
+                                  
+                                  // Web-specific file handling disabled for now
+                                  // TODO: Implement cross-platform file upload
                                   final currentSession = _sessions[_tabController.index];
-                                  
-                                  // ファイルサイズチェック（10MB制限）
-                                  if (file.size > 10 * 1024 * 1024) {
-                                    currentSession.terminal.write('\r\n\x1B[31mError: File size exceeds 10MB limit\x1B[0m\r\n');
-                                    return;
-                                  }
-                                  
-                                  // ファイル読み込み
-                                  final reader = html.FileReader();
-                                  reader.readAsArrayBuffer(file);
-                                  
-                                  reader.onLoadEnd.listen((e) {
-                                    if (currentSession.channel != null && 
-                                        currentSession.channel!.closeCode == null) {
-                                      // ファイルをBase64エンコード
-                                      final bytes = reader.result as Uint8List;
-                                      final base64Content = base64Encode(bytes);
-                                      
-                                      // ファイルアップロードメッセージを送信
-                                      currentSession.channel!.sink.add(json.encode({
-                                        'type': 'file_upload',
-                                        'filename': file.name,
-                                        'content': base64Content,
-                                        'encoding': 'base64',
-                                      }));
-                                      
-                                      // アップロード開始通知
-                                      currentSession.terminal.write('\r\n\x1B[33mUploading: ${file.name}...\x1B[0m\r\n');
-                                    }
+                                  currentSession.terminal.write('\r\n\x1B[31mFile upload not supported in this build\x1B[0m\r\n');
+                                },
+                                onHover: () {
+                                  setState(() {
+                                    _isDragging = true;
                                   });
-                                  
-                                  reader.onError.listen((error) {
-                                    currentSession.terminal.write('\r\n\x1B[31mError reading file: $error\x1B[0m\r\n');
+                                },
+                                onLeave: () {
+                                  setState(() {
+                                    _isDragging = false;
                                   });
-                                }
-                              },
-                              onHover: () {
-                                setState(() {
-                                  _isDragging = true;
-                                });
-                              },
-                              onLeave: () {
-                                setState(() {
-                                  _isDragging = false;
-                                });
-                              },
-                              onError: (error) {
-                                print('Dropzone error: $error');
-                              },
-                            ),
+                                },
+                                onError: (error) {
+                                  print('Dropzone error: $error');
+                                },
+                              )
+                            else
+                              const SizedBox.shrink(),
                           ],
                         ),
                       ),

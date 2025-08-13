@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
-import '../../features/customers/presentation/pages/customers_page.dart';
-// import '../../features/customers/presentation/pages/smart_customers_page.dart';
-// import '../../features/customers/presentation/pages/customers_split_page.dart';
-import '../../features/customers/presentation/pages/enhanced_customers_page.dart';
+// Removed customer-related imports as customer management has been removed
 import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/chat/presentation/pages/chat_conversation_page.dart';
 import '../../features/chat/presentation/pages/qr_code_page.dart';
@@ -109,19 +106,6 @@ class AppRouter {
                 ),
               ),
             ],
-          ),
-          GoRoute(
-            path: '/customers',
-            pageBuilder: (context, state) => CustomTransitionPage(
-              key: state.pageKey,
-              child: const EnhancedCustomersPage(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: child,
-                );
-              },
-            ),
           ),
           GoRoute(
             path: '/appointments',

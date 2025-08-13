@@ -30,6 +30,13 @@
             {
               "client_id": "425845959532-45fd6rm41llisgr2e4ek5sv3g7rul8k8.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "425845959532-i44s9kfhrm2d99661p0druhvfji0bmen.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sakanaAdmin"
+              }
             }
           ]
         }

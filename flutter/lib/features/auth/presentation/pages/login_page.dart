@@ -547,7 +547,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
     
     if (success && mounted) {
-      Navigator.pop(context);
+      // Navigator.popを削除し、直接ダッシュボードへ遷移
       context.go('/dashboard');
     } else if (mounted) {
       ResponsiveHelper.showResponsiveSnackBar(
