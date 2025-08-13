@@ -369,15 +369,23 @@ class ThemeService extends ChangeNotifier {
       scaffoldBackgroundColor: scaffoldColor,
       cardColor: cardColor,
       textTheme: TextTheme(
-        bodyLarge: _getGoogleFontStyle(fontSize: getFontSize('body')),
-        bodyMedium: _getGoogleFontStyle(fontSize: getFontSize('body')),
-        bodySmall: _getGoogleFontStyle(fontSize: getFontSize('caption')),
+        // Display styles (大きなタイトル用)
+        displayLarge: _getGoogleFontStyle(fontSize: getFontSize('headline') * 1.5, fontWeight: FontWeight.bold),
+        displayMedium: _getGoogleFontStyle(fontSize: getFontSize('headline') * 1.2, fontWeight: FontWeight.bold),
+        displaySmall: _getGoogleFontStyle(fontSize: getFontSize('headline'), fontWeight: FontWeight.bold),
+        // Headline styles
         headlineLarge: _getGoogleFontStyle(fontSize: getFontSize('headline'), fontWeight: FontWeight.bold),
         headlineMedium: _getGoogleFontStyle(fontSize: getFontSize('title'), fontWeight: FontWeight.w600),
         headlineSmall: _getGoogleFontStyle(fontSize: getFontSize('subtitle'), fontWeight: FontWeight.w500),
+        // Title styles
         titleLarge: _getGoogleFontStyle(fontSize: getFontSize('title'), fontWeight: FontWeight.w600),
         titleMedium: _getGoogleFontStyle(fontSize: getFontSize('subtitle'), fontWeight: FontWeight.w500),
         titleSmall: _getGoogleFontStyle(fontSize: getFontSize('caption'), fontWeight: FontWeight.w500),
+        // Body styles
+        bodyLarge: _getGoogleFontStyle(fontSize: getFontSize('body')),
+        bodyMedium: _getGoogleFontStyle(fontSize: getFontSize('body')),
+        bodySmall: _getGoogleFontStyle(fontSize: getFontSize('caption')),
+        // Label styles
         labelLarge: _getGoogleFontStyle(fontSize: getFontSize('button'), fontWeight: FontWeight.w500),
         labelMedium: _getGoogleFontStyle(fontSize: getFontSize('caption')),
         labelSmall: _getGoogleFontStyle(fontSize: getFontSize('caption') - 2),

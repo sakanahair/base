@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/image_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -60,6 +62,29 @@ class SettingsPage extends StatelessWidget {
                   iconColor: Colors.orange,
                   title: '通知設定',
                   subtitle: 'プッシュ通知の管理',
+                  onTap: () {},
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            _buildSettingsSection(
+              context,
+              title: 'システム',
+              items: [
+                _SettingsItem(
+                  icon: Icons.storage,
+                  iconColor: Colors.purple,
+                  title: 'ストレージ管理',
+                  subtitle: 'キャッシュとデータの管理',
+                  onTap: () => _showStorageDialog(context),
+                ),
+                _SettingsItem(
+                  icon: Icons.backup,
+                  iconColor: Colors.teal,
+                  title: 'バックアップ',
+                  subtitle: 'データのバックアップと復元',
                   onTap: () {},
                 ),
               ],
@@ -233,6 +258,186 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
+
+  // ストレージ管理ダイアログ
+  void _showStorageDialog(BuildContext context) async {
+    // LocalStorageの使用状況を計算
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    int totalSize = 0;
+    Map<String, int> breakdown = {};
+    
+    for (final key in keys) {
+      final value = prefs.get(key);
+      final size = value.toString().length;
+      totalSize += size;
+      
+      // カテゴリ別に集計
+      if (key.startsWith('sakana_images_')) {
+        breakdown['画像データ'] = (breakdown['画像データ'] ?? 0) + size;
+      } else if (key.startsWith('sakana_customers')) {
+        breakdown['顧客データ'] = (breakdown['顧客データ'] ?? 0) + size;
+      } else if (key.startsWith('theme_')) {
+        breakdown['テーマ設定'] = (breakdown['テーマ設定'] ?? 0) + size;
+      } else {
+        breakdown['その他'] = (breakdown['その他'] ?? 0) + size;
+      }
+    }
+    
+    // ダイアログ表示
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ストレージ管理'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 使用状況サマリー
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '総使用量',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${(totalSize / 1024).toStringAsFixed(1)} KB / 5,000 KB',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: totalSize / (5 * 1024 * 1024), // 5MBを上限として表示
+                      backgroundColor: Colors.blue.shade100,
+                      valueColor: AlwaysStoppedAnimation(
+                        totalSize > 4 * 1024 * 1024 
+                          ? Colors.red 
+                          : totalSize > 3 * 1024 * 1024 
+                            ? Colors.orange 
+                            : Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // カテゴリ別使用量
+              const Text(
+                'カテゴリ別使用量',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              ...breakdown.entries.map((entry) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(entry.key),
+                    Text('${(entry.value / 1024).toStringAsFixed(1)} KB'),
+                  ],
+                ),
+              )).toList(),
+              
+              const SizedBox(height: 16),
+              
+              // 警告メッセージ
+              if (totalSize > 3 * 1024 * 1024)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'ストレージ容量が残り少なくなっています',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+          if (breakdown.containsKey('画像データ'))
+            TextButton(
+              onPressed: () async {
+                // 画像キャッシュをクリア
+                final imageService = Provider.of<ImageService>(context, listen: false);
+                await imageService.clearCache();
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('画像キャッシュをクリアしました')),
+                );
+              },
+              child: const Text('画像キャッシュをクリア'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.orange,
+              ),
+            ),
+          ElevatedButton(
+            onPressed: () async {
+              // 全データをクリア（設定を除く）
+              final keysToRemove = keys.where((key) => 
+                !key.startsWith('theme_') && 
+                !key.startsWith('is_dark_mode') &&
+                !key.startsWith('font_')
+              ).toList();
+              
+              for (final key in keysToRemove) {
+                await prefs.remove(key);
+              }
+              
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('キャッシュをクリアしました')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('全キャッシュをクリア'),
+          ),
+        ],
+      ),
+    );
+  }
 
 class _SettingsItem {
   final IconData icon;

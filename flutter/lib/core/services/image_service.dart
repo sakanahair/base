@@ -22,7 +22,7 @@ class ImageService extends ChangeNotifier {
   }
   final Uuid _uuid = const Uuid();
   
-  // 画像をアップロード（LocalStorage + Firebase Storage）
+  // 画像をアップロード（Firebase Storage優先、LocalStorageは軽量化）
   Future<ServiceImage> uploadImage({
     required String serviceId,
     required Uint8List imageData,
@@ -32,15 +32,26 @@ class ImageService extends ChangeNotifier {
       final imageId = _uuid.v4();
       final timestamp = DateTime.now().toIso8601String();
       
-      // 1. LocalStorageに保存（Base64）
-      final base64Image = base64Encode(imageData);
+      // 画像をリサイズして軽量化（サムネイル用）
+      final thumbnailData = await _createThumbnail(imageData);
+      final thumbnailBase64 = thumbnailData != null ? base64Encode(thumbnailData) : '';
+      
+      // Firebase Storageに先にアップロード
+      String firebaseUrl = '';
+      if (_storage != null) {
+        final url = await _uploadToFirebase(imageId, serviceId, imageData, fileName);
+        if (url != null) {
+          firebaseUrl = url;
+        }
+      }
+      
       final image = ServiceImage(
         id: imageId,
         serviceId: serviceId,
-        localData: base64Image,
+        localData: thumbnailBase64, // サムネイルのみ保存
         fileName: fileName,
         uploadedAt: timestamp,
-        firebaseUrl: '', // 後でFirebaseから取得
+        firebaseUrl: firebaseUrl,
         size: imageData.length,
       );
       
@@ -50,26 +61,59 @@ class ImageService extends ChangeNotifier {
       }
       _imageCache[serviceId]!.add(image);
       
-      // LocalStorageに保存
+      // LocalStorageに保存（URLとメタデータのみ）
       await _saveToLocalStorage(serviceId);
-      
-      // 2. Firebase Storageにアップロード（Webのみ、バックグラウンド）
-      if (_storage != null) {
-        _uploadToFirebase(imageId, serviceId, imageData, fileName).then((url) {
-          if (url != null) {
-            image.firebaseUrl = url;
-            _saveToLocalStorage(serviceId);
-            notifyListeners();
-          }
-        });
-      }
       
       notifyListeners();
       return image;
     } catch (e) {
       print('Error uploading image: $e');
+      
+      // LocalStorage容量エラーの場合はクリア
+      if (e.toString().contains('QuotaExceededError')) {
+        await _clearOldImages();
+        // リトライ
+        return uploadImage(
+          serviceId: serviceId,
+          imageData: imageData,
+          fileName: fileName,
+        );
+      }
       rethrow;
     }
+  }
+  
+  // サムネイル作成（実装は簡略化）
+  Future<Uint8List?> _createThumbnail(Uint8List imageData) async {
+    // 画像サイズが100KB以下ならそのまま返す
+    if (imageData.length <= 100 * 1024) {
+      return imageData;
+    }
+    // それ以上なら null を返してLocalStorageには保存しない
+    return null;
+  }
+  
+  // 古い画像データをクリア
+  Future<void> _clearOldImages() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().where((key) => key.startsWith(_localStoragePrefix));
+      
+      for (final key in keys) {
+        await prefs.remove(key);
+      }
+      
+      _imageCache.clear();
+      print('Cleared old image data from LocalStorage');
+    } catch (e) {
+      print('Error clearing old images: $e');
+    }
+  }
+  
+  // パブリックメソッド: キャッシュをクリア
+  Future<void> clearCache() async {
+    await _clearOldImages();
+    notifyListeners();
   }
   
   // Firebase Storageにアップロード
