@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/utils/responsive_helper.dart';
+import '../../../../core/utils/ios_safe_area_helper.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -91,7 +92,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: RefreshIndicator(
+      body: IOSSafeAreaHelper.wrapWithSafeArea(
+        child: RefreshIndicator(
         onRefresh: () async {
           if (context.isTouchDevice) {
             ResponsiveHelper.addHapticFeedback();
@@ -111,11 +113,6 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                     '予約管理',
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: ResponsiveHelper.getResponsiveFontSize(
-                        context,
-                        baseFontSize: 24,
-                        mobileScale: 0.9,
-                      ),
                     ),
                   ).animate().fadeIn().slideX(begin: -0.2, end: 0),
                   
@@ -142,6 +139,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
             ),
           ],
         ),
+      ),
       ),
       
       // Mobile FAB for adding appointments

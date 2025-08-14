@@ -3,17 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class ServiceImageGallery extends StatefulWidget {
   final String serviceId;
   final bool isEditable;
+  final Function(List<String>)? onImagesChanged;
+  final List<String>? initialImageUrls; // Firebaseから取得済みの画像URL
   
   const ServiceImageGallery({
     super.key,
     required this.serviceId,
     this.isEditable = true,
+    this.onImagesChanged,
+    this.initialImageUrls,
   });
   
   @override
@@ -32,14 +37,60 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
   }
   
   Future<void> _loadImages() async {
+    print('Loading images for service: ${widget.serviceId}');
+    
+    // 初期画像URLが提供されている場合は、それを使用
+    if (widget.initialImageUrls != null && widget.initialImageUrls!.isNotEmpty) {
+      print('Using initial image URLs from Firebase: ${widget.initialImageUrls}');
+      // Firebase URLから仮のServiceImageオブジェクトを作成
+      setState(() {
+        _images = widget.initialImageUrls!.map((url) => ServiceImage(
+          id: url.split('/').last, // URLから仮のIDを生成
+          serviceId: widget.serviceId,
+          localData: '', // LocalDataは空
+          firebaseUrl: url,
+          fileName: 'image',
+          uploadedAt: DateTime.now().toIso8601String(),
+          size: 0,
+        )).toList();
+      });
+      
+      // コールバックで通知
+      if (widget.onImagesChanged != null) {
+        widget.onImagesChanged!(widget.initialImageUrls!);
+      }
+      return;
+    }
+    
+    // 初期画像URLがない場合のみ、ImageServiceから読み込み
     final imageService = Provider.of<ImageService>(context, listen: false);
     final images = await imageService.getServiceImages(widget.serviceId);
+    print('Loaded ${images.length} images from ImageService');
+    
     setState(() {
       _images = images;
     });
+    
+    // 画像URLのリストをコールバックで通知（Firebase URLのみを使用）
+    if (widget.onImagesChanged != null) {
+      final urls = images
+          .where((img) => img.firebaseUrl.isNotEmpty)
+          .map((img) => img.firebaseUrl)
+          .toList();
+      print('Notifying parent with Firebase URLs: $urls');
+      print('Total images: ${images.length}, Images with Firebase URLs: ${urls.length}');
+      widget.onImagesChanged!(urls);
+    }
   }
   
   Future<void> _pickAndUploadImages() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('画像選択を開始します...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+    
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -47,48 +98,105 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
         withData: true,
       );
       
-      if (result != null && result.files.isNotEmpty) {
-        setState(() {
-          _isLoading = true;
-        });
-        
-        final imageService = Provider.of<ImageService>(context, listen: false);
-        
-        for (final file in result.files) {
-          if (file.bytes != null) {
-            await imageService.uploadImage(
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('画像が選択されませんでした'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      if (result.files.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ファイルが空です'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${result.files.length}枚の画像を選択しました'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+      
+      setState(() {
+        _isLoading = true;
+      });
+      
+      final imageService = Provider.of<ImageService>(context, listen: false);
+      int uploadedCount = 0;
+      
+      for (final file in result.files) {
+        if (file.bytes != null) {
+          try {
+            final uploadedImage = await imageService.uploadImage(
               serviceId: widget.serviceId,
               imageData: file.bytes!,
               fileName: file.name,
             );
+            uploadedCount++;
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${file.name}をアップロードしました ($uploadedCount/${result.files.length})'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          } catch (uploadError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${file.name}のアップロードに失敗: $uploadError'),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         }
-        
-        await _loadImages();
-        
-        setState(() {
-          _isLoading = false;
-        });
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${result.files.length}枚の画像をアップロードしました'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
       }
-    } catch (e) {
+      
+      await _loadImages();
+      
       setState(() {
         _isLoading = false;
       });
       
+      if (mounted && uploadedCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$uploadedCount枚の画像をアップロードしました'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // アップロード完了後、Firebase URLを親に通知
+        if (widget.onImagesChanged != null && _images.isNotEmpty) {
+          final urls = _images
+              .where((img) => img.firebaseUrl.isNotEmpty)
+              .map((img) => img.firebaseUrl)
+              .toList();
+          print('After upload - Notifying parent with Firebase URLs: $urls');
+          widget.onImagesChanged!(urls);
+        }
+      }
+    } catch (e, stackTrace) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // エラーの詳細をログに出力
+      developer.log('FilePicker error', name: 'ServiceImageGallery', error: e, stackTrace: stackTrace);
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('画像のアップロードに失敗しました: $e'),
+            content: Text('画像選択エラー: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -272,18 +380,7 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                image.imageBytes,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 48),
-                    ),
-                  );
-                },
-              ),
+              child: _buildImage(image),
             ),
           ),
           if (widget.isEditable)
@@ -333,18 +430,7 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      _images[_selectedImageIndex].imageBytes,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.broken_image, size: 48),
-                          ),
-                        );
-                      },
-                    ),
+                    child: _buildImage(_images[_selectedImageIndex]),
                   ),
                 ),
                 // ズームアイコン
@@ -418,18 +504,7 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(7),
-                      child: Image.memory(
-                        _images[index].imageBytes,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(Icons.broken_image, size: 24),
-                            ),
-                          );
-                        },
-                      ),
+                      child: _buildImage(_images[index], isThumb: true),
                     ),
                   ),
                 ),
@@ -438,6 +513,73 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
           ),
         ),
       ],
+    );
+  }
+  
+  Widget _buildImage(ServiceImage image, {bool isThumb = false}) {
+    // Firebase URLがある場合はそれを使用
+    if (image.firebaseUrl.isNotEmpty) {
+      return Image.network(
+        image.firebaseUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // Firebase URLが失敗した場合はローカルデータを試す
+          if (image.localData.isNotEmpty) {
+            return Image.memory(
+              image.imageBytes,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: Icon(Icons.broken_image, size: isThumb ? 24 : 48),
+                  ),
+                );
+              },
+            );
+          }
+          return Container(
+            color: Colors.grey[200],
+            child: Center(
+              child: Icon(Icons.broken_image, size: isThumb ? 24 : 48),
+            ),
+          );
+        },
+      );
+    }
+    
+    // Firebase URLがない場合はローカルデータを使用
+    if (image.localData.isNotEmpty) {
+      return Image.memory(
+        image.imageBytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[200],
+            child: Center(
+              child: Icon(Icons.broken_image, size: isThumb ? 24 : 48),
+            ),
+          );
+        },
+      );
+    }
+    
+    // どちらもない場合はプレースホルダー
+    return Container(
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.broken_image, size: isThumb ? 24 : 48),
+      ),
     );
   }
 }
@@ -507,22 +649,7 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
                     minScale: 0.5,
                     maxScale: 4.0,
                     child: Center(
-                      child: Image.memory(
-                        widget.images[index].imageBytes,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[900],
-                            child: const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 64,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      child: _buildViewerImage(widget.images[index]),
                     ),
                   );
                 },
@@ -687,6 +814,90 @@ class _ImageViewerDialogState extends State<ImageViewerDialog> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildViewerImage(ServiceImage image) {
+    // Firebase URLがある場合はそれを使用
+    if (image.firebaseUrl.isNotEmpty) {
+      return Image.network(
+        image.firebaseUrl,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white54),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          // Firebase URLが失敗した場合はローカルデータを試す
+          if (image.localData.isNotEmpty) {
+            return Image.memory(
+              image.imageBytes,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[900],
+                  child: const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 64,
+                      color: Colors.white54,
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+          return Container(
+            color: Colors.grey[900],
+            child: const Center(
+              child: Icon(
+                Icons.broken_image,
+                size: 64,
+                color: Colors.white54,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    
+    // Firebase URLがない場合はローカルデータを使用
+    if (image.localData.isNotEmpty) {
+      return Image.memory(
+        image.imageBytes,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[900],
+            child: const Center(
+              child: Icon(
+                Icons.broken_image,
+                size: 64,
+                color: Colors.white54,
+              ),
+            ),
+          );
+        },
+      );
+    }
+    
+    // どちらもない場合はプレースホルダー
+    return Container(
+      color: Colors.grey[900],
+      child: const Center(
+        child: Icon(
+          Icons.broken_image,
+          size: 64,
+          color: Colors.white54,
         ),
       ),
     );

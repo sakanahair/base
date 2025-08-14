@@ -14,6 +14,7 @@ import 'core/services/theme_service.dart';
 import 'core/services/tag_service.dart';
 import 'core/services/memo_service.dart';
 import 'core/services/image_service.dart';
+import 'core/services/service_service.dart';
 import 'core/services/simplified_auth_service.dart';
 import 'core/services/enhanced_auth_service.dart';
 import 'core/services/multi_tenant_service.dart';
@@ -107,6 +108,10 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
         ChangeNotifierProvider(create: (_) => TagService()),
         ChangeNotifierProvider(create: (_) => MemoService()),
         ChangeNotifierProvider(create: (_) => ImageService()),
+        ChangeNotifierProxyProvider<SimplifiedAuthService, ServiceService>(
+          create: (context) => ServiceService(context.read<SimplifiedAuthService>()),
+          update: (context, auth, previous) => previous ?? ServiceService(auth),
+        ),
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
@@ -128,6 +133,15 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
             theme: themeService.generateThemeData(),
             routerConfig: AppRouter.router,
             debugShowCheckedModeBanner: false,
+            // プラットフォーム間でデザインを統一
+            themeMode: ThemeMode.light,
+            // iOSでもMaterial Designを使用
+            builder: (context, child) {
+              return ScrollConfiguration(
+                behavior: const MaterialScrollBehavior(),
+                child: child!,
+              );
+            },
           );
         },
       ),

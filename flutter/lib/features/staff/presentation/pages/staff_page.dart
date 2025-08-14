@@ -8,10 +8,15 @@ class StaffPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: Center(
-        child: Text(
-          'スタッフ管理',
-          style: Theme.of(context).textTheme.displaySmall,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 20.0),
+          child: Center(
+            child: Text(
+              'スタッフ管理',
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
+          ),
         ),
       ),
     );

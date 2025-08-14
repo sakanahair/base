@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/utils/responsive_helper.dart';
+import '../../../../core/utils/ios_safe_area_helper.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/recent_appointments_card.dart';
 import '../widgets/revenue_chart_card.dart';
@@ -27,40 +28,42 @@ class _DashboardPageState extends State<DashboardPage> {
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          if (context.isTouchDevice) {
-            ResponsiveHelper.addHapticFeedback();
-          }
-          // TODO: Implement refresh logic
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: SingleChildScrollView(
-          padding: isMobile 
-            ? const EdgeInsets.all(12.0) // モバイルでは小さめのパディング
-            : context.responsivePadding,
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              _buildHeader(context, isMobile, isTablet),
-            
-              SizedBox(height: context.responsiveSpacing),
+      body: IOSSafeAreaHelper.wrapWithSafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            if (context.isTouchDevice) {
+              ResponsiveHelper.addHapticFeedback();
+            }
+            // TODO: Implement refresh logic
+            await Future.delayed(const Duration(seconds: 1));
+          },
+          child: SingleChildScrollView(
+            padding: isMobile 
+              ? const EdgeInsets.all(12.0) // モバイルでは小さめのパディング
+              : context.responsivePadding,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                _buildHeader(context, isMobile, isTablet),
               
-              // Stats Grid
-              _buildStatsGrid(context, isMobile, isTablet, isDesktop),
-            
-              SizedBox(height: context.responsiveSpacing),
+                SizedBox(height: context.responsiveSpacing),
+                
+                // Stats Grid
+                _buildStatsGrid(context, isMobile, isTablet, isDesktop),
               
-              // Charts and Lists
-              _buildChartsSection(context, isMobile, isDesktop),
-            
-              SizedBox(height: context.responsiveSpacing),
+                SizedBox(height: context.responsiveSpacing),
+                
+                // Charts and Lists
+                _buildChartsSection(context, isMobile, isDesktop),
               
-              // Quick Actions (Desktop only - mobile uses FAB)
-              if (isDesktop) _buildQuickActions(context),
-            ],
+                SizedBox(height: context.responsiveSpacing),
+                
+                // Quick Actions (Desktop only - mobile uses FAB)
+                if (isDesktop) _buildQuickActions(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -80,11 +83,6 @@ class _DashboardPageState extends State<DashboardPage> {
               'ダッシュボード',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: ResponsiveHelper.getResponsiveFontSize(
-                  context,
-                  baseFontSize: 24,
-                  mobileScale: 0.9,
-                ),
               ),
             ).animate().fadeIn().slideX(begin: -0.2, end: 0),
             const SizedBox(height: 4),
@@ -92,11 +90,6 @@ class _DashboardPageState extends State<DashboardPage> {
               '今日は${_dateFormat.format(DateTime.now())}です',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppTheme.textSecondary,
-                fontSize: ResponsiveHelper.getResponsiveFontSize(
-                  context,
-                  baseFontSize: 16,
-                  mobileScale: 0.9,
-                ),
               ),
             ).animate().fadeIn(delay: 100.ms),
           ],
@@ -347,11 +340,7 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getResponsiveFontSize(
-                    context,
-                    baseFontSize: 14,
-                  ),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: color,
                 ),

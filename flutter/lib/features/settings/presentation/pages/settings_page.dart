@@ -24,16 +24,15 @@ class SettingsPage extends StatelessWidget {
             // Header
             Text(
               '設定',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'アプリケーションの設定を管理します',
-              style: TextStyle(
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppTheme.textSecondary,
-                fontSize: 14,
               ),
             ),
             const SizedBox(height: 32),
@@ -314,7 +313,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${(totalSize / 1024).toStringAsFixed(1)} KB / 5,000 KB',
+                      '${(totalSize / 1024).toStringAsFixed(1)} KB / 10,000 KB',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -323,12 +322,12 @@ class SettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
-                      value: totalSize / (5 * 1024 * 1024), // 5MBを上限として表示
+                      value: totalSize / (10 * 1024 * 1024), // 10MBを上限として表示
                       backgroundColor: Colors.blue.shade100,
                       valueColor: AlwaysStoppedAnimation(
-                        totalSize > 4 * 1024 * 1024 
+                        totalSize > 8 * 1024 * 1024 
                           ? Colors.red 
-                          : totalSize > 3 * 1024 * 1024 
+                          : totalSize > 6 * 1024 * 1024 
                             ? Colors.orange 
                             : Colors.blue,
                       ),
@@ -363,7 +362,7 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 16),
               
               // 警告メッセージ
-              if (totalSize > 3 * 1024 * 1024)
+              if (totalSize > 6 * 1024 * 1024)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

@@ -1,22 +1,29 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'simplified_auth_service.dart';
+
+// Web環境用の画像圧縮をインポート
+import '../utils/image_compressor_stub.dart'
+  if (dart.library.html) '../utils/image_compressor_web.dart';
 
 class ImageService extends ChangeNotifier {
   static const String _localStoragePrefix = 'sakana_images_';
   final Map<String, List<ServiceImage>> _imageCache = {};
   FirebaseStorage? _storage;
+  final SimplifiedAuthService _authService = SimplifiedAuthService();
   
   ImageService() {
     // Firebase Storage を初期化（すべてのプラットフォーム）
     try {
       _storage = FirebaseStorage.instance;
+      developer.log('ImageService initialized with Firebase Storage: ${_storage != null}', name: 'ImageService');
     } catch (e) {
-      print('Firebase Storage initialization error: $e');
+      developer.log('Firebase Storage initialization error: $e', name: 'ImageService', error: e);
       // Firebase Storageが利用できない場合はLocalStorageのみで動作
     }
   }
@@ -28,31 +35,62 @@ class ImageService extends ChangeNotifier {
     required Uint8List imageData,
     required String fileName,
   }) async {
+    developer.log('uploadImage called - serviceId: $serviceId, fileName: $fileName, size: ${imageData.length} bytes (${(imageData.length / 1024 / 1024).toStringAsFixed(2)} MB)', name: 'ImageService');
+    
+    // temp_IDや空IDへのアップロードを拒否
+    if (serviceId.isEmpty || serviceId.startsWith('temp_')) {
+      developer.log('WARNING: Rejecting upload for invalid serviceId: $serviceId', name: 'ImageService');
+      throw Exception('正式なサービスIDが必要です。サービスを保存後に画像を追加してください。');
+    }
+    
     try {
+      // 画像を圧縮
+      Uint8List compressedData;
+      try {
+        compressedData = await _compressImage(imageData, fileName);
+        developer.log('Image compressed: ${imageData.length} → ${compressedData.length} bytes', name: 'ImageService');
+      } catch (compressError) {
+        developer.log('Compression error: $compressError', name: 'ImageService', error: compressError);
+        throw Exception('画像の圧縮に失敗しました: $compressError');
+      }
+      
       final imageId = _uuid.v4();
       final timestamp = DateTime.now().toIso8601String();
-      
-      // 画像をリサイズして軽量化（サムネイル用）
-      final thumbnailData = await _createThumbnail(imageData);
-      final thumbnailBase64 = thumbnailData != null ? base64Encode(thumbnailData) : '';
       
       // Firebase Storageに先にアップロード
       String firebaseUrl = '';
       if (_storage != null) {
-        final url = await _uploadToFirebase(imageId, serviceId, imageData, fileName);
+        developer.log('Attempting Firebase upload...', name: 'ImageService');
+        final url = await _uploadToFirebase(imageId, serviceId, compressedData, fileName);
         if (url != null) {
           firebaseUrl = url;
+          developer.log('Firebase upload successful: $url', name: 'ImageService');
+          developer.log('Firebase URL will be used for service: $serviceId', name: 'ImageService');
+        } else {
+          developer.log('Firebase upload returned null', name: 'ImageService');
         }
+      } else {
+        developer.log('Firebase Storage is not initialized', name: 'ImageService');
+      }
+      
+      // Firebase URLがある場合はBase64データを保存しない（容量節約）
+      String localDataBase64 = '';
+      if (firebaseUrl.isEmpty) {
+        // Firebase URLがない場合のみBase64データを保存
+        localDataBase64 = base64Encode(compressedData);
+        developer.log('Base64 encoded: ${localDataBase64.length} chars', name: 'ImageService');
+      } else {
+        developer.log('Using Firebase URL, skipping Base64 encoding to save space', name: 'ImageService');
       }
       
       final image = ServiceImage(
         id: imageId,
         serviceId: serviceId,
-        localData: thumbnailBase64, // サムネイルのみ保存
+        localData: localDataBase64,
         fileName: fileName,
         uploadedAt: timestamp,
         firebaseUrl: firebaseUrl,
-        size: imageData.length,
+        size: compressedData.length,
       );
       
       // キャッシュに追加
@@ -65,12 +103,14 @@ class ImageService extends ChangeNotifier {
       await _saveToLocalStorage(serviceId);
       
       notifyListeners();
+      developer.log('Image uploaded successfully - id: ${image.id}', name: 'ImageService');
       return image;
-    } catch (e) {
-      print('Error uploading image: $e');
+    } catch (e, stackTrace) {
+      developer.log('Error uploading image: $e', name: 'ImageService', error: e, stackTrace: stackTrace);
       
       // LocalStorage容量エラーの場合はクリア
       if (e.toString().contains('QuotaExceededError')) {
+        developer.log('QuotaExceededError detected, clearing old images...', name: 'ImageService');
         await _clearOldImages();
         // リトライ
         return uploadImage(
@@ -83,14 +123,80 @@ class ImageService extends ChangeNotifier {
     }
   }
   
-  // サムネイル作成（実装は簡略化）
-  Future<Uint8List?> _createThumbnail(Uint8List imageData) async {
-    // 画像サイズが100KB以下ならそのまま返す
-    if (imageData.length <= 100 * 1024) {
+  
+  // 画像データを圧縮（アップロード前の処理）
+  Future<Uint8List> _compressImage(Uint8List imageData, String fileName) async {
+    // 目標サイズを2MBに設定
+    const targetSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 10 * 1024 * 1024; // 10MB（絶対的な上限）
+    const bool skipCompression = true; // デバッグ用：trueにすると圧縮をスキップ
+    
+    developer.log(
+      'Processing image: ${fileName}, original size: ${imageData.length} bytes (${(imageData.length / 1024 / 1024).toStringAsFixed(2)} MB)',
+      name: 'ImageService',
+    );
+    
+    // デバッグ：圧縮をスキップ
+    if (skipCompression) {
+      developer.log('Skipping compression (debug mode)', name: 'ImageService');
+      if (imageData.length > maxSize) {
+        throw Exception('画像が大きすぎます（${(imageData.length / 1024 / 1024).toStringAsFixed(1)}MB）。10MB以下の画像を選択してください。');
+      }
       return imageData;
     }
-    // それ以上なら null を返してLocalStorageには保存しない
-    return null;
+    
+    // 2MB以下の場合はそのまま返す
+    if (imageData.length <= targetSize) {
+      developer.log('Image size is optimal, no compression needed', name: 'ImageService');
+      return imageData;
+    }
+    
+    // 10MB以上の場合でも圧縮を試みる
+    if (imageData.length > maxSize * 2) {
+      // 20MB以上は流石に大きすぎる
+      developer.log(
+        'Image too large to process: ${(imageData.length / 1024 / 1024).toStringAsFixed(2)} MB',
+        name: 'ImageService',
+      );
+      throw Exception('画像が大きすぎます（${(imageData.length / 1024 / 1024).toStringAsFixed(1)}MB）。20MB以下の画像を選択してください。');
+    }
+    
+    // Web環境で実際の画像圧縮を実行
+    try {
+      developer.log('Starting image compression...', name: 'ImageService');
+      
+      if (kIsWeb) {
+        // Web環境では Canvas API を使った圧縮を実行
+        final compressedData = await ImageCompressorWeb.compressImage(
+          imageData: imageData,
+          fileName: fileName,
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 85, // 初期品質85%から開始
+          targetSizeBytes: targetSize,
+        );
+        
+        developer.log(
+          'Compression complete: ${(imageData.length / 1024 / 1024).toStringAsFixed(2)}MB -> ${(compressedData.length / 1024 / 1024).toStringAsFixed(2)}MB',
+          name: 'ImageService',
+        );
+        
+        return compressedData;
+      } else {
+        // Web以外の環境では元の画像を返す
+        developer.log('Non-web platform, returning original image', name: 'ImageService');
+        return imageData;
+      }
+      
+    } catch (e) {
+      developer.log('Compression failed: $e', name: 'ImageService', error: e);
+      // 圧縮に失敗した場合は元の画像を使用（ただし10MB以下の場合のみ）
+      if (imageData.length <= maxSize) {
+        return imageData;
+      } else {
+        throw Exception('画像の圧縮に失敗しました。より小さい画像を選択してください。');
+      }
+    }
   }
   
   // 古い画像データをクリア
@@ -123,11 +229,16 @@ class ImageService extends ChangeNotifier {
     Uint8List imageData,
     String fileName,
   ) async {
-    if (_storage == null) return null;
+    if (_storage == null) {
+      return null;
+    }
     
     try {
       final tenantId = await _getTenantId();
-      final path = 'tenants/$tenantId/services/$serviceId/$imageId';
+      // temp_IDの場合は一時フォルダにアップロード
+      final path = serviceId.startsWith('temp_') 
+          ? 'tenants/$tenantId/temp/$serviceId/$imageId'
+          : 'tenants/$tenantId/services/$serviceId/$imageId';
       final ref = _storage!.ref(path);
       
       // メタデータを設定
@@ -144,10 +255,10 @@ class ImageService extends ChangeNotifier {
       final uploadTask = await ref.putData(imageData, metadata);
       final url = await uploadTask.ref.getDownloadURL();
       
-      print('Image uploaded to Firebase: $url');
+      developer.log('Image uploaded to Firebase: $url', name: 'ImageService');
       return url;
     } catch (e) {
-      print('Error uploading to Firebase Storage: $e');
+      developer.log('Error uploading to Firebase Storage: $e', name: 'ImageService', error: e);
       return null;
     }
   }
@@ -198,14 +309,19 @@ class ImageService extends ChangeNotifier {
   
   // Firebase Storageから削除
   Future<void> _deleteFromFirebase(String url) async {
-    if (_storage == null) return;
+    if (_storage == null) {
+      developer.log('Firebase Storage is not initialized, cannot delete', name: 'ImageService');
+      return;
+    }
     
     try {
+      developer.log('Deleting image from Firebase Storage: $url', name: 'ImageService');
       final ref = _storage!.refFromURL(url);
       await ref.delete();
-      print('Image deleted from Firebase Storage');
+      developer.log('Image deleted successfully from Firebase Storage: $url', name: 'ImageService');
     } catch (e) {
-      print('Error deleting from Firebase Storage: $e');
+      developer.log('Error deleting from Firebase Storage: $e\nURL: $url', name: 'ImageService', error: e);
+      // エラーが発生しても処理を続行
     }
   }
   
@@ -236,10 +352,15 @@ class ImageService extends ChangeNotifier {
     await prefs.setString(key, json.encode(jsonList));
   }
   
-  // テナントIDを取得
+  // テナントIDを取得（AuthServiceから取得）
   Future<String> _getTenantId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('tenantId') ?? 'default';
+    // 現在のユーザーのUIDをテナントIDとして使用
+    final currentUser = _authService.currentUser;
+    if (currentUser != null) {
+      return currentUser.uid;
+    }
+    // ユーザーがログインしていない場合はエラー
+    throw Exception('User not authenticated - cannot upload images');
   }
   
   // ファイル名からコンテンツタイプを判定
@@ -262,21 +383,154 @@ class ImageService extends ChangeNotifier {
   
   // サービスのすべての画像を削除
   Future<void> deleteAllServiceImages(String serviceId) async {
+    developer.log('=== DELETING ALL IMAGES FOR SERVICE: $serviceId ===', name: 'ImageService');
+    
+    // 1. LocalStorageから画像情報を取得
     final images = await getServiceImages(serviceId);
+    developer.log('Found ${images.length} images to delete from LocalStorage', name: 'ImageService');
     
-    // LocalStorageから削除
-    _imageCache.remove(serviceId);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('$_localStoragePrefix$serviceId');
-    
-    // Firebase Storageから削除（バックグラウンド）
-    for (final image in images) {
-      if (image.firebaseUrl.isNotEmpty) {
-        _deleteFromFirebase(image.firebaseUrl);
+    // 2. Firebase Storageから直接フォルダ内のすべての画像を削除
+    if (_storage != null) {
+      try {
+        final tenantId = await _getTenantId();
+        final folderPath = 'tenants/$tenantId/services/$serviceId';
+        developer.log('Attempting to delete all files in folder: $folderPath', name: 'ImageService');
+        
+        // フォルダ内のすべてのファイルをリスト
+        final listResult = await _storage!.ref(folderPath).listAll();
+        developer.log('Found ${listResult.items.length} files in Firebase Storage folder', name: 'ImageService');
+        
+        // すべてのファイルを削除
+        final deletionFutures = <Future<void>>[];
+        for (final item in listResult.items) {
+          developer.log('Deleting file: ${item.fullPath}', name: 'ImageService');
+          deletionFutures.add(item.delete());
+        }
+        
+        if (deletionFutures.isNotEmpty) {
+          await Future.wait(deletionFutures);
+          developer.log('Deleted ${deletionFutures.length} files from Firebase Storage', name: 'ImageService');
+        }
+      } catch (e) {
+        developer.log('Error deleting folder from Firebase Storage: $e', name: 'ImageService', error: e);
       }
     }
     
+    // 3. LocalStorageから画像データを削除
+    _imageCache.remove(serviceId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_localStoragePrefix$serviceId');
+    developer.log('Removed images from LocalStorage', name: 'ImageService');
+    
+    // 4. URLベースでも削除（バックアップ）
+    for (final image in images) {
+      if (image.firebaseUrl.isNotEmpty) {
+        try {
+          await _deleteFromFirebase(image.firebaseUrl);
+        } catch (e) {
+          // URLベースの削除が失敗しても続行
+          developer.log('Failed to delete by URL: ${image.firebaseUrl}', name: 'ImageService');
+        }
+      }
+    }
+    
+    developer.log('=== COMPLETED DELETING ALL IMAGES ===', name: 'ImageService');
     notifyListeners();
+  }
+  
+  // 一時IDから実際のサービスIDに画像を移動
+  Future<void> moveImages(String fromServiceId, String toServiceId) async {
+    if (fromServiceId == toServiceId) return;
+    
+    // 一時IDの画像を取得
+    final tempImages = await getServiceImages(fromServiceId);
+    if (tempImages.isEmpty) return;
+    
+    developer.log('Moving ${tempImages.length} images from $fromServiceId to $toServiceId', name: 'ImageService');
+    
+    // Firebase Storage内でファイルをコピー（新しいURLを生成）
+    final List<ServiceImage> newImages = [];
+    for (final img in tempImages) {
+      ServiceImage newImage;
+      
+      // Firebase URLがある場合はコピーして新しいURLを取得
+      if (img.firebaseUrl.isNotEmpty && img.localData.isNotEmpty) {
+        // ローカルデータがある場合は再アップロード
+        final newUrl = await _uploadToFirebase(
+          img.id,
+          toServiceId,
+          img.imageBytes,
+          img.fileName,
+        );
+        
+        newImage = ServiceImage(
+          id: img.id,
+          serviceId: toServiceId,
+          localData: img.localData,
+          firebaseUrl: newUrl ?? img.firebaseUrl,
+          fileName: img.fileName,
+          uploadedAt: img.uploadedAt,
+          size: img.size,
+        );
+      } else {
+        // Firebase URLのみまたはローカルデータのみの場合はそのまま使用
+        newImage = ServiceImage(
+          id: img.id,
+          serviceId: toServiceId,
+          localData: img.localData,
+          firebaseUrl: img.firebaseUrl,
+          fileName: img.fileName,
+          uploadedAt: img.uploadedAt,
+          size: img.size,
+        );
+      }
+      
+      newImages.add(newImage);
+    }
+    
+    // 新しいサービスIDで画像を保存
+    _imageCache[toServiceId] = newImages;
+    
+    // LocalStorageに保存
+    await _saveToLocalStorage(toServiceId);
+    
+    // 一時IDのデータを削除
+    _imageCache.remove(fromServiceId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_localStoragePrefix$fromServiceId');
+    
+    // tempフォルダの画像を削除
+    if (fromServiceId.startsWith('temp_')) {
+      await _deleteTempFolder(fromServiceId);
+    }
+    
+    notifyListeners();
+  }
+  
+  // tempフォルダを削除
+  Future<void> _deleteTempFolder(String tempServiceId) async {
+    if (_storage == null) return;
+    
+    try {
+      final tenantId = await _getTenantId();
+      final tempPath = 'tenants/$tenantId/temp/$tempServiceId';
+      developer.log('Deleting temp folder: $tempPath', name: 'ImageService');
+      
+      final listResult = await _storage!.ref(tempPath).listAll();
+      final deletionFutures = <Future<void>>[];
+      
+      for (final item in listResult.items) {
+        developer.log('Deleting temp file: ${item.fullPath}', name: 'ImageService');
+        deletionFutures.add(item.delete());
+      }
+      
+      if (deletionFutures.isNotEmpty) {
+        await Future.wait(deletionFutures);
+        developer.log('Deleted ${deletionFutures.length} temp files', name: 'ImageService');
+      }
+    } catch (e) {
+      developer.log('Error deleting temp folder: $e', name: 'ImageService', error: e);
+    }
   }
 }
 
@@ -325,7 +579,13 @@ class ServiceImage {
   }
   
   // Base64データをUint8Listに変換
-  Uint8List get imageBytes => base64Decode(localData);
+  Uint8List get imageBytes {
+    if (localData.isNotEmpty) {
+      return base64Decode(localData);
+    }
+    // LocalDataが空の場合はダミーデータを返す（実際にはFirebaseから取得すべき）
+    return Uint8List.fromList([]);
+  }
   
   // ファイルサイズを人間が読みやすい形式で取得
   String get formattedSize {

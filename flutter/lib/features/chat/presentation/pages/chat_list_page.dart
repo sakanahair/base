@@ -85,10 +85,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 children: [
                   Text(
                     'チャット',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Spacer(),
@@ -171,7 +169,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 indicatorWeight: 3,
                 labelColor: themeService.primaryColor,
                 unselectedLabelColor: Colors.black54,
-                labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
                 tabs: const [
                   Tab(text: 'トーク'),
                   Tab(text: '顧客'),

@@ -66,10 +66,9 @@ class _EnhancedCustomersPageState extends State<EnhancedCustomersPage> with Sing
                           children: [
                             Text(
                               '顧客管理',
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                fontWeight: FontWeight.w800,
                                 color: themeService.onPrimaryColor,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),

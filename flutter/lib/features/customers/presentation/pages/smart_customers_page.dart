@@ -130,27 +130,30 @@ class _SmartCustomersPageState extends State<SmartCustomersPage>
     final isMobile = context.isMobile;
 
     // AdminLayout内で表示されるため、Scaffoldは不要
-    return Container(
-      color: AppTheme.backgroundColor,
-      child: Stack(
-        children: [
-          if (isDesktop || isTablet)
-            _buildDesktopLayout()
-          else
-            _buildMobileLayout(),
-          
-          // モバイル用FAB
-          if (isMobile)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: QuickActionDial(
-                onNewCustomer: _showNewCustomerDialog,
-                onStartChat: _selectedCustomer != null ? _startChat : null,
-                onCall: _selectedCustomer != null ? () => _makeCall(_selectedCustomer!) : null,
+    // iOSの場合はSafeAreaを追加
+    return SafeArea(
+      child: Container(
+        color: AppTheme.backgroundColor,
+        child: Stack(
+          children: [
+            if (isDesktop || isTablet)
+              _buildDesktopLayout()
+            else
+              _buildMobileLayout(),
+            
+            // モバイル用FAB
+            if (isMobile)
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: QuickActionDial(
+                  onNewCustomer: _showNewCustomerDialog,
+                  onStartChat: _selectedCustomer != null ? _startChat : null,
+                  onCall: _selectedCustomer != null ? () => _makeCall(_selectedCustomer!) : null,
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

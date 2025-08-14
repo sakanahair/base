@@ -20,6 +20,7 @@ class SimplifiedAuthService extends ChangeNotifier {
   bool get initialized => _initialized;
   bool get isAuthenticated => _firebaseUser != null;
   User? get firebaseUser => _firebaseUser;
+  User? get currentUser => _firebaseUser; // ServiceServiceで使用
   bool get isAdmin => _isAdmin;
 
   Future<void> _initializeAuth() async {

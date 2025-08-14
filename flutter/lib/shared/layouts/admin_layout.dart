@@ -260,11 +260,6 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: themeService.onPrimaryColor,
               fontWeight: FontWeight.w300,
-              fontSize: ResponsiveHelper.getResponsiveFontSize(
-                context,
-                baseFontSize: 18,
-                mobileScale: 0.9,
-              ),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -452,13 +447,9 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                           const SizedBox(width: 8),
                           Text(
                             isSuperAdmin ? 'SUPER管理者' : '管理者',
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: themeService.onPrimaryColor,
                               fontWeight: FontWeight.w500,
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context,
-                                baseFontSize: 14,
-                              ),
                             ),
                           ),
                           const SizedBox(width: 4),
