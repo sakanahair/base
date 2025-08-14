@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'simplified_auth_service.dart';
 
 class ThemeService extends ChangeNotifier {
   static const String _themeColorKey = 'theme_color';
@@ -137,6 +140,8 @@ class ThemeService extends ChangeNotifier {
   String _fontSize = 'm';
   Map<String, double> _customFontSizes = {};
   SharedPreferences? _prefs;
+  final SimplifiedAuthService _authService = SimplifiedAuthService();
+  StreamSubscription<DocumentSnapshot>? _themeSubscription;
 
   Color get primaryColor => _primaryColor;
   bool get isDarkMode => _isDarkMode;
@@ -173,13 +178,25 @@ class ThemeService extends ChangeNotifier {
   Color get primaryColorHover => _primaryColor.withOpacity(0.1);
 
   ThemeService() {
-    _loadTheme();
+    _initializeTheme();
   }
 
-  // テーマの読み込み
-  Future<void> _loadTheme() async {
+  // テーマの初期化（Firebase優先）
+  Future<void> _initializeTheme() async {
     _prefs = await SharedPreferences.getInstance();
     
+    // まずLocalStorageから読み込み（即座の表示用）
+    await _loadFromLocalStorage();
+    
+    // Firebaseから読み込み（真実の源）
+    if (_authService.currentUser != null) {
+      await _loadFromFirebase();
+      _startRealtimeSync();
+    }
+  }
+
+  // LocalStorageから読み込み
+  Future<void> _loadFromLocalStorage() async {
     final colorValue = _prefs?.getInt(_themeColorKey);
     if (colorValue != null) {
       _primaryColor = Color(colorValue);
@@ -199,10 +216,132 @@ class ThemeService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Firebaseから読み込み
+  Future<void> _loadFromFirebase() async {
+    if (_authService.currentUser == null) return;
+    
+    try {
+      final uid = _authService.currentUser!.uid;
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('settings')
+          .doc('theme')
+          .get();
+      
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        
+        // カラー
+        if (data['primaryColor'] != null) {
+          _primaryColor = Color(int.parse(data['primaryColor'].toString().replaceAll('#', '0xFF')));
+        }
+        
+        // ダークモード
+        _isDarkMode = data['isDarkMode'] ?? false;
+        
+        // フォント設定
+        _fontFamily = data['fontFamily'] ?? 'M PLUS Rounded 1c';
+        _fontSize = data['fontSize'] ?? 'm';
+        
+        // カスタムフォントサイズ
+        if (data['customFontSizes'] != null) {
+          final customSizes = Map<String, dynamic>.from(data['customFontSizes']);
+          _customFontSizes = customSizes.map((key, value) => MapEntry(key, value.toDouble()));
+        }
+        
+        // LocalStorageにも保存（キャッシュ）
+        await _saveToLocalStorage();
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error loading theme from Firebase: $e');
+    }
+  }
+
+  // リアルタイム同期を開始
+  void _startRealtimeSync() {
+    if (_authService.currentUser == null) return;
+    
+    // 既存のリスナーを停止
+    _themeSubscription?.cancel();
+    
+    final uid = _authService.currentUser!.uid;
+    _themeSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('settings')
+        .doc('theme')
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data()!;
+        
+        // カラー
+        if (data['primaryColor'] != null) {
+          _primaryColor = Color(int.parse(data['primaryColor'].toString().replaceAll('#', '0xFF')));
+        }
+        
+        // ダークモード
+        _isDarkMode = data['isDarkMode'] ?? false;
+        
+        // フォント設定
+        _fontFamily = data['fontFamily'] ?? 'M PLUS Rounded 1c';
+        _fontSize = data['fontSize'] ?? 'm';
+        
+        // カスタムフォントサイズ
+        if (data['customFontSizes'] != null) {
+          final customSizes = Map<String, dynamic>.from(data['customFontSizes']);
+          _customFontSizes = customSizes.map((key, value) => MapEntry(key, value.toDouble()));
+        }
+        
+        // LocalStorageにも保存
+        _saveToLocalStorage();
+        notifyListeners();
+      }
+    });
+  }
+
+  // LocalStorageに保存
+  Future<void> _saveToLocalStorage() async {
+    await _prefs?.setInt(_themeColorKey, _primaryColor.value);
+    await _prefs?.setBool(_isDarkModeKey, _isDarkMode);
+    await _prefs?.setString(_fontFamilyKey, _fontFamily);
+    await _prefs?.setString(_fontSizeKey, _fontSize);
+    await _prefs?.setString('custom_font_sizes', json.encode(_customFontSizes));
+  }
+
+  // Firebaseに保存
+  Future<void> _saveToFirebase() async {
+    if (_authService.currentUser == null) return;
+    
+    try {
+      final uid = _authService.currentUser!.uid;
+      final colorHex = '#${_primaryColor.value.toRadixString(16).substring(2).toUpperCase()}';
+      
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('settings')
+          .doc('theme')
+          .set({
+        'primaryColor': colorHex,
+        'isDarkMode': _isDarkMode,
+        'fontFamily': _fontFamily,
+        'fontSize': _fontSize,
+        'customFontSizes': _customFontSizes,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error saving theme to Firebase: $e');
+    }
+  }
+
   // プライマリカラーの変更
   Future<void> setPrimaryColor(Color color) async {
     _primaryColor = color;
-    await _prefs?.setInt(_themeColorKey, color.value);
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
   }
 
@@ -217,7 +356,8 @@ class ThemeService extends ChangeNotifier {
   // ダークモードの切り替え
   Future<void> toggleDarkMode() async {
     _isDarkMode = !_isDarkMode;
-    await _prefs?.setBool(_isDarkModeKey, _isDarkMode);
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
   }
 
@@ -225,7 +365,8 @@ class ThemeService extends ChangeNotifier {
   Future<void> setFontFamily(String fontFamily) async {
     print('ThemeService: フォント変更 $_fontFamily -> $fontFamily');
     _fontFamily = fontFamily;
-    await _prefs?.setString(_fontFamilyKey, fontFamily);
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
     print('ThemeService: notifyListeners() 呼び出し完了');
   }
@@ -233,7 +374,8 @@ class ThemeService extends ChangeNotifier {
   // フォントサイズの変更
   Future<void> setFontSize(String size) async {
     _fontSize = size;
-    await _prefs?.setString(_fontSizeKey, size);
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
   }
   
@@ -241,7 +383,8 @@ class ThemeService extends ChangeNotifier {
   Future<void> setCustomFontSize(String sizeCategory, String type, double size) async {
     final key = '${sizeCategory}_$type';
     _customFontSizes[key] = size;
-    await _prefs?.setString('custom_font_sizes', json.encode(_customFontSizes));
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
   }
   
@@ -251,13 +394,17 @@ class ThemeService extends ChangeNotifier {
     _isDarkMode = false;
     _fontFamily = 'M PLUS Rounded 1c';
     _fontSize = 'm';
+    _customFontSizes = {};
     
-    await _prefs?.remove(_themeColorKey);
-    await _prefs?.remove(_isDarkModeKey);
-    await _prefs?.remove(_fontFamilyKey);
-    await _prefs?.remove(_fontSizeKey);
-    
+    await _saveToLocalStorage();
+    await _saveToFirebase();
     notifyListeners();
+  }
+  
+  // リソースのクリーンアップ
+  void dispose() {
+    _themeSubscription?.cancel();
+    super.dispose();
   }
   
   // カスタムカラーの検証
