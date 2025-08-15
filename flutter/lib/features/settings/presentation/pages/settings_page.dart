@@ -6,6 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/image_service.dart';
+import 'store_info_page.dart';
+import 'business_hours_page.dart';
+import 'payment_settings_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -103,21 +106,30 @@ class SettingsPage extends StatelessWidget {
                   iconColor: Colors.green,
                   title: '店舗情報',
                   subtitle: '基本情報の編集',
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const StoreInfoPage()),
+                  ),
                 ),
                 _SettingsItem(
                   icon: Icons.schedule,
                   iconColor: Colors.purple,
                   title: '営業時間',
                   subtitle: '営業日・営業時間の設定',
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BusinessHoursPage()),
+                  ),
                 ),
                 _SettingsItem(
                   icon: Icons.payment,
                   iconColor: Colors.teal,
                   title: '決済設定',
                   subtitle: '支払い方法の管理',
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PaymentSettingsPage()),
+                  ),
                 ),
               ],
             ),

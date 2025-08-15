@@ -211,7 +211,12 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
               children: [
                 // ヘッダー
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.fromLTRB(
+                    MediaQuery.of(context).size.width < 600 ? 16 : 24,
+                    MediaQuery.of(context).size.width < 600 ? 8 : 16,
+                    MediaQuery.of(context).size.width < 600 ? 16 : 24,
+                    MediaQuery.of(context).size.width < 600 ? 8 : 16,
+                  ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -422,16 +427,33 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                 final filteredServices = category == 'すべて' 
                     ? services
                     : services.where((s) => s.category == category).toList();
+                
+                final screenWidth = MediaQuery.of(context).size.width;
+                final isMobile = screenWidth < 600;
                     
                 return filteredServices.isEmpty
                     ? _buildEmptyState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredServices.length,
-                        itemBuilder: (context, index) {
-                          return _buildServiceCard(filteredServices[index]);
-                        },
-                      );
+                    : isMobile
+                        ? ListView.builder(
+                            padding: const EdgeInsets.all(8),
+                            itemCount: filteredServices.length,
+                            itemBuilder: (context, index) {
+                              return _buildServiceCard(filteredServices[index]);
+                            },
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 2.5,
+                            ),
+                            itemCount: filteredServices.length,
+                            itemBuilder: (context, index) {
+                              return _buildServiceCard(filteredServices[index]);
+                            },
+                          );
               }).toList(),
             ),
             ),
@@ -546,16 +568,16 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
         ),
       ),
       child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: 2,
+        margin: EdgeInsets.only(bottom: isMobile ? 8 : 0),
+        elevation: 1,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: InkWell(
           onTap: () => _showEditServiceDialog(context, service),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isMobile ? 10 : 12),
             child: isMobile 
                 ? _buildMobileLayout(service)
                 : _buildDesktopLayout(service),
@@ -566,168 +588,179 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
   }
   
   Widget _buildMobileLayout(ServiceModel service) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // タイトル行
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
+        // サムネイル画像
+        if (service.images.isNotEmpty)
+          Container(
+            width: 60,
+            height: 60,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              image: DecorationImage(
+                image: NetworkImage(service.images.first),
+                fit: BoxFit.cover,
+              ),
+            ),
+          )
+        else
+          Container(
+            width: 60,
+            height: 60,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(6),
+              color: _getCategoryColor(service.category).withOpacity(0.1),
+            ),
+            child: Icon(
+              _getCategoryIcon(service.category),
+              color: _getCategoryColor(service.category),
+              size: 24,
+            ),
+          ),
+        // サービス情報
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // タイトルと価格
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    service.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  Expanded(
+                    child: Text(
+                      service.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: _getCategoryColor(service.category).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          service.category,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: _getCategoryColor(service.category),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (!service.isActive)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            '無効',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                    ],
+                  const SizedBox(width: 8),
+                  Text(
+                    '¥${service.price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // 3点メニュー
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  offset: const Offset(0, 30),
-                  elevation: 8,
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        _showEditServiceDialog(context, service);
-                        break;
-                      case 'duplicate':
-                        _duplicateService(service);
-                        break;
-                      case 'delete':
-                        print('Delete menu clicked for service: ${service.id}');
-                        _confirmDeleteService(context, service);
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 18),
-                          SizedBox(width: 8),
-                          Text('編集'),
-                        ],
+              const SizedBox(height: 2),
+              // カテゴリと時間
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: _getCategoryColor(service.category).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      service.category,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: _getCategoryColor(service.category),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const PopupMenuItem(
-                      value: 'duplicate',
-                      child: Row(
-                        children: [
-                          Icon(Icons.copy, size: 18, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text('複製', style: TextStyle(color: Colors.blue)),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('削除', style: TextStyle(color: Colors.red)),
-                        ],
+                  ),
+                  if (service.duration > 0) ...[
+                    const SizedBox(width: 6),
+                    Icon(Icons.access_time, size: 11, color: Colors.grey[600]),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${service.duration}分',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
-                ),
+                ],
+              ),
+              // 説明
+              if (service.description.isNotEmpty) ...[
+                const SizedBox(height: 4),
                 Text(
-                  '¥${service.price.toStringAsFixed(0)}',
+                  service.description,
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                    height: 1.2,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (service.duration > 0)
-                  Text(
-                    '${service.duration}分',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
               ],
+            ],
+          ),
+        ),
+        // メニュー
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, size: 18, color: Colors.grey[600]),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(
+            minWidth: 20,
+            minHeight: 20,
+          ),
+          offset: const Offset(0, 20),
+          elevation: 8,
+          onSelected: (value) {
+            switch (value) {
+              case 'edit':
+                _showEditServiceDialog(context, service);
+                break;
+              case 'duplicate':
+                _duplicateService(service);
+                break;
+              case 'delete':
+                _confirmDeleteService(context, service);
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'edit',
+              height: 36,
+              child: Row(
+                children: [
+                  Icon(Icons.edit, size: 16),
+                  SizedBox(width: 8),
+                  Text('編集', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'duplicate',
+              height: 36,
+              child: Row(
+                children: [
+                  Icon(Icons.copy, size: 16, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('複製', style: TextStyle(fontSize: 13, color: Colors.blue)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'delete',
+              height: 36,
+              child: Row(
+                children: [
+                  Icon(Icons.delete, size: 16, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text('削除', style: TextStyle(fontSize: 13, color: Colors.red)),
+                ],
+              ),
             ),
           ],
         ),
-        if (service.description.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            service.description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-        if (service.options.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: service.options.map((option) {
-              return Chip(
-                label: Text(
-                  option,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                backgroundColor: Colors.grey[100],
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              );
-            }).toList(),
-          ),
-        ],
       ],
     );
   }
@@ -816,290 +849,308 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
   }
   
   Widget _buildDesktopLayout(ServiceModel service) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-              // サムネイル画像（すべての業種）
-              Builder(
-                builder: (context) {
-                  developer.log('Service ${service.id} - Images in model: ${service.images}', name: 'ServicesPage');
-                  
-                  // サービスモデルの画像URLを直接使用
-                  if (service.images.isNotEmpty) {
-                    final imageUrl = service.images.first;
-                    developer.log('Using image URL from service model: $imageUrl', name: 'ServicesPage');
-                    
-                    return Container(
-                      width: 80,
-                      height: 80,
-                      margin: const EdgeInsets.only(right: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(7),
-                        child: Stack(
-                          children: [
-                            Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              width: 80,
-                              height: 80,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                          : null,
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                developer.log('Failed to load image: $error', name: 'ServicesPage', error: error);
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              },
-                            ),
-                            if (service.images.length > 1)
-                              Positioned(
-                                bottom: 4,
-                                right: 4,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.7),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '+${service.images.length - 1}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+        // タイトル（画像の上に配置）
+        Text(
+          service.name,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        // 画像とコンテンツ
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // サムネイル画像
+            Builder(
+              builder: (context) {
+                if (service.images.isNotEmpty) {
+                  final imageUrl = service.images.first;
+                  return Container(
+                    width: 70,
+                    height: 70,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: Stack(
+                        children: [
+                          Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: 70,
+                            height: 70,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  _getCategoryIcon(service.category),
+                                  color: Colors.grey[400],
+                                  size: 28,
+                                ),
+                              );
+                            },
+                          ),
+                          if (service.images.length > 1)
+                            Positioned(
+                              bottom: 2,
+                              right: 2,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.7),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '+${service.images.length - 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
-                    );
-                  }
-                  
-                  // 画像がない場合のプレースホルダー
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    margin: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[100],
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Icon(
-                      Icons.image_outlined,
-                      color: Colors.grey[400],
-                      size: 32,
                     ),
                   );
-                },
-              ),
-              // サービス情報
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          service.name,
+                }
+                
+                // 画像がない場合のプレースホルダー
+                return Container(
+                  width: 70,
+                  height: 70,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    color: _getCategoryColor(service.category).withOpacity(0.1),
+                    border: Border.all(color: _getCategoryColor(service.category).withOpacity(0.3)),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(service.category),
+                    color: _getCategoryColor(service.category),
+                    size: 28,
+                  ),
+                );
+              },
+            ),
+            // サービス情報
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // カテゴリとステータス
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getCategoryColor(service.category).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          service.category,
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            fontSize: 11,
+                            color: _getCategoryColor(service.category),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                      ),
+                      if (!service.isActive) ...[
+                        const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: _getCategoryColor(service.category).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
-                            service.category,
+                          child: const Text(
+                            '無効',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: _getCategoryColor(service.category),
-                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                              color: Colors.grey,
                             ),
                           ),
                         ),
-                        if (!service.isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              '無効',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
                       ],
+                    ],
+                  ),
+                  if (service.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      service.description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (service.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                  ],
+                    if (service.options.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        height: 26,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: service.options.length > 3 ? 4 : service.options.length,
+                          itemBuilder: (context, index) {
+                            if (index == 3 && service.options.length > 3) {
+                              return Container(
+                                margin: const EdgeInsets.only(right: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '+${service.options.length - 3}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            }
+                            final option = service.options[index];
+                            // オプションテキストを最大20文字に制限
+                            final displayText = option.length > 20 
+                                ? '${option.substring(0, 20)}...' 
+                                : option;
+                            return Container(
+                              margin: const EdgeInsets.only(right: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[300]!, width: 0.5),
+                              ),
+                              child: Text(
+                                displayText,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                ],
+              ),
+            ),
+            // 価格と時間
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '¥${service.price.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                if (service.duration > 0) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                      const SizedBox(width: 2),
                       Text(
-                        service.description,
+                        '${service.duration}分',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           color: Colors.grey[600],
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    if (service.options.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: service.options.map((option) {
-                          return Chip(
-                            label: Text(
-                              option,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            backgroundColor: Colors.grey[100],
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              // 価格と時間
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '¥${service.price.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
                   ),
-                  if (service.duration > 0) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${service.duration}分',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ],
+              ],
+            ),
+            const SizedBox(width: 8),
+            // アクションメニュー
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, size: 18, color: Colors.grey[600]),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 20,
+                minHeight: 20,
               ),
-              const SizedBox(width: 16),
-              // アクションメニュー
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert),
-                offset: const Offset(0, 30),
-                elevation: 8,
-                onSelected: (value) {
-                  switch (value) {
-                    case 'edit':
-                      _showEditServiceDialog(context, service);
-                      break;
-                    case 'duplicate':
-                      _duplicateService(service);
-                      break;
-                    case 'toggle':
-                      // TODO: 有効/無効切り替えを実装
-                      break;
-                    case 'delete':
-                      _confirmDeleteService(context, service);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 12),
-                        Text('編集'),
-                      ],
-                    ),
+              offset: const Offset(0, 20),
+              elevation: 8,
+              onSelected: (value) {
+                switch (value) {
+                  case 'edit':
+                    _showEditServiceDialog(context, service);
+                    break;
+                  case 'duplicate':
+                    _duplicateService(service);
+                    break;
+                  case 'delete':
+                    _confirmDeleteService(context, service);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  height: 36,
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 16),
+                      SizedBox(width: 8),
+                      Text('編集', style: TextStyle(fontSize: 13)),
+                    ],
                   ),
-                  const PopupMenuItem(
-                    value: 'duplicate',
-                    child: Row(
-                      children: [
-                        Icon(Icons.copy, size: 20),
-                        SizedBox(width: 12),
-                        Text('複製'),
-                      ],
-                    ),
+                ),
+                const PopupMenuItem(
+                  value: 'duplicate',
+                  height: 36,
+                  child: Row(
+                    children: [
+                      Icon(Icons.copy, size: 16),
+                      SizedBox(width: 8),
+                      Text('複製', style: TextStyle(fontSize: 13)),
+                    ],
                   ),
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Row(
-                      children: [
-                        Icon(
-                          service.isActive ? Icons.visibility_off : Icons.visibility,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(service.isActive ? '無効にする' : '有効にする'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuDivider(),
+                ),
                   const PopupMenuItem(
                     value: 'delete',
+                    height: 36,
                     child: Row(
                       children: [
-                        Icon(Icons.delete, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('削除', style: TextStyle(color: Colors.red)),
+                        Icon(Icons.delete, size: 16, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('削除', style: TextStyle(fontSize: 13, color: Colors.red)),
                       ],
                     ),
                   ),
                 ],
               ),
-            ],
-          );
+          ],
+        ),
+      ],
+    );
   }
   
   Widget _buildEmptyState() {
@@ -1447,6 +1498,25 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
     final categories = _industryCategories[_selectedIndustry]!;
     final index = categories.indexOf(category);
     return index >= 0 ? colors[index % colors.length] : Colors.grey;
+  }
+  
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'カット':
+        return Icons.cut;
+      case 'カラー':
+        return Icons.palette;
+      case 'パーマ':
+        return Icons.waves;
+      case 'トリートメント':
+        return Icons.spa;
+      case 'ヘッドスパ':
+        return Icons.self_improvement;
+      case 'セット':
+        return Icons.style;
+      default:
+        return Icons.category;
+    }
   }
 }
 

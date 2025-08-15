@@ -194,6 +194,14 @@ class ThemeService extends ChangeNotifier {
       _startRealtimeSync();
     }
   }
+  
+  // ユーザーログイン時に呼ばれる
+  Future<void> onUserLogin() async {
+    if (_authService.currentUser != null) {
+      await _loadFromFirebase();
+      _startRealtimeSync();
+    }
+  }
 
   // LocalStorageから読み込み
   Future<void> _loadFromLocalStorage() async {
