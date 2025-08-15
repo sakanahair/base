@@ -107,8 +107,9 @@ class _BusinessHoursPageState extends State<BusinessHoursPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('営業時間'),
+        title: const Text('営業時間', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
           // 業種切り替えボタン（デモ用）

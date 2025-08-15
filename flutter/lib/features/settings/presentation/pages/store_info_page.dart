@@ -128,8 +128,9 @@ class _StoreInfoPageState extends State<StoreInfoPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('店舗情報'),
+        title: const Text('店舗情報', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
           // 業種切り替えボタン（デモ用）

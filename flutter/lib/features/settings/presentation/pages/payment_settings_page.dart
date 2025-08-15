@@ -138,8 +138,9 @@ class _PaymentSettingsPageState extends State<PaymentSettingsPage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('決済設定'),
+        title: const Text('決済設定', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
           PopupMenuButton<String>(
