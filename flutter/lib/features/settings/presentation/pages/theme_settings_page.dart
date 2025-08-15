@@ -93,14 +93,15 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
-            color: AppTheme.textSecondary,
+            color: Colors.black54,
           ),
         ),
         const SizedBox(height: 16),
@@ -163,7 +164,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? preset.color : AppTheme.textPrimary,
+                    color: isSelected ? preset.color : Colors.black87,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
@@ -308,17 +309,31 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                 children: [
                   Text(
                     'あいうえお かきくけこ',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                      fontFamily: themeService.fontFamily,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'ABCDEFG 12345',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                      fontFamily: themeService.fontFamily,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'このフォントで表示されています',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                      fontFamily: themeService.fontFamily,
+                    ),
                   ),
                 ],
               ),

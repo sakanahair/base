@@ -89,7 +89,8 @@ class StatCard extends StatelessWidget {
           const Spacer(),
           Text(
             title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 14,
               color: AppTheme.textTertiary,
               fontWeight: FontWeight.w500,
             ),
@@ -101,7 +102,8 @@ class StatCard extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                style: TextStyle(
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.textPrimary,
                 ),
@@ -110,7 +112,8 @@ class StatCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   subtitle,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  style: TextStyle(
+                    fontSize: 16,
                     color: AppTheme.textSecondary,
                   ),
                 ),

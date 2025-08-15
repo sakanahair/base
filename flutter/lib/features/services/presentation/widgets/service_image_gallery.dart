@@ -206,6 +206,8 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
   Future<void> _deleteImage(ServiceImage image) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('画像の削除'),
         content: const Text('この画像を削除しますか？'),
@@ -245,6 +247,9 @@ class _ServiceImageGalleryState extends State<ServiceImageGallery> {
   void _showImageViewer(int initialIndex) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black87,
+      useSafeArea: true,
       builder: (context) => ImageViewerDialog(
         images: _images,
         initialIndex: initialIndex,

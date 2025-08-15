@@ -73,8 +73,8 @@ fi
 
 # Flutter Webファイルをコピー
 echo "Flutter Webファイルを配置中..."
-mkdir -p /var/www/sakana/public/app
-cp -r /var/www/sakana/flutter/build/web/* /var/www/sakana/public/app/
+mkdir -p /var/www/sakana/next/public/app
+cp -r /var/www/sakana/flutter/build/web/* /var/www/sakana/next/public/app/
 
 # Nginxを再起動
 echo "Nginxを再起動中..."
@@ -90,7 +90,6 @@ echo ""
 echo "アクセスURL:"
 echo "- メインサイト: http://dev.sakana.hair/"
 echo "- Flutter App: http://dev.sakana.hair/app/"
-echo "- morishita: http://dev.sakana.hair/morishita/"
 echo ""
 echo "PM2ログを確認: ssh $SERVER 'pm2 logs sakana-next'"
 echo ""

@@ -384,6 +384,8 @@ class _SmartMemoPadState extends State<SmartMemoPad> {
                           if (_hasChanges) {
                             showDialog(
                               context: context,
+                              barrierDismissible: false,
+                              barrierColor: Colors.black54,
                               builder: (context) => AlertDialog(
                                 title: const Text('保存確認'),
                                 content: const Text('変更が保存されていません。保存しますか？'),
@@ -424,6 +426,8 @@ class _SmartMemoPadState extends State<SmartMemoPad> {
                       PopupMenuButton<String>(
                         icon: const Icon(Icons.snippet_folder, size: 20),
                         tooltip: 'テンプレート',
+                        offset: const Offset(0, 30),
+                        elevation: 8,
                         itemBuilder: (context) => _templates.map((template) {
                           return PopupMenuItem(
                             value: template['content'],
@@ -464,6 +468,8 @@ class _SmartMemoPadState extends State<SmartMemoPad> {
                         onPressed: () {
                           showDialog(
                             context: context,
+                            barrierDismissible: true,
+                            barrierColor: Colors.black54,
                             builder: (context) => AlertDialog(
                               title: const Text('メモ内検索'),
                               content: TextField(

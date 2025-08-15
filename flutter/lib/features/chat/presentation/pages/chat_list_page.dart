@@ -85,8 +85,10 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 children: [
                   Text(
                     'チャット',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    style: TextStyle(
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
+                      color: Colors.black87,
                     ),
                   ),
                   const Spacer(),
@@ -169,7 +171,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                 indicatorWeight: 3,
                 labelColor: themeService.primaryColor,
                 unselectedLabelColor: Colors.black54,
-                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                labelStyle: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
                 tabs: const [
@@ -1012,6 +1015,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                   ),
                   trailing: PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
+                    offset: const Offset(0, 30),
+                    elevation: 8,
                     itemBuilder: (context) => [
                       const PopupMenuItem<String>(
                         value: 'chat',
@@ -1058,6 +1063,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                         case 'tags':
                           showDialog(
                             context: context,
+                            barrierDismissible: true,
+                            barrierColor: Colors.black54,
+                            useSafeArea: true,
                             builder: (context) => TagManagerDialog(
                               userId: customer.id,
                               userName: customer.name,
@@ -1270,6 +1278,9 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
     final themeService = Provider.of<ThemeService>(context, listen: false);
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      useSafeArea: true,
       builder: (context) => Dialog(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.9,
@@ -1590,6 +1601,8 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
   Future<bool> _showDeleteDialog(BuildContext context, Map<String, dynamic> chat) async {
     return await showDialog(
       context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('削除確認'),
         content: Text('${chat['name']}との会話とユーザー情報を完全に削除しますか？'),

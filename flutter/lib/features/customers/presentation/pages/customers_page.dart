@@ -61,13 +61,14 @@ class _CustomersPageState extends State<CustomersPage> {
                 children: [
                   Text(
                     '顧客管理',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: ResponsiveHelper.getResponsiveFontSize(
                         context,
                         baseFontSize: 24,
                         mobileScale: 0.9,
                       ),
+                      color: Colors.black87,
                     ),
                   ).animate().fadeIn().slideX(begin: -0.2, end: 0),
                   
@@ -235,14 +236,17 @@ class _CustomersPageState extends State<CustomersPage> {
                       children: [
                         Text(
                           customer.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           customer.phone,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: TextStyle(
+                            fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
                         ),
@@ -252,6 +256,8 @@ class _CustomersPageState extends State<CustomersPage> {
                   
                   // Actions
                   PopupMenuButton<String>(
+                    offset: const Offset(0, 30),
+                    elevation: 8,
                     onSelected: (value) {
                       ResponsiveHelper.addHapticFeedback();
                       if (value == 'edit') {
@@ -355,7 +361,8 @@ class _CustomersPageState extends State<CustomersPage> {
           Flexible(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
               overflow: TextOverflow.ellipsis,
@@ -499,14 +506,17 @@ class _CustomersPageState extends State<CustomersPage> {
           const SizedBox(height: 16),
           Text(
             _searchQuery.isEmpty ? '顧客が登録されていません' : '検索結果がありません',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
               color: AppTheme.textTertiary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             _searchQuery.isEmpty ? '新しい顧客を登録してみましょう' : '別のキーワードで検索してみてください',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 14,
               color: AppTheme.textTertiary,
             ),
             textAlign: TextAlign.center,
@@ -532,6 +542,8 @@ class _CustomersPageState extends State<CustomersPage> {
   void _showAddCustomerDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('新規顧客登録'),
         content: const Text('顧客登録機能は実装予定です'),
@@ -548,6 +560,8 @@ class _CustomersPageState extends State<CustomersPage> {
   void _showCustomerDetails(BuildContext context, _CustomerData customer) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: Text(customer.name),
         content: Column(
@@ -591,6 +605,8 @@ class _CustomersPageState extends State<CustomersPage> {
   void _deleteCustomer(BuildContext context, _CustomerData customer) {
     showDialog(
       context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('顧客を削除'),
         content: Text('${customer.name}を削除しますか？'),

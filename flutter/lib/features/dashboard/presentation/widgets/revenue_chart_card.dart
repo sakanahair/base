@@ -36,8 +36,10 @@ class _RevenueChartCardState extends State<RevenueChartCard> {
             children: [
               Text(
                 '売上推移',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
+                  color: Colors.black87,
                 ),
               ),
               Container(

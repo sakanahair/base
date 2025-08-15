@@ -81,14 +81,17 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             Text(
               'ダッシュボード',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.w800,
+                color: Colors.black87,
               ),
             ).animate().fadeIn().slideX(begin: -0.2, end: 0),
             const SizedBox(height: 4),
             Text(
               '今日は${_dateFormat.format(DateTime.now())}です',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: TextStyle(
+                fontSize: 16,
                 color: AppTheme.textSecondary,
               ),
             ).animate().fadeIn(delay: 100.ms),
@@ -261,8 +264,10 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Text(
           'クイックアクション',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          style: TextStyle(
+            fontSize: 24,
             fontWeight: FontWeight.w700,
+            color: Colors.black87,
           ),
         ).animate().fadeIn(delay: 700.ms),
         
@@ -340,7 +345,8 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: color,
                 ),

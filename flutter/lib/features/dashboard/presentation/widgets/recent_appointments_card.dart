@@ -69,8 +69,10 @@ class RecentAppointmentsCard extends StatelessWidget {
             children: [
               Text(
                 '本日の予約',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
+                  color: Colors.black87,
                 ),
               ),
               TextButton(

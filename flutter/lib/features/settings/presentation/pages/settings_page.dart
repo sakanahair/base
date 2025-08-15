@@ -24,14 +24,17 @@ class SettingsPage extends StatelessWidget {
             // Header
             Text(
               '設定',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.w800,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'アプリケーションの設定を管理します',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: TextStyle(
+                fontSize: 16,
                 color: AppTheme.textSecondary,
               ),
             ),
@@ -286,6 +289,8 @@ class SettingsPage extends StatelessWidget {
     // ダイアログ表示
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('ストレージ管理'),
         content: SizedBox(

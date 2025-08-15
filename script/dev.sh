@@ -52,8 +52,8 @@ echo "  Flutter: http://localhost:3000/app/"
 echo ""
 echo "💡 Flutter アプリを更新する場合:"
 echo "  1. cd flutter"
-echo "  2. flutter build web"
-echo "  3. ./script/update-flutter.sh (または手動でコピー)"
+echo "  2. flutter build web --release --base-href /app/"
+echo "  3. cp -r build/web/* ../next/public/app/"
 echo ""
 
 # 開発サーバーを起動

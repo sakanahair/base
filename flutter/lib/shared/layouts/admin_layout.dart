@@ -177,8 +177,12 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
       
       // Floating Action Button for mobile
       floatingActionButton: isMobile
-          ? _buildMobileFAB(context)
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 60), // BottomNavの高さ分上げる
+              child: _buildMobileFAB(context),
+            )
           : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -186,8 +190,11 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     final themeService = Provider.of<ThemeService>(context);
     // モバイルではヘッダーを小さくするか、非表示にする
     if (isMobile) {
+      // iOS notch対応のためSafeAreaの高さを考慮
+      final safePadding = MediaQuery.of(context).padding.top;
       return Container(
-        height: 48, // モバイルでは小さなヘッダー
+        height: 48 + safePadding, // SafeAreaを考慮した高さ
+        padding: EdgeInsets.only(top: safePadding), // 上部にSafeAreaパディング
         decoration: BoxDecoration(
           color: themeService.primaryColor,
           boxShadow: [
@@ -257,7 +264,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
           // Title
           Text(
             isMobile ? 'SAKANA' : 'SAKANA Admin',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            style: TextStyle(
+              fontSize: isMobile ? 20 : 24,
               color: themeService.onPrimaryColor,
               fontWeight: FontWeight.w300,
             ),
@@ -279,6 +287,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                 showDialog(
                   context: context,
                   barrierDismissible: false,
+                  barrierColor: Colors.black54,
+                  useSafeArea: true,
                   builder: (context) => Dialog(
                     backgroundColor: Colors.transparent,
                     insetPadding: const EdgeInsets.all(20),
@@ -318,6 +328,9 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                 // メモ帳を開く
                 showDialog(
                   context: context,
+                  barrierDismissible: true,
+                  barrierColor: Colors.black54,
+                  useSafeArea: true,
                   builder: (dialogContext) => Dialog(
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.8,
@@ -381,6 +394,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                   horizontal: isMobile ? 8 : 16,
                 ),
                 child: PopupMenuButton<String>(
+                  offset: const Offset(0, 40),
+                  elevation: 8,
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: isMobile ? 8 : 12,
@@ -447,7 +462,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                           const SizedBox(width: 8),
                           Text(
                             isSuperAdmin ? 'SUPER管理者' : '管理者',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: TextStyle(
+                              fontSize: 14,
                               color: themeService.onPrimaryColor,
                               fontWeight: FontWeight.w500,
                             ),
@@ -566,13 +582,19 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
     // Only show main navigation items on bottom nav (first 5)
     final mainItems = _menuItems.take(5).toList();
     
-    return Theme(
-      data: Theme.of(context).copyWith(
-        // BottomNavigationBarの高さとパディングを調整
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
-      child: BottomNavigationBar(
+      child: SafeArea(
+        top: false,
+        child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         selectedItemColor: AppTheme.secondaryColor,
@@ -619,6 +641,7 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
             label: _getShortLabel(item.label),
           );
         }).toList(),
+        ),
       ),
     );
   }
@@ -641,7 +664,11 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
   void _showQuickActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      elevation: 10,
+      barrierColor: Colors.black54,
+      useSafeArea: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -662,7 +689,11 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
             const SizedBox(height: 20),
             Text(
               'クイックアクション',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 20),
             GridView.count(
@@ -835,14 +866,16 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                             children: [
                               Text(
                                 'SAKANA Hair',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: AppTheme.textPrimary,
                                 ),
                               ),
                               Text(
                                 '管理システム',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                style: TextStyle(
+                                  fontSize: 12,
                                   color: AppTheme.textTertiary,
                                 ),
                               ),
@@ -991,7 +1024,8 @@ class _AdminLayoutState extends State<AdminLayout> with TickerProviderStateMixin
                       const SizedBox(width: 12),
                       Text(
                         'ヘルプ＆サポート',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: TextStyle(
+                          fontSize: 12,
                           color: AppTheme.textTertiary,
                         ),
                       ),

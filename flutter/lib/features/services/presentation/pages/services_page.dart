@@ -329,6 +329,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                           color: Colors.grey[50],
                         ),
                         child: PopupMenuButton<String>(
+                          offset: const Offset(0, 40),
+                          elevation: 8,
                           onSelected: (value) {
                             setState(() {
                               _selectedIndustry = value;
@@ -628,6 +630,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                 // 3点メニュー
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, size: 20),
+                  offset: const Offset(0, 30),
+                  elevation: 8,
                   onSelected: (value) {
                     switch (value) {
                       case 'edit':
@@ -699,7 +703,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
           const SizedBox(height: 8),
           Text(
             service.description,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 14,
               color: Colors.grey[600],
             ),
             maxLines: 2,
@@ -924,8 +929,10 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                       children: [
                         Text(
                           service.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                         ),
                         Container(
@@ -964,7 +971,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                       const SizedBox(height: 4),
                       Text(
                         service.description,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: TextStyle(
+                          fontSize: 14,
                           color: Colors.grey[600],
                         ),
                         maxLines: 2,
@@ -997,7 +1005,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                 children: [
                   Text(
                     '¥${service.price.toStringAsFixed(0)}',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: TextStyle(
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
                     ),
@@ -1024,6 +1033,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
               // アクションメニュー
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),
+                offset: const Offset(0, 30),
+                elevation: 8,
                 onSelected: (value) {
                   switch (value) {
                     case 'edit':
@@ -1136,6 +1147,9 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
   void _showAddServiceDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      useSafeArea: true,
       builder: (context) => ServiceEditDialog(
         industry: _selectedIndustry,
         categories: _industryCategories[_selectedIndustry]!,
@@ -1184,6 +1198,9 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
   void _showEditServiceDialog(BuildContext context, ServiceModel service) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      useSafeArea: true,
       builder: (context) => ServiceEditDialog(
         service: service,
         industry: _selectedIndustry,
@@ -1221,6 +1238,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
     
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('サービスを複製'),
         content: Column(
@@ -1278,6 +1297,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
   Future<bool> _showDeleteConfirmDialog(BuildContext context, ServiceModel service) async {
     final result = await showDialog<bool>(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('サービスの削除'),
         content: Text('「${service.name}」を削除しますか？'),
@@ -1313,6 +1334,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: false, // 削除中はダイアログを閉じられないように
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('サービスの削除'),
         content: Text('「${service.name}」を削除しますか？\n\nこの操作は取り消せません。'),
@@ -1500,7 +1522,26 @@ class _ServiceEditDialogState extends State<ServiceEditDialog> {
   
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    // モバイルの場合はフルスクリーンScaffold
+    if (isMobile) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(widget.service == null ? 'サービスを追加' : 'サービスを編集'),
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 1,
+        ),
+        body: _buildFormContent(),
+        bottomNavigationBar: _buildBottomBar(),
+      );
+    }
+    
+    // デスクトップの場合はダイアログ
     return Dialog(
+      elevation: 8,
       child: Container(
         width: 800,
         constraints: BoxConstraints(
@@ -1543,11 +1584,22 @@ class _ServiceEditDialogState extends State<ServiceEditDialog> {
             ),
             // フォーム
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: _buildFormContent(),
+            ),
+            // ボタン
+            _buildBottomBar(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildFormContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
                     // サービス名
                     const Text(
                       'サービス名 *',
@@ -1768,38 +1820,45 @@ class _ServiceEditDialogState extends State<ServiceEditDialog> {
                           ],
                         ),
                       ),
-                  ],
-                ),
-              ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildBottomBar() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: isMobile ? null : const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+        border: isMobile ? Border(
+          top: BorderSide(color: Colors.grey[300]!),
+        ) : null,
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('キャンセル'),
             ),
-            // フッター
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: _saveService,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('キャンセル'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _saveService,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(widget.service == null ? '追加' : '保存'),
-                  ),
-                ],
-              ),
+              child: Text(widget.service == null ? '追加' : '保存'),
             ),
           ],
         ),

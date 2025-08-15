@@ -111,8 +111,10 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 children: [
                   Text(
                     '予約管理',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    style: TextStyle(
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
+                      color: Colors.black87,
                     ),
                   ).animate().fadeIn().slideX(begin: -0.2, end: 0),
                   
@@ -418,14 +420,17 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                       children: [
                         Text(
                           appointment.customerName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           appointment.serviceName,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: 14,
                             color: AppTheme.textSecondary,
                           ),
                         ),
@@ -536,15 +541,18 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                       children: [
                         Text(
                           appointment.customerName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           appointment.serviceName,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: TextStyle(
+                            fontSize: 12,
                             color: AppTheme.textSecondary,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -560,8 +568,10 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               // Date and Time
               Text(
                 _dateFormat.format(appointment.date),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
+                  color: Colors.black87,
                 ),
               ),
               
@@ -569,7 +579,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               
               Text(
                 '${_timeFormat.format(DateTime(0, 0, 0, appointment.time.hour, appointment.time.minute))} (${appointment.duration}分)',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: TextStyle(
+                  fontSize: 12,
                   color: AppTheme.textSecondary,
                 ),
               ),
@@ -665,7 +676,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           Flexible(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
               overflow: TextOverflow.ellipsis,
@@ -678,6 +690,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   
   Widget _buildAppointmentActions(BuildContext context, _AppointmentData appointment) {
     return PopupMenuButton<String>(
+      offset: const Offset(0, 30),
+      elevation: 8,
       onSelected: (value) {
         if (context.isTouchDevice) {
           ResponsiveHelper.addHapticFeedback();
@@ -771,14 +785,17 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           const SizedBox(height: 16),
           Text(
             _searchQuery.isEmpty ? '予約がありません' : '検索結果がありません',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
               color: AppTheme.textTertiary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             _searchQuery.isEmpty ? '新しい予約を作成してみましょう' : '別のキーワードで検索してみてください',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: TextStyle(
+              fontSize: 14,
               color: AppTheme.textTertiary,
             ),
             textAlign: TextAlign.center,
@@ -823,6 +840,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   void _showAddAppointmentDialog(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('新規予約'),
         content: const Text('予約作成機能は実装予定です'),
@@ -839,6 +858,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   void _showAppointmentDetails(BuildContext context, _AppointmentData appointment) {
     showDialog(
       context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: Text('予約詳細'),
         content: Column(
@@ -902,6 +923,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
   void _cancelAppointment(BuildContext context, _AppointmentData appointment) {
     showDialog(
       context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
         title: const Text('予約をキャンセル'),
         content: Text('${appointment.customerName}の予約をキャンセルしますか？'),
