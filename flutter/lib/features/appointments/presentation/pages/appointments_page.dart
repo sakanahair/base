@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/services/theme_service.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../shared/utils/responsive_helper.dart';
-import '../../../../core/utils/ios_safe_area_helper.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -13,870 +13,530 @@ class AppointmentsPage extends StatefulWidget {
   State<AppointmentsPage> createState() => _AppointmentsPageState();
 }
 
-class _AppointmentsPageState extends State<AppointmentsPage>
-    with TickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  DateTime _selectedDate = DateTime.now();
-  String _selectedStatus = 'all';
-  late TabController _tabController;
-  final _dateFormat = DateFormat('MM月dd日(E)', 'ja_JP');
-  final _timeFormat = DateFormat('HH:mm');
+class _AppointmentsPageState extends State<AppointmentsPage> {
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
   
-  final List<_AppointmentData> _appointments = List.generate(
-    15,
-    (index) {
-      final date = DateTime.now().add(Duration(days: index % 7));
-      final statuses = ['confirmed', 'pending', 'completed', 'cancelled'];
-      return _AppointmentData(
-        id: index + 1,
-        customerName: '顧客 ${index + 1}',
-        serviceName: index % 3 == 0 
-            ? 'カット + カラー' 
-            : index % 2 == 0 
-              ? 'パーマ + トリートメント'
-              : 'カット',
-        date: date,
-        time: TimeOfDay(hour: 9 + (index % 8), minute: index % 2 == 0 ? 0 : 30),
-        duration: 60 + (index % 3) * 30,
-        status: statuses[index % statuses.length],
-        phone: '090-1234-${5678 + index}',
-        price: 5000 + (index % 5) * 1000,
-      );
-    },
-  );
-
+  // Google カレンダー連携状態（モック）
+  bool _isGoogleCalendarConnected = false;
+  
+  // 表示モード
+  String _viewMode = 'calendar'; // 'calendar', 'list', 'timeline'
+  
+  // モックの予約データ
+  final Map<DateTime, List<Appointment>> _appointments = {};
+  
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _selectedDay = _focusedDay;
+    _loadMockAppointments();
   }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<_AppointmentData> get _filteredAppointments {
-    var filtered = _appointments.where((appointment) {
-      final matchesSearch = _searchQuery.isEmpty ||
-          appointment.customerName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          appointment.serviceName.toLowerCase().contains(_searchQuery.toLowerCase());
-      
-      final matchesStatus = _selectedStatus == 'all' || 
-          appointment.status == _selectedStatus;
-      
-      return matchesSearch && matchesStatus;
-    }).toList();
+  
+  void _loadMockAppointments() {
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
     
-    // Sort by date and time
-    filtered.sort((a, b) {
-      final dateComparison = a.date.compareTo(b.date);
-      if (dateComparison != 0) return dateComparison;
-      
-      final aMinutes = a.time.hour * 60 + a.time.minute;
-      final bMinutes = b.time.hour * 60 + b.time.minute;
-      return aMinutes.compareTo(bMinutes);
-    });
-    
-    return filtered;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    final isTablet = context.isTablet;
-    final isDesktop = context.isDesktop;
-
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: IOSSafeAreaHelper.wrapWithSafeArea(
-        child: RefreshIndicator(
-        onRefresh: () async {
-          if (context.isTouchDevice) {
-            ResponsiveHelper.addHapticFeedback();
-          }
-          // TODO: Refresh appointment data
-          await Future.delayed(const Duration(seconds: 1));
-        },
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: context.responsivePadding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '予約管理',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-                  
-                  SizedBox(height: context.responsiveSpacing),
-                  
-                  // Search and Filters
-                  _buildSearchAndFilters(context, isMobile),
-                ],
-              ),
-            ),
-            
-            // Status Tabs (Mobile) or Filter Chips (Desktop)
-            if (isMobile) 
-              _buildMobileStatusTabs(context)
-            else 
-              _buildDesktopFilterChips(context),
-            
-            // Appointments List
-            Expanded(
-              child: Container(
-                padding: context.responsiveHorizontalPadding,
-                child: _buildAppointmentsList(context, isMobile),
-              ),
-            ),
-          ],
-        ),
+    // 今日の予約
+    _appointments[normalizedToday] = [
+      Appointment(
+        id: '1',
+        customerName: '田中 花子',
+        serviceName: 'カット + カラー',
+        startTime: DateTime(today.year, today.month, today.day, 10, 0),
+        endTime: DateTime(today.year, today.month, today.day, 12, 0),
+        status: AppointmentStatus.confirmed,
+        staffName: '山田スタイリスト',
+        price: 12000,
+        note: '前回と同じカラーリング希望',
+        isFromGoogle: true,
       ),
+      Appointment(
+        id: '2',
+        customerName: '佐藤 太郎',
+        serviceName: 'カット',
+        startTime: DateTime(today.year, today.month, today.day, 14, 0),
+        endTime: DateTime(today.year, today.month, today.day, 15, 0),
+        status: AppointmentStatus.confirmed,
+        staffName: '鈴木スタイリスト',
+        price: 4500,
       ),
-      
-      // Mobile FAB for adding appointments
-      floatingActionButton: isMobile
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                ResponsiveHelper.addHapticFeedbackMedium();
-                _showAddAppointmentDialog(context);
-              },
-              backgroundColor: AppTheme.secondaryColor,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                '予約追加',
-                style: TextStyle(color: Colors.white),
-              ),
-            )
-          : null,
-    );
-  }
-  
-  Widget _buildSearchAndFilters(BuildContext context, bool isMobile) {
-    return Column(
-      children: [
-        // Search Bar
-        TextField(
-          controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
-          decoration: InputDecoration(
-            hintText: '顧客名やサービスで検索...',
-            prefixIcon: Icon(
-              Icons.search,
-              size: context.responsiveIconSize,
-            ),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.clear,
-                      size: context.responsiveIconSize,
-                    ),
-                    onPressed: () {
-                      if (context.isTouchDevice) {
-                        ResponsiveHelper.addHapticFeedback();
-                      }
-                      _searchController.clear();
-                      setState(() {
-                        _searchQuery = '';
-                      });
-                    },
-                  )
-                : null,
-          ),
-        ),
-        
-        if (!isMobile) ...[
-          SizedBox(height: context.responsiveSpacing),
-          
-          // Desktop Actions Row
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: () => _selectDate(context),
-                icon: Icon(Icons.calendar_today, size: context.responsiveIconSize),
-                label: Text(_dateFormat.format(_selectedDate)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.textPrimary,
-                  side: const BorderSide(color: AppTheme.borderColor),
-                ),
-              ),
-              
-              const SizedBox(width: 16),
-              
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (context.isTouchDevice) {
-                    ResponsiveHelper.addHapticFeedback();
-                  }
-                  _showAddAppointmentDialog(context);
-                },
-                icon: Icon(Icons.add, size: context.responsiveIconSize),
-                label: const Text('新規予約'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                ),
-              ),
-              
-              const Spacer(),
-              
-              // Export button
-              OutlinedButton.icon(
-                onPressed: () {
-                  if (context.isTouchDevice) {
-                    ResponsiveHelper.addHapticFeedback();
-                  }
-                  ResponsiveHelper.showResponsiveSnackBar(
-                    context,
-                    message: 'エクスポート機能は実装予定です',
-                    backgroundColor: AppTheme.infoColor,
-                  );
-                },
-                icon: Icon(Icons.download, size: context.responsiveIconSize),
-                label: const Text('エクスポート'),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-  
-  Widget _buildMobileStatusTabs(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        labelColor: AppTheme.secondaryColor,
-        unselectedLabelColor: AppTheme.textSecondary,
-        indicatorColor: AppTheme.secondaryColor,
-        indicatorWeight: 3,
-        labelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        onTap: (index) {
-          ResponsiveHelper.addHapticFeedback();
-          setState(() {
-            _selectedStatus = ['all', 'confirmed', 'pending', 'completed'][index];
-          });
-        },
-        tabs: const [
-          Tab(text: 'すべて'),
-          Tab(text: '確定'),
-          Tab(text: '保留'),
-          Tab(text: '完了'),
-        ],
+      Appointment(
+        id: '3',
+        customerName: '鈴木 美咲',
+        serviceName: 'トリートメント',
+        startTime: DateTime(today.year, today.month, today.day, 15, 30),
+        endTime: DateTime(today.year, today.month, today.day, 16, 30),
+        status: AppointmentStatus.pending,
+        staffName: '山田スタイリスト',
+        price: 6000,
       ),
-    );
-  }
-  
-  Widget _buildDesktopFilterChips(BuildContext context) {
-    final statuses = [
-      {'key': 'all', 'label': 'すべて', 'count': _appointments.length},
-      {'key': 'confirmed', 'label': '確定', 'count': _appointments.where((a) => a.status == 'confirmed').length},
-      {'key': 'pending', 'label': '保留', 'count': _appointments.where((a) => a.status == 'pending').length},
-      {'key': 'completed', 'label': '完了', 'count': _appointments.where((a) => a.status == 'completed').length},
     ];
     
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Wrap(
-        spacing: 12,
-        children: statuses.map((status) {
-          final isSelected = _selectedStatus == status['key'];
-          return FilterChip(
-            label: Text('${status['label']} (${status['count']})'),
-            selected: isSelected,
-            onSelected: (selected) {
-              if (context.isTouchDevice) {
-                ResponsiveHelper.addHapticFeedback();
-              }
+    // 明日の予約
+    final tomorrow = normalizedToday.add(const Duration(days: 1));
+    _appointments[tomorrow] = [
+      Appointment(
+        id: '4',
+        customerName: '高橋 健一',
+        serviceName: 'パーマ + カット',
+        startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 11, 0),
+        endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 13, 0),
+        status: AppointmentStatus.confirmed,
+        staffName: '佐藤スタイリスト',
+        price: 15000,
+        isFromGoogle: true,
+      ),
+    ];
+    
+    // 来週の予約
+    final nextWeek = normalizedToday.add(const Duration(days: 7));
+    _appointments[nextWeek] = [
+      Appointment(
+        id: '5',
+        customerName: '伊藤 さゆり',
+        serviceName: '縮毛矯正',
+        startTime: DateTime(nextWeek.year, nextWeek.month, nextWeek.day, 9, 0),
+        endTime: DateTime(nextWeek.year, nextWeek.month, nextWeek.day, 12, 0),
+        status: AppointmentStatus.confirmed,
+        staffName: '山田スタイリスト',
+        price: 18000,
+      ),
+    ];
+  }
+  
+  List<Appointment> _getAppointmentsForDay(DateTime day) {
+    final normalized = DateTime(day.year, day.month, day.day);
+    return _appointments[normalized] ?? [];
+  }
+  
+  void _showAppointmentDetails(Appointment appointment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _AppointmentDetailModal(appointment: appointment),
+    );
+  }
+  
+  void _showNewAppointmentDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const _NewAppointmentDialog(),
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        title: const Text('予約管理', style: TextStyle(color: Colors.black87)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        actions: [
+          // Google カレンダー連携状態
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _isGoogleCalendarConnected 
+                ? Colors.green.shade50 
+                : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _isGoogleCalendarConnected 
+                  ? Colors.green.shade300 
+                  : Colors.grey.shade300,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.calendar_month,
+                  size: 16,
+                  color: _isGoogleCalendarConnected 
+                    ? Colors.green.shade700 
+                    : Colors.grey.shade600,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _isGoogleCalendarConnected ? 'Google 連携中' : 'Google 未連携',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _isGoogleCalendarConnected 
+                      ? Colors.green.shade700 
+                      : Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 表示切り替え
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.view_module),
+            onSelected: (value) {
               setState(() {
-                _selectedStatus = status['key'] as String;
+                _viewMode = value;
               });
             },
-            backgroundColor: Colors.white,
-            selectedColor: AppTheme.activeBackgroundColor,
-            checkmarkColor: AppTheme.secondaryColor,
-            side: BorderSide(
-              color: isSelected ? AppTheme.secondaryColor : AppTheme.borderColor,
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-  
-  Widget _buildAppointmentsList(BuildContext context, bool isMobile) {
-    final filteredAppointments = _filteredAppointments;
-    
-    if (filteredAppointments.isEmpty) {
-      return _buildEmptyState(context);
-    }
-    
-    if (isMobile) {
-      return ListView.separated(
-        itemCount: filteredAppointments.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final appointment = filteredAppointments[index];
-          return _buildMobileAppointmentCard(context, appointment, index);
-        },
-      ).animate().fadeIn(delay: 200.ms);
-    } else {
-      return GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: ResponsiveHelper.getGridColumnCount(
-            context,
-            mobileColumns: 1,
-            tabletColumns: 2,
-            desktopColumns: 3,
-          ),
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.3,
-        ),
-        itemCount: filteredAppointments.length,
-        itemBuilder: (context, index) {
-          final appointment = filteredAppointments[index];
-          return _buildDesktopAppointmentCard(context, appointment, index);
-        },
-      ).animate().fadeIn(delay: 200.ms);
-    }
-  }
-  
-  Widget _buildMobileAppointmentCard(
-    BuildContext context, 
-    _AppointmentData appointment, 
-    int index
-  ) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: () {
-          ResponsiveHelper.addHapticFeedback();
-          _showAppointmentDetails(context, appointment);
-        },
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with status and actions
-              Row(
-                children: [
-                  _buildStatusChip(context, appointment.status),
-                  const Spacer(),
-                  _buildAppointmentActions(context, appointment),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Customer and Service Info
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: AppTheme.secondaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 12),
-                  
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          appointment.customerName,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          appointment.serviceName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Price
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.successColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '¥${appointment.price.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        color: AppTheme.successColor,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 12),
-              
-              // Date and Time Info
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoChip(
-                      context,
-                      Icons.calendar_today,
-                      _dateFormat.format(appointment.date),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildInfoChip(
-                      context,
-                      Icons.access_time,
-                      '${_timeFormat.format(DateTime(0, 0, 0, appointment.time.hour, appointment.time.minute))} (${appointment.duration}分)',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: -0.1, end: 0);
-  }
-  
-  Widget _buildDesktopAppointmentCard(
-    BuildContext context, 
-    _AppointmentData appointment, 
-    int index
-  ) {
-    return Card(
-      child: InkWell(
-        onTap: () {
-          if (context.isTouchDevice) {
-            ResponsiveHelper.addHapticFeedback();
-          }
-          _showAppointmentDetails(context, appointment);
-        },
-        borderRadius: BorderRadius.circular(ResponsiveHelper.getCardBorderRadius(context)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  _buildStatusChip(context, appointment.status),
-                  const Spacer(),
-                  _buildAppointmentActions(context, appointment),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Customer Info
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: AppTheme.secondaryColor,
-                      size: 20,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 12),
-                  
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          appointment.customerName,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          appointment.serviceName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              
-              const Spacer(),
-              
-              // Date and Time
-              Text(
-                _dateFormat.format(appointment.date),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'calendar',
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_view_month, size: 20),
+                    SizedBox(width: 8),
+                    Text('カレンダー'),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: 4),
-              
-              Text(
-                '${_timeFormat.format(DateTime(0, 0, 0, appointment.time.hour, appointment.time.minute))} (${appointment.duration}分)',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
+              const PopupMenuItem(
+                value: 'list',
+                child: Row(
+                  children: [
+                    Icon(Icons.list, size: 20),
+                    SizedBox(width: 8),
+                    Text('リスト'),
+                  ],
                 ),
               ),
-              
-              const SizedBox(height: 12),
-              
-              // Price
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.successColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '¥${appointment.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    color: AppTheme.successColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
+              const PopupMenuItem(
+                value: 'timeline',
+                child: Row(
+                  children: [
+                    Icon(Icons.timeline, size: 20),
+                    SizedBox(width: 8),
+                    Text('タイムライン'),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    ).animate().fadeIn(delay: (index * 50).ms).scale(begin: const Offset(0.95, 0.95));
-  }
-  
-  Widget _buildStatusChip(BuildContext context, String status) {
-    Color color;
-    String label;
-    
-    switch (status) {
-      case 'confirmed':
-        color = AppTheme.successColor;
-        label = '確定';
-        break;
-      case 'pending':
-        color = AppTheme.warningColor;
-        label = '保留';
-        break;
-      case 'completed':
-        color = AppTheme.infoColor;
-        label = '完了';
-        break;
-      case 'cancelled':
-        color = AppTheme.errorColor;
-        label = 'キャンセル';
-        break;
-      default:
-        color = AppTheme.textTertiary;
-        label = '不明';
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildInfoChip(BuildContext context, IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.borderColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: AppTheme.textSecondary,
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              _showGoogleCalendarSettings();
+            },
           ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          const SizedBox(width: 8),
         ],
       ),
+      body: _viewMode == 'calendar' 
+        ? _buildCalendarView(themeService, isMobile)
+        : _viewMode == 'list'
+          ? _buildListView(themeService)
+          : _buildTimelineView(themeService),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showNewAppointmentDialog,
+        backgroundColor: themeService.primaryColor,
+        child: const Icon(Icons.add),
+      ),
     );
   }
   
-  Widget _buildAppointmentActions(BuildContext context, _AppointmentData appointment) {
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 30),
-      elevation: 8,
-      onSelected: (value) {
-        if (context.isTouchDevice) {
-          ResponsiveHelper.addHapticFeedback();
-        }
+  Widget _buildCalendarView(ThemeService themeService, bool isMobile) {
+    final selectedAppointments = _selectedDay != null 
+      ? _getAppointmentsForDay(_selectedDay!)
+      : [];
+    
+    return Column(
+      children: [
+        // カレンダー
+        Card(
+          margin: const EdgeInsets.all(16),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: AppTheme.borderColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              locale: 'ja_JP',
+              selectedDayPredicate: (day) {
+                return isSameDay(_selectedDay, day);
+              },
+              eventLoader: _getAppointmentsForDay,
+              startingDayOfWeek: StartingDayOfWeek.monday,
+              calendarStyle: CalendarStyle(
+                outsideDaysVisible: false,
+                selectedDecoration: BoxDecoration(
+                  color: themeService.primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: themeService.primaryColor.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                markersMaxCount: 3,
+                markerDecoration: BoxDecoration(
+                  color: Colors.blue.shade400,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: true,
+                titleCentered: true,
+              ),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              },
+              onFormatChanged: (format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              },
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+              },
+            ),
+          ),
+        ).animate().fadeIn().slideY(begin: 0.1, end: 0),
         
-        switch (value) {
-          case 'edit':
-            _editAppointment(context, appointment);
-            break;
-          case 'confirm':
-            _confirmAppointment(context, appointment);
-            break;
-          case 'complete':
-            _completeAppointment(context, appointment);
-            break;
-          case 'cancel':
-            _cancelAppointment(context, appointment);
-            break;
-          case 'call':
-            _callCustomer(context, appointment);
-            break;
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 20),
-              SizedBox(width: 8),
-              Text('編集'),
-            ],
-          ),
-        ),
-        if (appointment.status == 'pending')
-          const PopupMenuItem(
-            value: 'confirm',
-            child: Row(
-              children: [
-                Icon(Icons.check_circle, size: 20, color: AppTheme.successColor),
-                SizedBox(width: 8),
-                Text('確定'),
-              ],
-            ),
-          ),
-        if (appointment.status == 'confirmed')
-          const PopupMenuItem(
-            value: 'complete',
-            child: Row(
-              children: [
-                Icon(Icons.done, size: 20, color: AppTheme.infoColor),
-                SizedBox(width: 8),
-                Text('完了'),
-              ],
-            ),
-          ),
-        const PopupMenuItem(
-          value: 'call',
-          child: Row(
-            children: [
-              Icon(Icons.phone, size: 20, color: AppTheme.warningColor),
-              SizedBox(width: 8),
-              Text('電話'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'cancel',
-          child: Row(
-            children: [
-              Icon(Icons.cancel, size: 20, color: AppTheme.errorColor),
-              SizedBox(width: 8),
-              Text('キャンセル', style: TextStyle(color: AppTheme.errorColor)),
-            ],
-          ),
+        // 選択日の予約一覧
+        Expanded(
+          child: selectedAppointments.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
+                    const SizedBox(height: 16),
+                    Text(
+                      _selectedDay != null
+                        ? '${DateFormat('M月d日').format(_selectedDay!)}の予約はありません'
+                        : '日付を選択してください',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: selectedAppointments.length,
+                itemBuilder: (context, index) {
+                  final appointment = selectedAppointments[index];
+                  return _AppointmentCard(
+                    appointment: appointment,
+                    onTap: () => _showAppointmentDetails(appointment),
+                  ).animate().fadeIn(delay: Duration(milliseconds: index * 100));
+                },
+              ),
         ),
       ],
     );
   }
   
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
+  Widget _buildListView(ThemeService themeService) {
+    // すべての予約を日付順にソート
+    final allAppointments = <Appointment>[];
+    final sortedDates = _appointments.keys.toList()..sort();
+    
+    for (final date in sortedDates) {
+      allAppointments.addAll(_appointments[date]!);
+    }
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: allAppointments.length,
+      itemBuilder: (context, index) {
+        final appointment = allAppointments[index];
+        return _AppointmentCard(
+          appointment: appointment,
+          onTap: () => _showAppointmentDetails(appointment),
+          showDate: true,
+        ).animate().fadeIn(delay: Duration(milliseconds: index * 50));
+      },
+    );
+  }
+  
+  Widget _buildTimelineView(ThemeService themeService) {
+    final today = DateTime.now();
+    final todayAppointments = _getAppointmentsForDay(today);
+    
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: AppTheme.textTertiary,
+          Text(
+            DateFormat('yyyy年M月d日 (E)', 'ja').format(today),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 16),
-          Text(
-            _searchQuery.isEmpty ? '予約がありません' : '検索結果がありません',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.textTertiary,
+          
+          // タイムライン表示
+          SizedBox(
+            height: 24 * 60, // 24時間分の高さ
+            child: Stack(
+              children: [
+                // 時間軸
+                ...List.generate(24, (hour) {
+                  return Positioned(
+                    top: hour * 60.0,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 50,
+                          child: Text(
+                            '${hour.toString().padLeft(2, '0')}:00',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(color: Colors.grey.shade300),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                
+                // 予約表示
+                ...todayAppointments.map((appointment) {
+                  final startMinutes = appointment.startTime.hour * 60 + 
+                                      appointment.startTime.minute;
+                  final duration = appointment.endTime.difference(appointment.startTime).inMinutes;
+                  
+                  return Positioned(
+                    top: startMinutes.toDouble(),
+                    left: 60,
+                    right: 16,
+                    height: duration.toDouble(),
+                    child: GestureDetector(
+                      onTap: () => _showAppointmentDetails(appointment),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(appointment.status).withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _getStatusColor(appointment.status),
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              appointment.customerName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              appointment.serviceName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isEmpty ? '新しい予約を作成してみましょう' : '別のキーワードで検索してみてください',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textTertiary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (_searchQuery.isEmpty) ...[
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                if (context.isTouchDevice) {
-                  ResponsiveHelper.addHapticFeedback();
-                }
-                _showAddAppointmentDialog(context);
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('新規予約を作成'),
-            ),
-          ],
         ],
       ),
     );
   }
   
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('ja', 'JP'),
-    );
-    
-    if (picked != null && picked != _selectedDate) {
-      if (context.isTouchDevice) {
-        ResponsiveHelper.addHapticFeedback();
-      }
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-  
-  void _showAddAppointmentDialog(BuildContext context) {
+  void _showGoogleCalendarSettings() {
     showDialog(
       context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
       builder: (context) => AlertDialog(
-        title: const Text('新規予約'),
-        content: const Text('予約作成機能は実装予定です'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('閉じる'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showAppointmentDetails(BuildContext context, _AppointmentData appointment) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
-      builder: (context) => AlertDialog(
-        title: Text('予約詳細'),
+        title: const Text('Google カレンダー連携'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('顧客: ${appointment.customerName}'),
-            const SizedBox(height: 8),
-            Text('サービス: ${appointment.serviceName}'),
-            const SizedBox(height: 8),
-            Text('日付: ${_dateFormat.format(appointment.date)}'),
-            const SizedBox(height: 8),
-            Text('時間: ${_timeFormat.format(DateTime(0, 0, 0, appointment.time.hour, appointment.time.minute))}'),
-            const SizedBox(height: 8),
-            Text('料金: ¥${appointment.price.toStringAsFixed(0)}'),
-            const SizedBox(height: 8),
-            Text('電話: ${appointment.phone}'),
+            if (!_isGoogleCalendarConnected) ...[
+              const Icon(Icons.calendar_month, size: 64, color: Colors.blue),
+              const SizedBox(height: 16),
+              const Text(
+                'Google カレンダーと連携すると、予約情報を自動で同期できます。',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isGoogleCalendarConnected = true;
+                  });
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Google カレンダーと連携しました')),
+                  );
+                },
+                icon: const Icon(Icons.link),
+                label: const Text('Google アカウントと連携'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                ),
+              ),
+            ] else ...[
+              const Icon(Icons.check_circle, size: 64, color: Colors.green),
+              const SizedBox(height: 16),
+              const Text(
+                'Google カレンダーと連携済みです',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'account@gmail.com',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isGoogleCalendarConnected = false;
+                  });
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('連携を解除しました')),
+                  );
+                },
+                icon: const Icon(Icons.link_off),
+                label: const Text('連携を解除'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -884,103 +544,610 @@ class _AppointmentsPageState extends State<AppointmentsPage>
             onPressed: () => Navigator.pop(context),
             child: const Text('閉じる'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _editAppointment(context, appointment);
-            },
-            child: const Text('編集'),
-          ),
         ],
       ),
     );
   }
   
-  void _editAppointment(BuildContext context, _AppointmentData appointment) {
-    ResponsiveHelper.showResponsiveSnackBar(
-      context,
-      message: '${appointment.customerName}の予約編集機能は実装予定です',
-      backgroundColor: AppTheme.infoColor,
-    );
+  Color _getStatusColor(AppointmentStatus status) {
+    switch (status) {
+      case AppointmentStatus.confirmed:
+        return Colors.green;
+      case AppointmentStatus.pending:
+        return Colors.orange;
+      case AppointmentStatus.cancelled:
+        return Colors.red;
+      case AppointmentStatus.completed:
+        return Colors.blue;
+    }
   }
+}
+
+// 予約モデル
+class Appointment {
+  final String id;
+  final String customerName;
+  final String serviceName;
+  final DateTime startTime;
+  final DateTime endTime;
+  final AppointmentStatus status;
+  final String staffName;
+  final int price;
+  final String? note;
+  final bool isFromGoogle;
   
-  void _confirmAppointment(BuildContext context, _AppointmentData appointment) {
-    ResponsiveHelper.showResponsiveSnackBar(
-      context,
-      message: '${appointment.customerName}の予約を確定しました',
-      backgroundColor: AppTheme.successColor,
-    );
-  }
+  Appointment({
+    required this.id,
+    required this.customerName,
+    required this.serviceName,
+    required this.startTime,
+    required this.endTime,
+    required this.status,
+    required this.staffName,
+    required this.price,
+    this.note,
+    this.isFromGoogle = false,
+  });
+}
+
+enum AppointmentStatus {
+  confirmed,
+  pending,
+  cancelled,
+  completed,
+}
+
+// 予約カード
+class _AppointmentCard extends StatelessWidget {
+  final Appointment appointment;
+  final VoidCallback onTap;
+  final bool showDate;
   
-  void _completeAppointment(BuildContext context, _AppointmentData appointment) {
-    ResponsiveHelper.showResponsiveSnackBar(
-      context,
-      message: '${appointment.customerName}の予約を完了しました',
-      backgroundColor: AppTheme.infoColor,
-    );
-  }
+  const _AppointmentCard({
+    required this.appointment,
+    required this.onTap,
+    this.showDate = false,
+  });
   
-  void _cancelAppointment(BuildContext context, _AppointmentData appointment) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black54,
-      builder: (context) => AlertDialog(
-        title: const Text('予約をキャンセル'),
-        content: Text('${appointment.customerName}の予約をキャンセルしますか？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('戻る'),
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppTheme.borderColor),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // 時間
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: themeService.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      DateFormat('HH:mm').format(appointment.startTime),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: themeService.primaryColor,
+                      ),
+                    ),
+                    Text(
+                      '〜',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: themeService.primaryColor,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('HH:mm').format(appointment.endTime),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: themeService.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // 詳細
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (showDate)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          DateFormat('M月d日(E)', 'ja').format(appointment.startTime),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    Row(
+                      children: [
+                        Text(
+                          appointment.customerName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (appointment.isFromGoogle)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.calendar_month, size: 10, color: Colors.blue.shade700),
+                                const SizedBox(width: 2),
+                                Text(
+                                  'Google',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      appointment.serviceName,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Text(
+                          appointment.staffName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '¥${NumberFormat('#,###').format(appointment.price)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: themeService.primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              // ステータス
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(appointment.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _getStatusColor(appointment.status).withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  _getStatusText(appointment.status),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(appointment.status),
+                  ),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ResponsiveHelper.showResponsiveSnackBar(
-                context,
-                message: '${appointment.customerName}の予約をキャンセルしました',
-                backgroundColor: AppTheme.errorColor,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+        ),
+      ),
+    );
+  }
+  
+  Color _getStatusColor(AppointmentStatus status) {
+    switch (status) {
+      case AppointmentStatus.confirmed:
+        return Colors.green;
+      case AppointmentStatus.pending:
+        return Colors.orange;
+      case AppointmentStatus.cancelled:
+        return Colors.red;
+      case AppointmentStatus.completed:
+        return Colors.blue;
+    }
+  }
+  
+  String _getStatusText(AppointmentStatus status) {
+    switch (status) {
+      case AppointmentStatus.confirmed:
+        return '確定';
+      case AppointmentStatus.pending:
+        return '仮予約';
+      case AppointmentStatus.cancelled:
+        return 'キャンセル';
+      case AppointmentStatus.completed:
+        return '完了';
+    }
+  }
+}
+
+// 予約詳細モーダル
+class _AppointmentDetailModal extends StatelessWidget {
+  final Appointment appointment;
+  
+  const _AppointmentDetailModal({required this.appointment});
+  
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ハンドル
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
             ),
-            child: const Text('キャンセル', style: TextStyle(color: Colors.white)),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ヘッダー
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            appointment.customerName,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('yyyy年M月d日(E) HH:mm', 'ja').format(appointment.startTime),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (appointment.isFromGoogle)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.calendar_month,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // 詳細情報
+                _DetailRow(
+                  icon: Icons.cut,
+                  label: 'サービス',
+                  value: appointment.serviceName,
+                ),
+                _DetailRow(
+                  icon: Icons.access_time,
+                  label: '時間',
+                  value: '${DateFormat('HH:mm').format(appointment.startTime)} 〜 ${DateFormat('HH:mm').format(appointment.endTime)}',
+                ),
+                _DetailRow(
+                  icon: Icons.person,
+                  label: '担当',
+                  value: appointment.staffName,
+                ),
+                _DetailRow(
+                  icon: Icons.attach_money,
+                  label: '料金',
+                  value: '¥${NumberFormat('#,###').format(appointment.price)}',
+                ),
+                if (appointment.note != null)
+                  _DetailRow(
+                    icon: Icons.note,
+                    label: 'メモ',
+                    value: appointment.note!,
+                  ),
+                
+                const SizedBox(height: 24),
+                
+                // アクションボタン
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('予約をキャンセルしました')),
+                          );
+                        },
+                        icon: const Icon(Icons.cancel),
+                        label: const Text('キャンセル'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('編集画面を開きます')),
+                          );
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('編集'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeService.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-  
-  void _callCustomer(BuildContext context, _AppointmentData appointment) {
-    ResponsiveHelper.showResponsiveSnackBar(
-      context,
-      message: '${appointment.phone}に電話をかけます',
-      backgroundColor: AppTheme.warningColor,
     );
   }
 }
 
-class _AppointmentData {
-  final int id;
-  final String customerName;
-  final String serviceName;
-  final DateTime date;
-  final TimeOfDay time;
-  final int duration; // minutes
-  final String status; // confirmed, pending, completed, cancelled
-  final String phone;
-  final double price;
+// 詳細行
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
   
-  _AppointmentData({
-    required this.id,
-    required this.customerName,
-    required this.serviceName,
-    required this.date,
-    required this.time,
-    required this.duration,
-    required this.status,
-    required this.phone,
-    required this.price,
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
   });
+  
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.grey.shade600),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 新規予約ダイアログ
+class _NewAppointmentDialog extends StatefulWidget {
+  const _NewAppointmentDialog();
+  
+  @override
+  State<_NewAppointmentDialog> createState() => _NewAppointmentDialogState();
+}
+
+class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
+  final _customerNameController = TextEditingController();
+  final _serviceController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
+  TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
+  String _selectedStaff = '山田スタイリスト';
+  bool _syncToGoogle = true;
+  
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
+    return AlertDialog(
+      title: const Text('新規予約'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _customerNameController,
+              decoration: const InputDecoration(
+                labelText: 'お客様名',
+                prefixIcon: Icon(Icons.person),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _serviceController,
+              decoration: const InputDecoration(
+                labelText: 'サービス',
+                prefixIcon: Icon(Icons.cut),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('日付'),
+              subtitle: Text(DateFormat('yyyy年M月d日(E)', 'ja').format(_selectedDate)),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.access_time),
+              title: const Text('開始時間'),
+              subtitle: Text(_startTime.format(context)),
+              onTap: () async {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: _startTime,
+                );
+                if (time != null) {
+                  setState(() {
+                    _startTime = time;
+                  });
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.access_time),
+              title: const Text('終了時間'),
+              subtitle: Text(_endTime.format(context)),
+              onTap: () async {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: _endTime,
+                );
+                if (time != null) {
+                  setState(() {
+                    _endTime = time;
+                  });
+                }
+              },
+            ),
+            DropdownButtonFormField<String>(
+              value: _selectedStaff,
+              decoration: const InputDecoration(
+                labelText: '担当スタッフ',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+              items: ['山田スタイリスト', '鈴木スタイリスト', '佐藤スタイリスト']
+                  .map((staff) => DropdownMenuItem(
+                        value: staff,
+                        child: Text(staff),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedStaff = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            CheckboxListTile(
+              title: const Text('Google カレンダーに同期'),
+              secondary: const Icon(Icons.calendar_month),
+              value: _syncToGoogle,
+              onChanged: (value) {
+                setState(() {
+                  _syncToGoogle = value!;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('キャンセル'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('予約を作成しました')),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: themeService.primaryColor,
+          ),
+          child: const Text('作成'),
+        ),
+      ],
+    );
+  }
+  
+  @override
+  void dispose() {
+    _customerNameController.dispose();
+    _serviceController.dispose();
+    super.dispose();
+  }
 }
