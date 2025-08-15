@@ -751,8 +751,10 @@ class _AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
+              Row(
+                children: [
               // 時間
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -874,24 +876,94 @@ class _AppointmentCard extends StatelessWidget {
                 ),
               ),
               
-              // ステータス
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(appointment.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _getStatusColor(appointment.status).withOpacity(0.3),
+                  // ステータス
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(appointment.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _getStatusColor(appointment.status).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      _getStatusText(appointment.status),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _getStatusColor(appointment.status),
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  _getStatusText(appointment.status),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _getStatusColor(appointment.status),
+                ],
+              ),
+              // クイックアクションボタン
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // チャットボタン
+                  IconButton(
+                    icon: Icon(Icons.chat_bubble_outline, size: 18, color: themeService.primaryColor),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    onPressed: () {
+                      GlobalModalService.showChat(
+                        context,
+                        customerId: appointment.customerId,
+                        customerName: appointment.customerName,
+                      );
+                    },
+                    tooltip: 'チャット',
                   ),
-                ),
+                  // 電話ボタン
+                  IconButton(
+                    icon: Icon(Icons.phone_outlined, size: 18, color: themeService.primaryColor),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    onPressed: () {
+                      // TODO: 電話番号があれば電話をかける
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('電話機能は準備中です')),
+                      );
+                    },
+                    tooltip: '電話',
+                  ),
+                  // 顧客詳細ボタン
+                  IconButton(
+                    icon: Icon(Icons.person_outline, size: 18, color: themeService.primaryColor),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    onPressed: () {
+                      GlobalModalService.showCustomerDetail(
+                        context,
+                        customerId: appointment.customerId,
+                        customerName: appointment.customerName,
+                      );
+                    },
+                    tooltip: '顧客詳細',
+                  ),
+                  // 詳細ボタン
+                  IconButton(
+                    icon: Icon(Icons.more_horiz, size: 18, color: Colors.grey.shade600),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    onPressed: onTap,
+                    tooltip: '詳細',
+                  ),
+                ],
               ),
             ],
           ),
@@ -968,12 +1040,72 @@ class _AppointmentDetailModal extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            appointment.customerName,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                appointment.customerName,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // クイックアクションボタン
+                              IconButton(
+                                icon: const Icon(Icons.chat_bubble_outline),
+                                iconSize: 20,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                onPressed: () {
+                                  // 予約詳細モーダルを閉じずにチャットを開く
+                                  GlobalModalService.showChat(
+                                    context,
+                                    customerId: appointment.customerId,
+                                    customerName: appointment.customerName,
+                                    isFromAppointmentDetail: true,
+                                  );
+                                },
+                                tooltip: 'チャット',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.phone_outlined),
+                                iconSize: 20,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                onPressed: () {
+                                  // TODO: 電話番号があれば電話をかける
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('電話機能は準備中です')),
+                                  );
+                                },
+                                tooltip: '電話',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.person_outline),
+                                iconSize: 20,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                onPressed: () {
+                                  // 予約詳細モーダルを閉じずに顧客詳細を開く
+                                  GlobalModalService.showCustomerDetail(
+                                    context,
+                                    customerId: appointment.customerId,
+                                    customerName: appointment.customerName,
+                                    isFromAppointmentDetail: true,
+                                  );
+                                },
+                                tooltip: '顧客詳細',
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -1034,63 +1166,39 @@ class _AppointmentDetailModal extends StatelessWidget {
                 const SizedBox(height: 24),
                 
                 // アクションボタン
-                Column(
+                Row(
                   children: [
-                    // 顧客詳細ボタン
-                    SizedBox(
-                      width: double.infinity,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('予約をキャンセルしました')),
+                          );
+                        },
+                        icon: const Icon(Icons.close),
+                        label: const Text('キャンセル'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          GlobalModalService.showCustomerDetail(
-                            context,
-                            customerId: appointment.customerId,
-                            customerName: appointment.customerName,
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('編集画面を開きます')),
                           );
                         },
-                        icon: const Icon(Icons.person),
-                        label: const Text('顧客詳細を開く'),
+                        icon: const Icon(Icons.edit),
+                        label: const Text('編集'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: themeService.primaryColor,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    // その他のアクション
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('予約をキャンセルしました')),
-                              );
-                            },
-                            icon: const Icon(Icons.cancel),
-                            label: const Text('キャンセル'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('編集画面を開きます')),
-                              );
-                            },
-                            icon: const Icon(Icons.edit),
-                            label: const Text('編集'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: themeService.primaryColor,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

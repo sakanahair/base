@@ -18,9 +18,10 @@ class GlobalModalService extends ChangeNotifier {
     String? customerName,
     String? customerPhone,
     String? customerEmail,
+    bool isFromAppointmentDetail = false,
   }) async {
-    // 既存のモーダルを閉じる
-    if (_instance._currentOpenModal != null) {
+    // 予約詳細から開いた場合は、既存のモーダルを閉じない
+    if (!isFromAppointmentDetail && _instance._currentOpenModal != null) {
       Navigator.of(context).pop();
     }
 
@@ -47,9 +48,10 @@ class GlobalModalService extends ChangeNotifier {
     String? customerName,
     String? channel,
     bool isFromCustomerDetail = false,
+    bool isFromAppointmentDetail = false,
   }) async {
-    // 顧客詳細から開いた場合は、顧客詳細を閉じない
-    if (!isFromCustomerDetail && _instance._currentOpenModal != null) {
+    // 顧客詳細や予約詳細から開いた場合は、既存のモーダルを閉じない
+    if (!isFromCustomerDetail && !isFromAppointmentDetail && _instance._currentOpenModal != null) {
       Navigator.of(context).pop();
     }
 

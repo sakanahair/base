@@ -9,6 +9,7 @@ extension ContextExtensions on BuildContext {
     String? customerName,
     String? customerPhone,
     String? customerEmail,
+    bool isFromAppointmentDetail = false,
   }) async {
     return GlobalModalService.showCustomerDetail(
       this,
@@ -16,6 +17,7 @@ extension ContextExtensions on BuildContext {
       customerName: customerName,
       customerPhone: customerPhone,
       customerEmail: customerEmail,
+      isFromAppointmentDetail: isFromAppointmentDetail,
     );
   }
   
@@ -25,6 +27,7 @@ extension ContextExtensions on BuildContext {
     String? customerName,
     String? channel,
     bool isFromCustomerDetail = false,
+    bool isFromAppointmentDetail = false,
   }) async {
     return GlobalModalService.showChat(
       this,
@@ -32,6 +35,7 @@ extension ContextExtensions on BuildContext {
       customerName: customerName,
       channel: channel,
       isFromCustomerDetail: isFromCustomerDetail,
+      isFromAppointmentDetail: isFromAppointmentDetail,
     );
   }
   
