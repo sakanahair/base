@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/services/theme_service.dart';
+import '../../../../core/services/global_modal_service.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class AppointmentsPage extends StatefulWidget {
@@ -27,11 +28,23 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   // モックの予約データ
   final Map<DateTime, List<Appointment>> _appointments = {};
   
+  // 検索関連
+  String _searchQuery = '';
+  late TextEditingController _searchController;
+  String _selectedFilter = 'all'; // 'all', 'customer', 'service', 'staff'
+  
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
+    _searchController = TextEditingController();
     _loadMockAppointments();
+  }
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
   
   void _loadMockAppointments() {
@@ -42,6 +55,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     _appointments[normalizedToday] = [
       Appointment(
         id: '1',
+        customerId: 'customer_001',
         customerName: '田中 花子',
         serviceName: 'カット + カラー',
         startTime: DateTime(today.year, today.month, today.day, 10, 0),
@@ -54,6 +68,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       ),
       Appointment(
         id: '2',
+        customerId: 'customer_002',
         customerName: '佐藤 太郎',
         serviceName: 'カット',
         startTime: DateTime(today.year, today.month, today.day, 14, 0),
@@ -64,6 +79,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       ),
       Appointment(
         id: '3',
+        customerId: 'customer_003',
         customerName: '鈴木 美咲',
         serviceName: 'トリートメント',
         startTime: DateTime(today.year, today.month, today.day, 15, 30),
@@ -79,6 +95,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     _appointments[tomorrow] = [
       Appointment(
         id: '4',
+        customerId: 'customer_004',
         customerName: '高橋 健一',
         serviceName: 'パーマ + カット',
         startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 11, 0),
@@ -95,6 +112,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     _appointments[nextWeek] = [
       Appointment(
         id: '5',
+        customerId: 'customer_005',
         customerName: '伊藤 さゆり',
         serviceName: '縮毛矯正',
         startTime: DateTime(nextWeek.year, nextWeek.month, nextWeek.day, 9, 0),
@@ -108,7 +126,30 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   
   List<Appointment> _getAppointmentsForDay(DateTime day) {
     final normalized = DateTime(day.year, day.month, day.day);
-    return _appointments[normalized] ?? [];
+    final appointments = _appointments[normalized] ?? [];
+    return _filterAppointments(appointments);
+  }
+  
+  List<Appointment> _filterAppointments(List<Appointment> appointments) {
+    if (_searchQuery.isEmpty) return appointments;
+    
+    final query = _searchQuery.toLowerCase();
+    return appointments.where((appointment) {
+      switch (_selectedFilter) {
+        case 'customer':
+          return appointment.customerName.toLowerCase().contains(query);
+        case 'service':
+          return appointment.serviceName.toLowerCase().contains(query);
+        case 'staff':
+          return appointment.staffName.toLowerCase().contains(query);
+        case 'all':
+        default:
+          return appointment.customerName.toLowerCase().contains(query) ||
+                 appointment.serviceName.toLowerCase().contains(query) ||
+                 appointment.staffName.toLowerCase().contains(query) ||
+                 (appointment.note?.toLowerCase().contains(query) ?? false);
+      }
+    }).toList();
   }
   
   void _showAppointmentDetails(Appointment appointment) {
@@ -164,6 +205,52 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         ),
                       ).animate().fadeIn(delay: 100.ms),
                     ],
+                  ),
+                  // 検索バー
+                  Container(
+                    height: 40,
+                    margin: const EdgeInsets.only(right: 8),
+                    child: SizedBox(
+                      width: 250,
+                      child: TextField(
+                        controller: _searchController,
+                        style: const TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: '顧客、サービス、スタッフで検索',
+                          hintStyle: const TextStyle(fontSize: 13),
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchQuery = '';
+                                    _searchController.clear();
+                                  });
+                                },
+                              )
+                            : null,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(color: themeService.primaryColor),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                      ),
+                    ),
                   ),
                   Row(
                     children: [
@@ -603,6 +690,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 // 予約モデル
 class Appointment {
   final String id;
+  final String customerId;  // 顧客ID追加
   final String customerName;
   final String serviceName;
   final DateTime startTime;
@@ -615,6 +703,7 @@ class Appointment {
   
   Appointment({
     required this.id,
+    String? customerId,
     required this.customerName,
     required this.serviceName,
     required this.startTime,
@@ -624,7 +713,7 @@ class Appointment {
     required this.price,
     this.note,
     this.isFromGoogle = false,
-  });
+  }) : customerId = customerId ?? 'customer_${id}';
 }
 
 enum AppointmentStatus {
@@ -945,38 +1034,63 @@ class _AppointmentDetailModal extends StatelessWidget {
                 const SizedBox(height: 24),
                 
                 // アクションボタン
-                Row(
+                Column(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('予約をキャンセルしました')),
-                          );
-                        },
-                        icon: const Icon(Icons.cancel),
-                        label: const Text('キャンセル'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    // 顧客詳細ボタン
+                    SizedBox(
+                      width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('編集画面を開きます')),
+                          GlobalModalService.showCustomerDetail(
+                            context,
+                            customerId: appointment.customerId,
+                            customerName: appointment.customerName,
                           );
                         },
-                        icon: const Icon(Icons.edit),
-                        label: const Text('編集'),
+                        icon: const Icon(Icons.person),
+                        label: const Text('顧客詳細を開く'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: themeService.primaryColor,
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    // その他のアクション
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('予約をキャンセルしました')),
+                              );
+                            },
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('キャンセル'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('編集画面を開きます')),
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('編集'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: themeService.primaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

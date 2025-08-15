@@ -731,8 +731,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                   style: themeService.getGoogleFontStyle(
                     fontSize: 11,
                     color: Colors.grey[600],
-                    height: 1.2,
-                  ),
+                  ).copyWith(height: 1.2),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1035,8 +1034,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                       style: themeService.getGoogleFontStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
-                        height: 1.3,
-                      ),
+                      ).copyWith(height: 1.3),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
