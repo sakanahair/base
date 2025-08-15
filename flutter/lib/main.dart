@@ -18,6 +18,9 @@ import 'core/services/service_service.dart';
 import 'core/services/simplified_auth_service.dart';
 import 'core/services/enhanced_auth_service.dart';
 import 'core/services/multi_tenant_service.dart';
+import 'core/services/store_info_service.dart';
+import 'core/services/business_hours_service.dart';
+import 'core/services/payment_settings_service.dart';
 import 'core/utils/setup_super_admin.dart';
 import 'shared/widgets/splash_screen.dart';
 
@@ -111,6 +114,18 @@ class _SakanaAdminAppState extends State<SakanaAdminApp> {
         ChangeNotifierProxyProvider<SimplifiedAuthService, ServiceService>(
           create: (context) => ServiceService(context.read<SimplifiedAuthService>()),
           update: (context, auth, previous) => previous ?? ServiceService(auth),
+        ),
+        ChangeNotifierProxyProvider<SimplifiedAuthService, StoreInfoService>(
+          create: (context) => StoreInfoService(authService: context.read<SimplifiedAuthService>()),
+          update: (context, auth, previous) => previous ?? StoreInfoService(authService: auth),
+        ),
+        ChangeNotifierProxyProvider<SimplifiedAuthService, BusinessHoursService>(
+          create: (context) => BusinessHoursService(authService: context.read<SimplifiedAuthService>()),
+          update: (context, auth, previous) => previous ?? BusinessHoursService(authService: auth),
+        ),
+        ChangeNotifierProxyProvider<SimplifiedAuthService, PaymentSettingsService>(
+          create: (context) => PaymentSettingsService(authService: context.read<SimplifiedAuthService>()),
+          update: (context, auth, previous) => previous ?? PaymentSettingsService(authService: auth),
         ),
       ],
       child: Consumer<ThemeService>(
