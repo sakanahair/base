@@ -436,7 +436,20 @@ class ThemeService extends ChangeNotifier {
     return Color(int.parse('FF$hex', radix: 16));
   }
 
-  // Google Fontsからテキストスタイルを取得
+  // Google Fontsからテキストスタイルを取得（公開メソッド）
+  TextStyle getGoogleFontStyle({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+  }) {
+    return _getGoogleFontStyle(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
+  // Google Fontsからテキストスタイルを取得（内部用）
   TextStyle _getGoogleFontStyle({
     double? fontSize,
     FontWeight? fontWeight,

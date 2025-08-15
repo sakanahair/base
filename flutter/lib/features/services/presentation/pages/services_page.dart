@@ -10,6 +10,7 @@ import '../../../../core/services/image_service.dart';
 import '../../../../core/services/service_service.dart';
 import '../../../../core/models/service_model.dart';
 import '../../../../core/utils/mock_image_generator.dart';
+import '../../../../core/services/theme_service.dart';
 
 class ServicesPage extends StatefulWidget {
   const ServicesPage({super.key});
@@ -199,8 +200,11 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ServiceService>(
-      builder: (context, serviceService, child) {
+    return Consumer2<ThemeService, ServiceService>(
+      builder: (context, themeService, serviceService, child) {
+        print('ServicesPage: Current font family = ${themeService.fontFamily}');
+        print('ServicesPage: Current font size = ${themeService.fontSize}');
+        
         final services = serviceService.searchServices(_searchQuery);
         final categories = serviceService.servicesByCategory;
         
@@ -209,78 +213,103 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
           body: SafeArea(
             child: Column(
               children: [
-                // ヘッダー
+                // ヘッダー（ダッシュボードと同じスタイル）
                 Container(
-                  padding: EdgeInsets.fromLTRB(
-                    MediaQuery.of(context).size.width < 600 ? 16 : 24,
-                    MediaQuery.of(context).size.width < 600 ? 8 : 16,
-                    MediaQuery.of(context).size.width < 600 ? 16 : 24,
-                    MediaQuery.of(context).size.width < 600 ? 8 : 16,
-                  ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // タイトル部分（シンプルに）
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'サービス管理',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_getIndustryName(_selectedIndustry)}のサービス一覧',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // キャッシュクリアボタン（一時的）
-                    TextButton.icon(
-                      onPressed: () async {
-                        final imageService = Provider.of<ImageService>(context, listen: false);
-                        await imageService.clearCache();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('画像キャッシュをクリアしました'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.cleaning_services, size: 16),
-                      label: const Text('キャッシュクリア', style: TextStyle(fontSize: 12)),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // 検索バー、業種選択、サービス追加を1行に（高さ統一）
-                SizedBox(
-                  height: 48, // 統一された高さ
-                  child: Row(
+                  color: AppTheme.backgroundColor,
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Builder(
+                                builder: (context) {
+                                  // テーマサービスからフォントサイズを取得
+                                  double titleFontSize = 28.0;
+                                  double subtitleFontSize = 16.0;
+                                  
+                                  switch (themeService.fontSize) {
+                                    case 'xs':
+                                      titleFontSize = 22.0;
+                                      subtitleFontSize = 13.0;
+                                      break;
+                                    case 's':
+                                      titleFontSize = 24.0;
+                                      subtitleFontSize = 14.0;
+                                      break;
+                                    case 'm':
+                                      titleFontSize = 28.0;
+                                      subtitleFontSize = 16.0;
+                                      break;
+                                    case 'l':
+                                      titleFontSize = 32.0;
+                                      subtitleFontSize = 18.0;
+                                      break;
+                                    case 'xl':
+                                      titleFontSize = 36.0;
+                                      subtitleFontSize = 20.0;
+                                      break;
+                                  }
+                                  
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'サービス管理',
+                                        style: themeService.getGoogleFontStyle(
+                                          fontSize: titleFontSize,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black87,
+                                        ),
+                                      ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${_getIndustryName(_selectedIndustry)}のサービス一覧',
+                                        style: themeService.getGoogleFontStyle(
+                                          fontSize: subtitleFontSize,
+                                          color: AppTheme.textSecondary,
+                                        ),
+                                      ).animate().fadeIn(delay: 100.ms),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          // キャッシュクリアボタン（一時的）
+                          TextButton.icon(
+                            onPressed: () async {
+                              final imageService = Provider.of<ImageService>(context, listen: false);
+                              await imageService.clearCache();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('画像キャッシュをクリアしました'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.cleaning_services, size: 16),
+                            label: Text('キャッシュクリア', 
+                              style: themeService.getGoogleFontStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // 検索バー、業種選択、サービス追加を1行に（高さ統一）
+                      SizedBox(
+                        height: 48, // 統一された高さ
+                        child: Row(
+                          children: [
                       // 検索バー（最初に配置）
                       Expanded(
                         child: TextField(
@@ -365,7 +394,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                                 const SizedBox(width: 8),
                                 Text(
                                   _getIndustryName(_selectedIndustry),
-                                  style: const TextStyle(
+                                  style: themeService.getGoogleFontStyle(
                                     color: AppTheme.textPrimary,
                                     fontSize: 14,
                                   ),
@@ -388,7 +417,10 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                         child: ElevatedButton.icon(
                           onPressed: () => _showAddServiceDialog(context),
                           icon: const Icon(Icons.add, size: 20),
-                          label: const Text('追加'),
+                          label: Text('追加',
+                            style: themeService.getGoogleFontStyle(
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
@@ -399,12 +431,12 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                           ),
                         ),
                       ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
           // カテゴリータブ
           Container(
             color: Colors.white,
@@ -414,6 +446,12 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
               labelColor: AppTheme.primaryColor,
               unselectedLabelColor: Colors.grey,
               indicatorColor: AppTheme.primaryColor,
+              labelStyle: themeService.getGoogleFontStyle(
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: themeService.getGoogleFontStyle(
+                fontWeight: FontWeight.normal,
+              ),
               tabs: ['すべて', ..._industryCategories[_selectedIndustry]!.take(4)]
                   .map((category) => Tab(text: category))
                   .toList(),
@@ -438,7 +476,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                             padding: const EdgeInsets.all(8),
                             itemCount: filteredServices.length,
                             itemBuilder: (context, index) {
-                              return _buildServiceCard(filteredServices[index]);
+                              return _buildServiceCard(filteredServices[index], themeService);
                             },
                           )
                         : GridView.builder(
@@ -451,7 +489,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                             ),
                             itemCount: filteredServices.length,
                             itemBuilder: (context, index) {
-                              return _buildServiceCard(filteredServices[index]);
+                              return _buildServiceCard(filteredServices[index], themeService);
                             },
                           );
               }).toList(),
@@ -461,8 +499,8 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
         ),
       ),
     );
-      },
-    );
+  },
+);
   }
   
   PopupMenuItem<String> _buildIndustryMenuItem(String value, String label, IconData icon) {
@@ -478,7 +516,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
     );
   }
   
-  Widget _buildServiceCard(ServiceModel service) {
+  Widget _buildServiceCard(ServiceModel service, ThemeService themeService) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
     
@@ -579,15 +617,15 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
           child: Padding(
             padding: EdgeInsets.all(isMobile ? 10 : 12),
             child: isMobile 
-                ? _buildMobileLayout(service)
-                : _buildDesktopLayout(service),
+                ? _buildMobileLayout(service, themeService)
+                : _buildDesktopLayout(service, themeService),
           ),
         ),
       ),
     ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
   }
   
-  Widget _buildMobileLayout(ServiceModel service) {
+  Widget _buildMobileLayout(ServiceModel service, ThemeService themeService) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -632,7 +670,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                   Expanded(
                     child: Text(
                       service.name,
-                      style: const TextStyle(
+                      style: themeService.getGoogleFontStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -644,7 +682,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                   const SizedBox(width: 8),
                   Text(
                     '¥${service.price.toStringAsFixed(0)}',
-                    style: TextStyle(
+                    style: themeService.getGoogleFontStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
@@ -664,7 +702,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                     ),
                     child: Text(
                       service.category,
-                      style: TextStyle(
+                      style: themeService.getGoogleFontStyle(
                         fontSize: 10,
                         color: _getCategoryColor(service.category),
                         fontWeight: FontWeight.w600,
@@ -677,7 +715,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                     const SizedBox(width: 2),
                     Text(
                       '${service.duration}分',
-                      style: TextStyle(
+                      style: themeService.getGoogleFontStyle(
                         fontSize: 11,
                         color: Colors.grey[600],
                       ),
@@ -690,7 +728,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                 const SizedBox(height: 4),
                 Text(
                   service.description,
-                  style: TextStyle(
+                  style: themeService.getGoogleFontStyle(
                     fontSize: 11,
                     color: Colors.grey[600],
                     height: 1.2,
@@ -726,36 +764,36 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'edit',
               height: 36,
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 16),
-                  SizedBox(width: 8),
-                  Text('編集', style: TextStyle(fontSize: 13)),
+                  const Icon(Icons.edit, size: 16),
+                  const SizedBox(width: 8),
+                  Text('編集', style: themeService.getGoogleFontStyle(fontSize: 13)),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'duplicate',
               height: 36,
               child: Row(
                 children: [
-                  Icon(Icons.copy, size: 16, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text('複製', style: TextStyle(fontSize: 13, color: Colors.blue)),
+                  const Icon(Icons.copy, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text('複製', style: themeService.getGoogleFontStyle(fontSize: 13, color: Colors.blue)),
                 ],
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               height: 36,
               child: Row(
                 children: [
-                  Icon(Icons.delete, size: 16, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('削除', style: TextStyle(fontSize: 13, color: Colors.red)),
+                  const Icon(Icons.delete, size: 16, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text('削除', style: themeService.getGoogleFontStyle(fontSize: 13, color: Colors.red)),
                 ],
               ),
             ),
@@ -848,14 +886,14 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
     );
   }
   
-  Widget _buildDesktopLayout(ServiceModel service) {
+  Widget _buildDesktopLayout(ServiceModel service, ThemeService themeService) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // タイトル（画像の上に配置）
         Text(
           service.name,
-          style: const TextStyle(
+          style: themeService.getGoogleFontStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
@@ -964,7 +1002,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                         ),
                         child: Text(
                           service.category,
-                          style: TextStyle(
+                          style: themeService.getGoogleFontStyle(
                             fontSize: 11,
                             color: _getCategoryColor(service.category),
                             fontWeight: FontWeight.w600,
@@ -979,9 +1017,9 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text(
+                          child: Text(
                             '無効',
-                            style: TextStyle(
+                            style: themeService.getGoogleFontStyle(
                               fontSize: 11,
                               color: Colors.grey,
                             ),
@@ -994,7 +1032,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                     const SizedBox(height: 4),
                     Text(
                       service.description,
-                      style: TextStyle(
+                      style: themeService.getGoogleFontStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
                         height: 1.3,
@@ -1044,7 +1082,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                               ),
                               child: Text(
                                 displayText,
-                                style: const TextStyle(
+                                style: themeService.getGoogleFontStyle(
                                   fontSize: 11,
                                   color: Colors.black87,
                                 ),
@@ -1063,7 +1101,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
               children: [
                 Text(
                   '¥${service.price.toStringAsFixed(0)}',
-                  style: TextStyle(
+                  style: themeService.getGoogleFontStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -1077,7 +1115,7 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                       const SizedBox(width: 2),
                       Text(
                         '${service.duration}分',
-                        style: TextStyle(
+                        style: themeService.getGoogleFontStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
                         ),
@@ -1112,36 +1150,36 @@ class _ServicesPageState extends State<ServicesPage> with SingleTickerProviderSt
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'edit',
                   height: 36,
                   child: Row(
                     children: [
-                      Icon(Icons.edit, size: 16),
-                      SizedBox(width: 8),
-                      Text('編集', style: TextStyle(fontSize: 13)),
+                      const Icon(Icons.edit, size: 16),
+                      const SizedBox(width: 8),
+                      Text('編集', style: themeService.getGoogleFontStyle(fontSize: 13)),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'duplicate',
                   height: 36,
                   child: Row(
                     children: [
-                      Icon(Icons.copy, size: 16),
-                      SizedBox(width: 8),
-                      Text('複製', style: TextStyle(fontSize: 13)),
+                      const Icon(Icons.copy, size: 16),
+                      const SizedBox(width: 8),
+                      Text('複製', style: themeService.getGoogleFontStyle(fontSize: 13)),
                     ],
                   ),
                 ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     height: 36,
                     child: Row(
                       children: [
-                        Icon(Icons.delete, size: 16, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('削除', style: TextStyle(fontSize: 13, color: Colors.red)),
+                        const Icon(Icons.delete, size: 16, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Text('削除', style: themeService.getGoogleFontStyle(fontSize: 13, color: Colors.red)),
                       ],
                     ),
                   ),
