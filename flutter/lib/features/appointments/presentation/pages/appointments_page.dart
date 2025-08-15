@@ -134,12 +134,39 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('予約管理', style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        actions: [
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ヘッダー（ダッシュボードと同じスタイル）
+            Container(
+              color: AppTheme.backgroundColor,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '予約管理',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black87,
+                        ),
+                      ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('yyyy年MM月dd日').format(DateTime.now()),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ).animate().fadeIn(delay: 100.ms),
+                    ],
+                  ),
+                  Row(
+                    children: [
           // Google カレンダー連携状態
           Container(
             margin: const EdgeInsets.only(right: 8),
@@ -229,11 +256,21 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: _viewMode == 'calendar' 
+    ],
+  ),
+),
+            
+            // コンテンツ
+            Expanded(
+              child: _viewMode == 'calendar' 
         ? _buildCalendarView(themeService, isMobile)
         : _viewMode == 'list'
           ? _buildListView(themeService)
           : _buildTimelineView(themeService),
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showNewAppointmentDialog,
         backgroundColor: themeService.primaryColor,

@@ -73,122 +73,150 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(88),
+      body: SafeArea(
         child: Column(
           children: [
+            // ヘッダー（ダッシュボードと同じスタイル）
             Container(
-              height: 48,
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+              color: AppTheme.backgroundColor,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'チャット',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.qr_code, size: 20, color: Colors.black54),
-                    onPressed: () => context.go('/chat/qr'),
-                    tooltip: 'QRコード生成',
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.broadcast_on_personal, size: 20, color: Colors.black54),
-                    onPressed: () => context.go('/chat/broadcast'),
-                    tooltip: '一斉配信',
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      _isDetailMode ? Icons.view_list : Icons.view_agenda,
-                      size: 20,
-                      color: Colors.black54,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isDetailMode = !_isDetailMode;
-                      });
-                    },
-                    tooltip: _isDetailMode ? 'シンプル表示' : '詳細表示',
-                    padding: const EdgeInsets.all(8),
-                  ),
-                  Stack(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.visibility_off, size: 20, color: Colors.black54),
-                        onPressed: () => _showHiddenChatsDialog(context),
-                        tooltip: '非表示リスト',
-                        padding: const EdgeInsets.all(8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'チャット',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black87,
+                            ),
+                          ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                          const SizedBox(height: 4),
+                          Text(
+                            '新しいメッセージをチェック',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ).animate().fadeIn(delay: 100.ms),
+                        ],
                       ),
-                      if (_hiddenChats.isNotEmpty)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              _hiddenChats.length.toString(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.qr_code, size: 20, color: Colors.black54),
+                            onPressed: () => context.go('/chat/qr'),
+                            tooltip: 'QRコード生成',
+                            padding: const EdgeInsets.all(8),
                           ),
-                        ),
+                          IconButton(
+                            icon: Icon(Icons.broadcast_on_personal, size: 20, color: Colors.black54),
+                            onPressed: () => context.go('/chat/broadcast'),
+                            tooltip: '一斉配信',
+                            padding: const EdgeInsets.all(8),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _isDetailMode ? Icons.view_list : Icons.view_agenda,
+                              size: 20,
+                              color: Colors.black54,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isDetailMode = !_isDetailMode;
+                              });
+                            },
+                            tooltip: _isDetailMode ? 'シンプル表示' : '詳細表示',
+                            padding: const EdgeInsets.all(8),
+                          ),
+                          Stack(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.visibility_off, size: 20, color: Colors.black54),
+                                onPressed: () => _showHiddenChatsDialog(context),
+                                tooltip: '非表示リスト',
+                                padding: const EdgeInsets.all(8),
+                              ),
+                              if (_hiddenChats.isNotEmpty)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      _hiddenChats.length.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.settings, size: 20, color: Colors.black54),
+                            onPressed: () => context.go('/settings/chat'),
+                            tooltip: 'チャット設定',
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.settings, size: 20, color: Colors.black54),
-                    onPressed: () => context.go('/settings/chat'),
-                    tooltip: 'チャット設定',
-                    padding: const EdgeInsets.all(8),
+                  const SizedBox(height: 16),
+                  // タブバー
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicatorColor: themeService.primaryColor,
+                      indicatorWeight: 3,
+                      labelColor: themeService.primaryColor,
+                      unselectedLabelColor: Colors.black54,
+                      labelStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      tabs: const [
+                        Tab(text: 'トーク'),
+                        Tab(text: '顧客'),
+                        Tab(text: 'グループ'),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade300, width: 1),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorColor: themeService.primaryColor,
-                indicatorWeight: 3,
-                labelColor: themeService.primaryColor,
-                unselectedLabelColor: Colors.black54,
-                labelStyle: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: const [
-                  Tab(text: 'トーク'),
-                  Tab(text: '顧客'),
-                  Tab(text: 'グループ'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
+            
+            // メインコンテンツ
+            Expanded(
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
               // 検索バーとフィルター
               Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -512,8 +540,12 @@ class _ChatListPageState extends State<ChatListPage> with SingleTickerProviderSt
                   ),
                 ),
               ),
+                  ),
+                ],
+              ),
             ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go('/chat/new'),
