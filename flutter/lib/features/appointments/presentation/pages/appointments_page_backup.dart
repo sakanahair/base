@@ -2571,3 +2571,298 @@ class _TimelineItem extends StatelessWidget {
     }
   }
 }
+
+// 同時刻の複数予約を表示するタイムラインアイテム
+class _TimelineGroupItem extends StatelessWidget {
+  final DateTime time;
+  final List<Appointment> appointments;
+  final bool isLast;
+  final Function(Appointment) onTap;
+  
+  const _TimelineGroupItem({
+    required this.time,
+    required this.appointments,
+    required this.isLast,
+    required this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final timeFormat = DateFormat('HH:mm');
+    
+    // 最も遅い終了時刻を取得
+    DateTime latestEndTime = appointments.first.endTime;
+    for (final appointment in appointments) {
+      if (appointment.endTime.isAfter(latestEndTime)) {
+        latestEndTime = appointment.endTime;
+      }
+    }
+    
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 時間表示
+          SizedBox(
+            width: 60,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  timeFormat.format(time),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '${appointments.length}件',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: themeService.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // タイムラインの線とドット（複数予約用の特別なデザイン）
+          Column(
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // 背景の円
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: themeService.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  // 数字表示
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: themeService.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${appointments.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: Colors.grey.shade300,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // 横スクロール可能なカードリスト
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ヘッダー
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: themeService.primaryColor.withOpacity(0.1),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.group,
+                          size: 14,
+                          color: themeService.primaryColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '同時刻の予約',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: themeService.primaryColor,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${timeFormat.format(time)} - ${timeFormat.format(latestEndTime)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 横スクロール可能なカードリスト
+                  Container(
+                    height: 140,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade200),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      ),
+                    ),
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.all(8),
+                      itemCount: appointments.length,
+                      itemBuilder: (context, index) {
+                        final appointment = appointments[index];
+                        return Container(
+                          width: 200,
+                          margin: EdgeInsets.only(right: index < appointments.length - 1 ? 8 : 0),
+                          child: _CompactAppointmentCard(
+                            appointment: appointment,
+                            onTap: () => onTap(appointment),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// コンパクトな予約カード（横並び表示用）
+class _CompactAppointmentCard extends StatelessWidget {
+  final Appointment appointment;
+  final VoidCallback onTap;
+  
+  const _CompactAppointmentCard({
+    required this.appointment,
+    required this.onTap,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final timeFormat = DateFormat('HH:mm');
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // スタッフバッジ
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: themeService.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.person_outline,
+                    size: 12,
+                    color: themeService.primaryColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      appointment.staffName,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: themeService.primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // 顧客名
+            Text(
+              appointment.customerName,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            // サービス名
+            Text(
+              appointment.serviceName,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            // 時間と価格
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${timeFormat.format(appointment.startTime)}-${timeFormat.format(appointment.endTime)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                Text(
+                  '¥${appointment.price.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: themeService.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
