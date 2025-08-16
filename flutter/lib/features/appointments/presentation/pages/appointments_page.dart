@@ -3,8 +3,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:async';
 import '../../../../core/services/theme_service.dart';
 import '../../../../core/services/global_modal_service.dart';
+import '../../../../core/services/customer_service.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class AppointmentsPage extends StatefulWidget {
@@ -1454,6 +1456,8 @@ class _NewAppointmentDialog extends StatefulWidget {
 }
 
 class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
+  final _phoneController = TextEditingController();
+  final _memberNumberController = TextEditingController();
   final _customerNameController = TextEditingController();
   final _serviceController = TextEditingController();
   late DateTime _selectedDate;
@@ -1462,10 +1466,96 @@ class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
   String _selectedStaff = '山田スタイリスト';
   bool _syncToGoogle = true;
   
+  // 検索結果
+  List<Customer> _suggestions = [];
+  Customer? _selectedCustomer;
+  bool _isSearching = false;
+  Timer? _debounceTimer;
+  
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.selectedDate ?? DateTime.now();
+    
+    // 電話番号入力時の自動検索
+    _phoneController.addListener(_onPhoneChanged);
+    // 会員番号入力時の自動検索
+    _memberNumberController.addListener(_onMemberNumberChanged);
+    // 名前入力時のリアルタイム検索
+    _customerNameController.addListener(_onNameChanged);
+  }
+  
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _phoneController.dispose();
+    _memberNumberController.dispose();
+    _customerNameController.dispose();
+    _serviceController.dispose();
+    super.dispose();
+  }
+  
+  // 電話番号での検索
+  void _onPhoneChanged() {
+    if (_phoneController.text.length >= 10) {
+      final customerService = Provider.of<CustomerService>(context, listen: false);
+      final customer = customerService.findByPhone(_phoneController.text);
+      if (customer != null) {
+        _selectCustomer(customer);
+      }
+    }
+  }
+  
+  // 会員番号での検索
+  void _onMemberNumberChanged() {
+    if (_memberNumberController.text.length >= 3) {
+      final customerService = Provider.of<CustomerService>(context, listen: false);
+      final customer = customerService.findByMemberNumber(_memberNumberController.text);
+      if (customer != null) {
+        _selectCustomer(customer);
+      }
+    }
+  }
+  
+  // 名前でのリアルタイム検索（デバウンス付き）
+  void _onNameChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_customerNameController.text.isNotEmpty && _selectedCustomer == null) {
+        final customerService = Provider.of<CustomerService>(context, listen: false);
+        setState(() {
+          _suggestions = customerService.getSuggestions(_customerNameController.text);
+        });
+      } else {
+        setState(() {
+          _suggestions = [];
+        });
+      }
+    });
+  }
+  
+  // 顧客を選択
+  void _selectCustomer(Customer customer) {
+    setState(() {
+      _selectedCustomer = customer;
+      _customerNameController.text = customer.name;
+      _phoneController.text = customer.phone;
+      if (customer.memberNumber != null) {
+        _memberNumberController.text = customer.memberNumber!;
+      }
+      _suggestions = [];
+    });
+  }
+  
+  // 選択をクリア
+  void _clearSelection() {
+    setState(() {
+      _selectedCustomer = null;
+      _phoneController.clear();
+      _memberNumberController.clear();
+      _customerNameController.clear();
+      _suggestions = [];
+    });
   }
   
   @override
@@ -1475,20 +1565,133 @@ class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
     return AlertDialog(
       title: const Text('新規予約'),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _customerNameController,
-              decoration: const InputDecoration(
-                labelText: 'お客様名',
-                prefixIcon: Icon(Icons.person),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 顧客情報セクション
+              Card(
+                color: _selectedCustomer != null ? Colors.green.shade50 : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.person_search, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('顧客検索', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Spacer(),
+                          if (_selectedCustomer != null)
+                            TextButton.icon(
+                              onPressed: _clearSelection,
+                              icon: const Icon(Icons.clear, size: 16),
+                              label: const Text('クリア'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // 電話番号入力
+                      TextField(
+                        controller: _phoneController,
+                        decoration: InputDecoration(
+                          labelText: '電話番号',
+                          hintText: '090-1234-5678',
+                          prefixIcon: const Icon(Icons.phone),
+                          enabled: _selectedCustomer == null,
+                          filled: _selectedCustomer != null,
+                          fillColor: _selectedCustomer != null ? Colors.grey.shade100 : null,
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 8),
+                      // 会員番号入力
+                      TextField(
+                        controller: _memberNumberController,
+                        decoration: InputDecoration(
+                          labelText: '会員番号',
+                          hintText: 'M00001',
+                          prefixIcon: const Icon(Icons.badge),
+                          enabled: _selectedCustomer == null,
+                          filled: _selectedCustomer != null,
+                          fillColor: _selectedCustomer != null ? Colors.grey.shade100 : null,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // お客様名入力
+                      Column(
+                        children: [
+                          TextField(
+                            controller: _customerNameController,
+                            decoration: InputDecoration(
+                              labelText: 'お客様名',
+                              prefixIcon: const Icon(Icons.person),
+                              enabled: _selectedCustomer == null,
+                              filled: _selectedCustomer != null,
+                              fillColor: _selectedCustomer != null ? Colors.grey.shade100 : null,
+                            ),
+                          ),
+                          // サジェストリスト
+                          if (_suggestions.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Column(
+                                children: _suggestions.map((customer) {
+                                  return ListTile(
+                                    dense: true,
+                                    leading: CircleAvatar(
+                                      radius: 16,
+                                      child: Text(customer.name[0]),
+                                    ),
+                                    title: Text(customer.name),
+                                    subtitle: Text('${customer.phone} ${customer.memberNumber ?? ""}'),
+                                    onTap: () => _selectCustomer(customer),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                        ],
+                      ),
+                      // 選択された顧客の情報表示
+                      if (_selectedCustomer != null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${_selectedCustomer!.name} 様が選択されました',
+                                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _serviceController,
-              decoration: const InputDecoration(
+              const SizedBox(height: 16),
+              TextField(
+                controller: _serviceController,
+                decoration: const InputDecoration(
                 labelText: 'サービス',
                 prefixIcon: Icon(Icons.cut),
               ),
@@ -1576,6 +1779,7 @@ class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
           ],
         ),
       ),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -1595,12 +1799,5 @@ class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
         ),
       ],
     );
-  }
-  
-  @override
-  void dispose() {
-    _customerNameController.dispose();
-    _serviceController.dispose();
-    super.dispose();
   }
 }

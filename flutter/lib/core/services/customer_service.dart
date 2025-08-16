@@ -97,6 +97,7 @@ class CustomerService extends ChangeNotifier {
         name: '田中 太郎',
         phone: '090-1234-5678',
         email: 'tanaka@example.com',
+        memberNumber: 'M00001',
         channel: 'LINE',
         registeredDate: DateTime(2024, 1, 15),
         lastVisit: DateTime.now().subtract(const Duration(days: 3)),
@@ -112,6 +113,7 @@ class CustomerService extends ChangeNotifier {
         name: '佐藤 花子',
         phone: '080-2345-6789',
         email: 'sato@example.com',
+        memberNumber: 'M00002',
         channel: 'WebChat',
         registeredDate: DateTime(2024, 2, 1),
         lastVisit: DateTime.now().subtract(const Duration(days: 7)),
@@ -127,6 +129,7 @@ class CustomerService extends ChangeNotifier {
         name: '山田 美咲',
         phone: '090-3456-7890',
         email: 'yamada@example.com',
+        memberNumber: 'M00003',
         channel: 'SMS',
         registeredDate: DateTime(2023, 11, 20),
         lastVisit: DateTime.now().subtract(const Duration(days: 14)),
@@ -142,6 +145,7 @@ class CustomerService extends ChangeNotifier {
         name: '鈴木 健一',
         phone: '080-4567-8901',
         email: 'suzuki@example.com',
+        memberNumber: 'M00004',
         channel: 'LINE',
         registeredDate: DateTime(2023, 5, 5),
         lastVisit: DateTime.now().subtract(const Duration(days: 1)),
@@ -416,18 +420,89 @@ class CustomerService extends ChangeNotifier {
     }
   }
   
+  // 電話番号で顧客を検索
+  Customer? findByPhone(String phone) {
+    final normalizedPhone = phone.replaceAll(RegExp(r'[-\s]'), '');
+    try {
+      return _customers.firstWhere(
+        (c) => c.phone.replaceAll(RegExp(r'[-\s]'), '') == normalizedPhone,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // 会員番号で顧客を検索
+  Customer? findByMemberNumber(String memberNumber) {
+    try {
+      return _customers.firstWhere(
+        (c) => c.memberNumber?.toUpperCase() == memberNumber.toUpperCase(),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  // 顧客を総合検索（名前、電話番号、会員番号）
+  List<Customer> searchCustomers(String query) {
+    if (query.isEmpty) return [];
+    
+    final normalizedQuery = query.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
+    final results = <Customer>[];
+    
+    for (final customer in _customers) {
+      // 名前で検索（部分一致）
+      if (customer.name.toLowerCase().contains(normalizedQuery)) {
+        results.add(customer);
+        continue;
+      }
+      
+      // 電話番号で検索（部分一致）
+      final normalizedPhone = customer.phone.replaceAll(RegExp(r'[-\s]'), '');
+      if (normalizedPhone.contains(normalizedQuery)) {
+        results.add(customer);
+        continue;
+      }
+      
+      // 会員番号で検索（前方一致）
+      if (customer.memberNumber != null &&
+          customer.memberNumber!.toLowerCase().startsWith(normalizedQuery)) {
+        results.add(customer);
+        continue;
+      }
+      
+      // メールアドレスで検索（部分一致）
+      if (customer.email.toLowerCase().contains(normalizedQuery)) {
+        results.add(customer);
+      }
+    }
+    
+    return results;
+  }
+  
+  // リアルタイムサジェスト用（最大5件）
+  List<Customer> getSuggestions(String query, {int limit = 5}) {
+    final results = searchCustomers(query);
+    return results.take(limit).toList();
+  }
+  
   // 新規顧客作成
   Future<Customer> createNewCustomer({
     required String name,
     required String phone,
     String? email,
+    String? memberNumber,
     String channel = 'なし',
   }) async {
+    // 会員番号を自動生成（指定がない場合）
+    final generatedMemberNumber = memberNumber ?? _generateMemberNumber();
+    
     final newCustomer = Customer(
       id: 'c${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       phone: phone,
       email: email ?? '',
+      memberNumber: generatedMemberNumber,
       channel: channel,
       registeredDate: DateTime.now(),
       lastVisit: null,
@@ -441,6 +516,24 @@ class CustomerService extends ChangeNotifier {
     
     await addCustomer(newCustomer);
     return newCustomer;
+  }
+  
+  // 会員番号を自動生成
+  String _generateMemberNumber() {
+    // 既存の会員番号から最大値を取得
+    int maxNumber = 0;
+    for (final customer in _customers) {
+      if (customer.memberNumber != null && customer.memberNumber!.startsWith('M')) {
+        final numberStr = customer.memberNumber!.substring(1);
+        final number = int.tryParse(numberStr) ?? 0;
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+    }
+    
+    // 次の番号を生成
+    return 'M${(maxNumber + 1).toString().padLeft(5, '0')}';
   }
   
   // チャンネル別に顧客を取得
@@ -491,6 +584,7 @@ class Customer {
   final String name;
   final String phone;
   final String email;
+  final String? memberNumber; // 会員番号（追加）
   final String channel;
   final DateTime registeredDate;
   final DateTime? lastVisit;
@@ -506,6 +600,7 @@ class Customer {
     required this.name,
     required this.phone,
     required this.email,
+    this.memberNumber, // 会員番号（追加）
     required this.channel,
     required this.registeredDate,
     this.lastVisit,
@@ -542,6 +637,7 @@ class Customer {
       'name': name,
       'phone': phone,
       'email': email,
+      'memberNumber': memberNumber,
       'channel': channel,
       'registeredDate': registeredDate.toIso8601String(),
       'lastVisit': lastVisit?.toIso8601String(),
@@ -561,6 +657,7 @@ class Customer {
       name: json['name'],
       phone: json['phone'],
       email: json['email'],
+      memberNumber: json['memberNumber'],
       channel: json['channel'],
       registeredDate: DateTime.parse(json['registeredDate']),
       lastVisit: json['lastVisit'] != null ? DateTime.parse(json['lastVisit']) : null,
@@ -580,6 +677,7 @@ class Customer {
       name: data['name'] ?? '',
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
+      memberNumber: data['memberNumber'],
       channel: data['channel'] ?? 'なし',
       registeredDate: (data['registeredDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastVisit: data['lastVisit'] != null ? (data['lastVisit'] as Timestamp).toDate() : null,
