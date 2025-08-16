@@ -181,82 +181,128 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             // ヘッダー（ダッシュボードと同じスタイル）
             Container(
               color: AppTheme.backgroundColor,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: EdgeInsets.fromLTRB(isMobile ? 16 : 20, 20, isMobile ? 16 : 20, 12),
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // タイトル行
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '予約管理',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '予約管理',
+                              style: TextStyle(
+                                fontSize: isMobile ? 24 : 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black87,
+                              ),
+                            ).animate().fadeIn().slideX(begin: -0.2, end: 0),
+                            const SizedBox(height: 4),
+                            Text(
+                              DateFormat('yyyy年MM月dd日').format(DateTime.now()),
+                              style: TextStyle(
+                                fontSize: isMobile ? 14 : 16,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ).animate().fadeIn(delay: 100.ms),
+                          ],
                         ),
-                      ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-                      const SizedBox(height: 4),
-                      Text(
-                        DateFormat('yyyy年MM月dd日').format(DateTime.now()),
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppTheme.textSecondary,
+                      ),
+                      // メニューボタン（モバイルのみ）
+                      if (isMobile)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'view':
+                                _showViewModeMenu();
+                                break;
+                              case 'google':
+                                _showGoogleCalendarSettings();
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'view',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.view_module, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('表示切替'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'google',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.settings, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('設定'),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ).animate().fadeIn(delay: 100.ms),
                     ],
                   ),
-                  // 検索バー
-                  Container(
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 8),
-                    child: SizedBox(
-                      width: 250,
-                      child: TextField(
-                        controller: _searchController,
-                        style: const TextStyle(fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: '顧客、サービス、スタッフで検索',
-                          hintStyle: const TextStyle(fontSize: 13),
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 16),
-                                onPressed: () {
-                                  setState(() {
-                                    _searchQuery = '';
-                                    _searchController.clear();
-                                  });
-                                },
-                              )
-                            : null,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: BorderSide(color: themeService.primaryColor),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 12),
+                  // 検索バーとアクション行
                   Row(
                     children: [
-          // Google カレンダー連携状態
-          Container(
-            margin: const EdgeInsets.only(right: 8),
+                      // 検索バー
+                      Expanded(
+                        child: Container(
+                          height: 40,
+                          child: TextField(
+                            controller: _searchController,
+                            style: const TextStyle(fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: isMobile ? '検索' : '顧客、サービス、スタッフで検索',
+                              hintStyle: const TextStyle(fontSize: 13),
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _searchController.clear();
+                                      });
+                                    },
+                                  )
+                                : null,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(color: themeService.primaryColor),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // デスクトップ用アクションボタン
+                      if (!isMobile) ...[
+            // Google カレンダー連携状態
+            Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: _isGoogleCalendarConnected 
@@ -292,9 +338,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
               ],
             ),
-          ),
-          // 表示切り替え
-          PopupMenuButton<String>(
+            ),
+            // 表示切り替え
+            PopupMenuButton<String>(
             icon: const Icon(Icons.view_module),
             onSelected: (value) {
               setState(() {
@@ -334,13 +380,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              _showGoogleCalendarSettings();
-            },
-          ),
-          const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                _showGoogleCalendarSettings();
+              },
+            ),
+          ],
         ],
       ),
     ],
@@ -367,105 +413,198 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
   
   Widget _buildCalendarView(ThemeService themeService, bool isMobile) {
-    final selectedAppointments = _selectedDay != null 
-      ? _getAppointmentsForDay(_selectedDay!)
-      : [];
-    
-    return Column(
-      children: [
-        // カレンダー
-        Card(
-          margin: const EdgeInsets.all(16),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: AppTheme.borderColor),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: TableCalendar(
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              focusedDay: _focusedDay,
-              calendarFormat: _calendarFormat,
-              locale: 'ja_JP',
-              selectedDayPredicate: (day) {
-                return isSameDay(_selectedDay, day);
-              },
-              eventLoader: _getAppointmentsForDay,
-              startingDayOfWeek: StartingDayOfWeek.monday,
-              calendarStyle: CalendarStyle(
-                outsideDaysVisible: false,
-                selectedDecoration: BoxDecoration(
-                  color: themeService.primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: themeService.primaryColor.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                markersMaxCount: 3,
-                markerDecoration: BoxDecoration(
-                  color: Colors.blue.shade400,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: true,
-                titleCentered: true,
-              ),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              onFormatChanged: (format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                _focusedDay = focusedDay;
-              },
+    return Card(
+      margin: EdgeInsets.all(isMobile ? 8 : 16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppTheme.borderColor),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(isMobile ? 8 : 16),
+        child: TableCalendar(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          focusedDay: _focusedDay,
+          calendarFormat: _calendarFormat,
+          locale: 'ja_JP',
+          rowHeight: isMobile ? 60 : 80,
+          daysOfWeekHeight: 40,
+          selectedDayPredicate: (day) {
+            return isSameDay(_selectedDay, day);
+          },
+          eventLoader: _getAppointmentsForDay,
+          startingDayOfWeek: StartingDayOfWeek.monday,
+          calendarStyle: CalendarStyle(
+            outsideDaysVisible: false,
+            cellMargin: const EdgeInsets.all(4),
+            selectedDecoration: BoxDecoration(
+              color: themeService.primaryColor,
+              shape: BoxShape.circle,
+            ),
+            todayDecoration: BoxDecoration(
+              color: themeService.primaryColor.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+            markersMaxCount: 3,
+            markerDecoration: BoxDecoration(
+              color: Colors.blue.shade400,
+              shape: BoxShape.circle,
+            ),
+            markersAlignment: Alignment.bottomCenter,
+            defaultTextStyle: TextStyle(
+              fontSize: isMobile ? 14 : 16,
+              fontWeight: FontWeight.w500,
+            ),
+            weekendTextStyle: TextStyle(
+              fontSize: isMobile ? 14 : 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.red,
+            ),
+            selectedTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ).animate().fadeIn().slideY(begin: 0.1, end: 0),
-        
-        // 選択日の予約一覧
-        Expanded(
-          child: selectedAppointments.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.event_available, size: 64, color: Colors.grey.shade300),
-                    const SizedBox(height: 16),
-                    Text(
-                      _selectedDay != null
-                        ? '${DateFormat('M月d日').format(_selectedDay!)}の予約はありません'
-                        : '日付を選択してください',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
+          headerStyle: HeaderStyle(
+            formatButtonVisible: true,
+            titleCentered: true,
+            formatButtonShowsNext: false,
+            formatButtonDecoration: BoxDecoration(
+              border: Border.all(color: themeService.primaryColor),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            formatButtonTextStyle: TextStyle(
+              color: themeService.primaryColor,
+              fontSize: 13,
+            ),
+            titleTextStyle: TextStyle(
+              fontSize: isMobile ? 16 : 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _focusedDay = focusedDay;
+            });
+            
+            // 選択した日の予約を取得
+            final appointments = _getAppointmentsForDay(selectedDay);
+            
+            if (appointments.isNotEmpty) {
+              // 予約がある場合はリスト表示
+              _showDayAppointmentsList(selectedDay, appointments);
+            } else {
+              // 予約がない場合は新規作成ダイアログ
+              _showNewAppointmentDialogForDay(selectedDay);
+            }
+          },
+          onFormatChanged: (format) {
+            setState(() {
+              _calendarFormat = format;
+            });
+          },
+          onPageChanged: (focusedDay) {
+            _focusedDay = focusedDay;
+          },
+        ),
+      ),
+    ).animate().fadeIn().slideY(begin: 0.1, end: 0);
+  }
+  
+  void _showDayAppointmentsList(DateTime day, List<Appointment> appointments) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ハンドル
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // ヘッダー
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('M月d日(E)', 'ja').format(day),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: selectedAppointments.length,
+                      Text(
+                        '${appointments.length}件の予約',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // 新規追加ボタン
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showNewAppointmentDialogForDay(day);
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    iconSize: 28,
+                    color: Provider.of<ThemeService>(context, listen: false).primaryColor,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // 予約リスト
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: appointments.length,
                 itemBuilder: (context, index) {
-                  final appointment = selectedAppointments[index];
+                  final appointment = appointments[index];
                   return _AppointmentCard(
                     appointment: appointment,
-                    onTap: () => _showAppointmentDetails(appointment),
-                  ).animate().fadeIn(delay: Duration(milliseconds: index * 100));
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAppointmentDetails(appointment);
+                    },
+                  ).animate().fadeIn(delay: Duration(milliseconds: index * 50));
                 },
               ),
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+  
+  void _showNewAppointmentDialogForDay(DateTime day) {
+    showDialog(
+      context: context,
+      builder: (context) => _NewAppointmentDialog(selectedDate: day),
     );
   }
   
@@ -595,6 +734,53 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+  
+  void _showViewModeMenu() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.calendar_view_month),
+              title: const Text('カレンダー'),
+              trailing: _viewMode == 'calendar' ? const Icon(Icons.check) : null,
+              onTap: () {
+                setState(() {
+                  _viewMode = 'calendar';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: const Text('リスト'),
+              trailing: _viewMode == 'list' ? const Icon(Icons.check) : null,
+              onTap: () {
+                setState(() {
+                  _viewMode = 'list';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.timeline),
+              title: const Text('タイムライン'),
+              trailing: _viewMode == 'timeline' ? const Icon(Icons.check) : null,
+              onTap: () {
+                setState(() {
+                  _viewMode = 'timeline';
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1259,7 +1445,9 @@ class _DetailRow extends StatelessWidget {
 
 // 新規予約ダイアログ
 class _NewAppointmentDialog extends StatefulWidget {
-  const _NewAppointmentDialog();
+  final DateTime? selectedDate;
+  
+  const _NewAppointmentDialog({this.selectedDate});
   
   @override
   State<_NewAppointmentDialog> createState() => _NewAppointmentDialogState();
@@ -1268,11 +1456,17 @@ class _NewAppointmentDialog extends StatefulWidget {
 class _NewAppointmentDialogState extends State<_NewAppointmentDialog> {
   final _customerNameController = TextEditingController();
   final _serviceController = TextEditingController();
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
   TimeOfDay _startTime = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 11, minute: 0);
   String _selectedStaff = '山田スタイリスト';
   bool _syncToGoogle = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.selectedDate ?? DateTime.now();
+  }
   
   @override
   Widget build(BuildContext context) {
